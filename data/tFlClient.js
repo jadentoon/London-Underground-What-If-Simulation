@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve("../.env")});
+dotenv.config({ path: path.join(process.cwd(), ".env") });
 
 const BASE = "https://api.tfl.gov.uk";
 const APP_KEY = process.env.TFL_APP_KEY;
