@@ -10,8 +10,8 @@
  * 4. Insert edges between stations into Neo4j.
  */
 
-import { buildFromRoutes } from "../data/buildFromRoutes.js";
-import { fetchAllLines } from "../data/fetchAllLines.js";
+import { buildFromRoutes } from "../api/buildFromRoutes.js";
+import { fetchAllLines } from "../../data/fetchAllLines.js";
 import { insertStations } from "../db/insertStations.js";
 import { insertEdges } from "../db/insertEdges.js";
 import { createStationConstraint } from "../db/createConstraints.js";

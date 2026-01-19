@@ -1,4 +1,4 @@
-import { fetchTfl } from "./tFlClient.js";
+import { fetchTfl } from "../data_acquisition/api/tFlClient.js";
 
 /**
  * fetchAllLines - Fetches all tube lines from TfL API.
