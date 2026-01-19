@@ -1,21 +1,52 @@
+/**
+ * buildGraph.js
+ * 
+ * Pipeline script to build a Neo4j graph of TfL tube stations and their connections.
+ * 
+ * Steps:
+ * 1. Fetch all tube lines from TfL API.
+ * 2. Build station nodes and edges (relationships) from routes.
+ * 3. Insert stations into Neo4j with uniqueness constraints.
+ * 4. Insert edges between stations into Neo4j.
+ */
+
 import { buildFromRoutes } from "../data/buildFromRoutes.js";
 import { fetchAllLines } from "../data/fetchAllLines.js";
 import { insertStations } from "../db/insertStations.js";
 import { insertEdges } from "../db/insertEdges.js";
 
-const lines = await fetchAllLines();
+async function main() {
+    try {
+        console.log("Fetching all tube lines from TfL...");
+        const lines = await fetchAllLines(); // Array of line objects {id, name}
+        console.log(`Found ${lines.length} lines`);
 
-console.log("Building graph from routes...");
-const { stations, edges } = await buildFromRoutes(lines);
+        console.log("Building graph from routes...");
+        // buildFromRoutes returns { stations: [], edges: [] }
+        const { stations, edges } = await buildFromRoutes(lines);
 
-console.log("Stations: ", stations.length);
-console.log("Edges: ", edges.length);
+        console.log(`Stations: ${stations.length}`);
+        console.log(`Edges: ${edges.length}`);
 
-await insertStations(stations);
-console.log("Stations inserted.");
+        // Insert station nodes into Neo4j
+        console.log("Inserting stations into database...");
+        await insertStations(stations);
+        console.log("Stations inserted.");
 
-await insertEdges(edges);
-console.log("Edges inserted.");
+        // Insert relationships between stations
+        console.log("Inserting edges (connections) into database...");
+        await insertEdges(edges);
+        console.log("Edges inserted.");
 
-console.log("Graph build complete.");
-process.exit();
+        console.log("Graph build complete.");
+    } catch (err) {
+        console.error("Error building graph:", err);
+        process.exit(1); // Exit with failure code
+    } finally {
+        // Ensure process exits cleanly even if driver or sessions remain open
+        process.exit(0);
+    }
+}
+
+// Run the pipeline
+await main();
