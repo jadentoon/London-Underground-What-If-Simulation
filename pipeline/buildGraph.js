@@ -14,6 +14,7 @@ import { buildFromRoutes } from "../data/buildFromRoutes.js";
 import { fetchAllLines } from "../data/fetchAllLines.js";
 import { insertStations } from "../db/insertStations.js";
 import { insertEdges } from "../db/insertEdges.js";
+import { createStationConstraint } from "../db/createConstraints.js";
 
 async function main() {
     try {
@@ -27,6 +28,10 @@ async function main() {
 
         console.log(`Stations: ${stations.length}`);
         console.log(`Edges: ${edges.length}`);
+
+        // Ensure uniqueness constraint exists before inserting stations.
+        console.log("Ensuring station uniqueness constraint...");
+        await createStationConstraint();
 
         // Insert station nodes into Neo4j
         console.log("Inserting stations into database...");
