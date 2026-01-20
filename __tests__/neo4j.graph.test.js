@@ -3,10 +3,10 @@ import { driver } from '../db/neo4jClient.js';
 import { jest } from '@jest/globals';
 
 
-// this test suite focuses on verifying the integrity of the graph data in Neo4j
+//this test suite focuses on verifying the integrity of the graph data in Neo4j
 //checking if station nodes exist as expected
 //check if neo4j is running and accessible before running tests
-// test missing, duplicate nodes
+//test missing, duplicate nodes
 
 
 
