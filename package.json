@@ -1,6 +1,17 @@
 {
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
+  },
   "dependencies": {
     "dotenv": "^17.2.3",
     "neo4j-driver": "^6.0.1"
+  },
+  "devDependencies": {
+    "jest": "^29.6.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "transform": {}
   }
 }
