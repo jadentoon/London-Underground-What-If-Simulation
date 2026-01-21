@@ -4,8 +4,8 @@ import { useRef, useState, useCallback, useEffect } from "react"
 
 const GRID_SIZE_MILES = 1
 const BASE_CELL_SIZE = 100
-const MIN_SCALE = 0.1
-const MAX_SCALE = 5
+const MIN_SCALE = 0.4 // min 
+const MAX_SCALE = 1.0 // max of 100
 const GRID_EXTENT = 50
 
 const COLORS = {
@@ -24,6 +24,7 @@ export function MapCanvas() {
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [showControls, setShowControls] = useState(true)
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
 
   useEffect(() => {
@@ -40,6 +41,12 @@ export function MapCanvas() {
     return () => window.removeEventListener("resize", updateSize)
   }, [])
 
+  // Hide controls after 15 seconds
+  useEffect(() => {
+    const t = setTimeout(() => setShowControls(false), 15000)
+    return () => clearTimeout(t)
+  }, [])
+
   const handleMouseDown = useCallback(
     (e) => {
       if (e.button === 2) {
@@ -54,14 +61,32 @@ export function MapCanvas() {
   const handleMouseMove = useCallback(
     (e) => {
       if (isDragging) {
-        setTransform((prev) => ({
-          ...prev,
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y,
-        }))
+        const proposedX = e.clientX - dragStart.x
+        const proposedY = e.clientY - dragStart.y
+        setTransform((prev) => {
+          const scale = prev.scale
+          const cellSize = BASE_CELL_SIZE * scale
+          const halfMilesX = (containerSize.width / 2) / cellSize
+          const halfMilesY = (containerSize.height / 2) / cellSize
+          const minCenterX = -30 + halfMilesX
+          const maxCenterX = 30 - halfMilesX
+          const minCenterY = -30 + halfMilesY
+          const maxCenterY = 30 - halfMilesY
+
+          let centerMilesX = -proposedX / cellSize
+          let centerMilesY = proposedY / cellSize
+
+          if (minCenterX > maxCenterX) centerMilesX = 0
+          else centerMilesX = Math.max(minCenterX, Math.min(maxCenterX, centerMilesX))
+
+          if (minCenterY > maxCenterY) centerMilesY = 0
+          else centerMilesY = Math.max(minCenterY, Math.min(maxCenterY, centerMilesY))
+
+          return { x: -centerMilesX * cellSize, y: centerMilesY * cellSize, scale }
+        })
       }
     },
-    [isDragging, dragStart]
+    [isDragging, dragStart, containerSize]
   )
 
   const handleMouseUp = useCallback(() => {
@@ -77,14 +102,33 @@ export function MapCanvas() {
       const mouseX = e.clientX - rect.left
       const mouseY = e.clientY - rect.top
       const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1
-      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, transform.scale * zoomFactor))
-      const scaleRatio = newScale / transform.scale
-      const newX = mouseX - (mouseX - transform.x) * scaleRatio
-      const newY = mouseY - (mouseY - transform.y) * scaleRatio
+      setTransform((prev) => {
+        const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.scale * zoomFactor))
+        const scaleRatio = newScale / prev.scale
+        const newX = mouseX - (mouseX - prev.x) * scaleRatio
+        const newY = mouseY - (mouseY - prev.y) * scaleRatio
 
-      setTransform({ x: newX, y: newY, scale: newScale })
+        const cellSize = BASE_CELL_SIZE * newScale
+        const halfMilesX = (containerSize.width / 2) / cellSize
+        const halfMilesY = (containerSize.height / 2) / cellSize
+        const minCenterX = -30 + halfMilesX
+        const maxCenterX = 30 - halfMilesX
+        const minCenterY = -30 + halfMilesY
+        const maxCenterY = 30 - halfMilesY
+
+        let centerMilesX = -newX / cellSize
+        let centerMilesY = newY / cellSize
+
+        if (minCenterX > maxCenterX) centerMilesX = 0
+        else centerMilesX = Math.max(minCenterX, Math.min(maxCenterX, centerMilesX))
+
+        if (minCenterY > maxCenterY) centerMilesY = 0
+        else centerMilesY = Math.max(minCenterY, Math.min(maxCenterY, centerMilesY))
+
+        return { x: -centerMilesX * cellSize, y: centerMilesY * cellSize, scale: newScale }
+      })
     },
-    [transform]
+    [containerSize]
   )
 
   const handleContextMenu = useCallback((e) => {
@@ -248,35 +292,37 @@ export function MapCanvas() {
       </div>
 
       {/* Controls */}
-      <div
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          background: COLORS.card,
-          backdropFilter: "blur(8px)",
-          border: `1px solid ${COLORS.border}`,
-          borderRadius: 8,
-          padding: 12,
-          fontSize: 13,
-          color: COLORS.text,
-        }}
-      >
-        <div>
-          <span style={{ color: COLORS.accent, fontWeight: 500 }}>Right-click + drag</span> to pan
+      {showControls && (
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            background: COLORS.card,
+            backdropFilter: "blur(8px)",
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 8,
+            padding: 12,
+            fontSize: 13,
+            color: COLORS.text,
+          }}
+        >
+          <div>
+            <span style={{ color: COLORS.accent, fontWeight: 500 }}>Right-click + drag</span> to pan
+          </div>
+          <div>
+            <span style={{ color: COLORS.accent, fontWeight: 500 }}>Scroll</span> to zoom
+          </div>
         </div>
-        <div>
-          <span style={{ color: COLORS.accent, fontWeight: 500 }}>Scroll</span> to zoom
-        </div>
-      </div>
+      )}
 
       {/* Title */}
       <div style={{ position: "absolute", top: 16, left: 16 }}>
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text }}>
-          London Underground <span style={{ color: COLORS.accent }}>Visualiser</span>
+          London Underground <span style={{ color: COLORS.accent }}>What If Simulator</span>
         </h1>
         <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
-          Interactive Map Grid
+          Interactive Map
         </p>
       </div>
     </div>

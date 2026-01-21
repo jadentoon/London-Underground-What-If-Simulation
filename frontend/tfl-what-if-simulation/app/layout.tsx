@@ -8,9 +8,9 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'London Underground Visualiser',
+  title: 'London Underground What-If Simulator',
   description: 'Interactive map visualiser for the London Underground network',
-  generator: 'v0.app',
+  generator: 'Next.js',
   icons: {
     icon: [
       {
