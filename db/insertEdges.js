@@ -14,8 +14,8 @@ export async function insertEdges(edges) {
             `
             UNWIND $edges AS e
             MATCH (a:Station {id: e.from}), (b:Station {id: e.to})
-            MERGE (a)-[:CONNECTS_TO {line: e.line}]->(b)
-            MERGE (b)-[:CONNECTS_TO {line: e.line}]->(a)
+            MERGE (a)-[:CONNECTS_TO {line: e.line, distance: e.distance}]->(b)
+            MERGE (b)-[:CONNECTS_TO {line: e.line, distance: e.distance}]->(a)
             `,
             { edges }
         );

@@ -1,6 +1,41 @@
 import { fetchTfl } from "./tFlClient.js"
 
 /**
+ * haversineDistance
+ * 
+ * Calculate the straight-line distance between 2 points on Earth.
+ * This uses the Haversine formula, which takes the Earth's curvature into account.
+ * Perfect for estimating distances between 2 tube stations.
+ * 
+ * @param {number} lat1 - Latitude of the first station in degrees (north/south) 
+ * @param {number} lon1 - Longitude of the first station in degrees (east/west) 
+ * @param {number} lat2 - Latitude of the second station in degrees.
+ * @param {number} lon2 - Longitude of the second station in degrees.
+ * @returns {number} Distance in meters
+ */
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const toRadians = deg => deg * (Math.PI / 180); // Average radius of the Earth
+
+    const earthRadius = 6371000; // Radius of the Earth in meters
+
+    const lat1InRadians = toRadians(lat1);
+    const lat2InRadians = toRadians(lat2);
+
+    const diffInLatitude = toRadians(lat2 - lat1);
+    const diffInLongitude = toRadians(lon2 - lon1);
+
+    const halfChordLengthSquared = Math.sin(diffInLatitude / 2) ** 2 +
+        Math.cos(lat1InRadians) *
+        Math.cos(lat2InRadians) *
+        Math.sin(diffInLongitude / 2) ** 2;
+    
+    const angularDistance = 2 * Math.atan2(Math.sqrt(halfChordLengthSquared), Math.sqrt(1 - halfChordLengthSquared));
+
+    const distanceInMeters = earthRadius * angularDistance;
+
+    return distanceInMeters;
+}
+/**
  * buildFromRoutes
  * 
  * Builds a station graph directly from TfL route data.
@@ -12,7 +47,7 @@ import { fetchTfl } from "./tFlClient.js"
  *  
  * @returns {Promise<{
  *  stations: Array<{id: string, name: string, lat: number, lon: number}>,
- *  edges: Array<{from: string, to: string, line: string, lineName: string}>
+ *  edges: Array<{from: string, to: string, line: string, lineName: string, distance: number}>
  * }>}
  * 
  * Why this approach:
@@ -52,11 +87,15 @@ export async function buildFromRoutes(lines) {
 
                 // Create edge to next station in sequence.
                 if (i < stops.length - 1) {
+                    const nextStop = stops[i + 1];
+                    const distance = haversineDistance(s.lat, s.lon, nextStop.lat, nextStop.lon);
+
                     edges.push({
                         from: s.id,
                         to: stops[i + 1].id,
                         line: line.id,
-                        lineName: line.name
+                        lineName: line.name,
+                        distance: distance
                     })
                 }
             }
