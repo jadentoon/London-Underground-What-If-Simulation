@@ -18,9 +18,7 @@ const LeafletMap = ({ center, zoom }) => {
     <MapContainer
         center={center}
         zoom={zoom}
-        zoomControl={true}
-        scrollWheelZoom={true}
-        tou
+        zoomControl={false}
         attributionControl={false}
         style={{
             position: "absolute",
