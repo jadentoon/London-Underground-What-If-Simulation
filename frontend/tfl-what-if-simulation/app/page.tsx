@@ -1,4 +1,4 @@
-import { MapCanvas } from "./components/map-canvas"
+import { MapCanvas } from "./components/MapCanvas"
 
 export default function Home() {
   return (
