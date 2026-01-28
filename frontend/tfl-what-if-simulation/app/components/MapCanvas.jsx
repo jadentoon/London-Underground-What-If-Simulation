@@ -8,7 +8,7 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 const GRID_SIZE_MILES = 1
 const BASE_CELL_SIZE = 100
 const MIN_SCALE = 0.4 // min 
-const MAX_SCALE = 3.0 // max of 100
+const MAX_SCALE = 3.0 // max of 3s00
 const GRID_EXTENT = 50
 
 const COLORS = {
@@ -140,7 +140,7 @@ export function MapCanvas() {
                 else centerMilesY = Math.max(minCenterY, Math.min(maxCenterY, centerMilesY))
 
                 return { x: -centerMilesX * cellSize, y: centerMilesY * cellSize, scale: newScale }
-            })
+            });
         },
         [containerSize]
     )

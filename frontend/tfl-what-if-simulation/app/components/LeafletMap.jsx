@@ -27,8 +27,18 @@ function SyncMap({ center, zoom }) {
     const map = useMap();
 
     useEffect(() => {
-        // Disable animation to avoid jitter when syncing frequent state updates.
-        map.setView(center, zoom, { animate: false })
+       const currCenter = map.getCenter();
+       const currZoom = map.getZoom();
+
+       const centerChanged = 
+            currCenter.lat !== center[0] ||
+            currCenter.lng !== center[1];
+        
+        if (centerChanged) {
+            map.setView(center, zoom, { animate: false });
+        } else if (currZoom !== zoom) {
+            map.setZoom(zoom, { animate: false });
+        }
     }, [center, zoom, map])
 
     return null
@@ -55,6 +65,8 @@ const LeafletMap = ({ center, zoom }) => {
         zoom={zoom}
         zoomControl={false}             // Custom zoom controls handled in MapCanvas
         attributionControl={false}      // Attribution hidden for custom UI layout
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
         style={{
             position: "absolute",
             inset: 0,
