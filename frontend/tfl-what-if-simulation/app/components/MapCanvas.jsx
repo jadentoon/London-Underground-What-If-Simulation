@@ -40,6 +40,7 @@ export function MapCanvas() {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
     const [showControls, setShowControls] = useState(true)
     const [containerSize, setContainerSize] = useState({ width: 0, height: 0 })
+    const [stations, setStations] = useState([]);
 
     useEffect(() => {
         const updateSize = () => {
@@ -231,7 +232,14 @@ export function MapCanvas() {
     const milesX = -transform.x / cellSize
     const milesY = transform.y / cellSize
     const mapCenter = milesToLatLng(milesX, milesY)
-    const leafletZoom = Math.round(12 + Math.log2(transform.scale))
+    const leafletZoom = Math.round(15 + Math.log2(transform.scale))
+
+    useEffect(() => {
+        fetch("api/stations")
+            .then(res => res.json())
+            .then(setStations)
+            .catch(console.error)
+    }, []);
 
     return (
         <div
@@ -252,7 +260,11 @@ export function MapCanvas() {
             onWheel={handleWheel}
             onContextMenu={handleContextMenu}
         >
-            <LeafletMap center={mapCenter} zoom={leafletZoom} />
+            <LeafletMap 
+                center={mapCenter} 
+                zoom={leafletZoom}
+                stations={stations} 
+            />
             <svg
                 width={containerSize.width}
                 height={containerSize.height}

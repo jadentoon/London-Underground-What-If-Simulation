@@ -7,7 +7,7 @@
  */
 
 import { useEffect } from "react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet"; 
+import { MapContainer, TileLayer, useMap, CircleMarker, Popup } from "react-leaflet"; 
 
 /**
  * SyncMap
@@ -23,7 +23,7 @@ import { MapContainer, TileLayer, useMap } from "react-leaflet";
  * @param {number} zoom - Zoom level for the map 
  * @returns {null} This component does not render any DOM elements.
  */
-function SyncMap({ center, zoom }) {
+function SyncMap({ center, zoom, stations }) {
     const map = useMap();
 
     useEffect(() => {
@@ -58,7 +58,7 @@ function SyncMap({ center, zoom }) {
  * @param {number} zoom - Initial and controlled map zoom level 
  * @returns {JSX.Element} Configured Leaflet map container.
  */
-const LeafletMap = ({ center, zoom }) => {
+const LeafletMap = ({ center, zoom, stations }) => {
   return (
     <MapContainer
         center={center}
@@ -80,6 +80,23 @@ const LeafletMap = ({ center, zoom }) => {
 
         {/* Keeps the Leaflet camera in sync with React state */}
         <SyncMap center={center} zoom={zoom} />
+
+        {stations.map((s) => (
+            <CircleMarker
+                key={s.name}
+                center={[s.lat, s.lon]}
+                radius={2}
+                pathOptions={{
+                    color: "#3b82f6",
+                    fillColor: "#000000",
+                    fillOpacity: 0.9,
+                }}
+            >
+                <Popup>
+                    <strong>{s.name}</strong>
+                </Popup>
+            </CircleMarker>
+        ))}
     </MapContainer>
   )
 }
