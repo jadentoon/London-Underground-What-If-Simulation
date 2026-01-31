@@ -9,7 +9,8 @@ export async function GET() {
             MATCH (s1:Station)-[r:CONNECTS_TO]->(s2:Station)
             RETURN
                 s1.id AS fromId, s1.name AS fromName, s1.lat AS fromLat, s1.lon AS fromLon,
-                s2.id AS toId, s2.name AS toName, s2.lat AS toLat, s2.lon AS toLon
+                s2.id AS toId, s2.name AS toName, s2.lat AS toLat, s2.lon AS toLon,
+                r.line AS line
         `);
 
         const nodesMap = new Map();
@@ -36,7 +37,11 @@ export async function GET() {
                 });
             }
 
-            edges.push({from: fromId, to: toId});
+            edges.push({
+                from: fromId,
+                 to: toId,
+                line: record.get("line")
+            });
         });
 
         const nodes = Array.from(nodesMap.values());

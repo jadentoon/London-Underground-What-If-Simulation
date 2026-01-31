@@ -23,7 +23,7 @@ import { MapContainer, TileLayer, useMap, CircleMarker, Popup, Polyline } from "
  * @param {number} zoom - Zoom level for the map 
  * @returns {null} This component does not render any DOM elements.
  */
-function SyncMap({ center, zoom, stations }) {
+function SyncMap({ center, zoom }) {
     const map = useMap();
 
     useEffect(() => {
@@ -58,7 +58,7 @@ function SyncMap({ center, zoom, stations }) {
  * @param {number} zoom - Initial and controlled map zoom level 
  * @returns {JSX.Element} Configured Leaflet map container.
  */
-const LeafletMap = ({ center, zoom, stations }) => {
+const LeafletMap = ({ center, zoom }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
 

@@ -8,7 +8,7 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 const GRID_SIZE_MILES = 1
 const BASE_CELL_SIZE = 100
 const MIN_SCALE = 0.4 // min 
-const MAX_SCALE = 3.0 // max of 3s00
+const MAX_SCALE = 1.0 // max of 3s00
 const GRID_EXTENT = 50
 
 const COLORS = {
@@ -231,7 +231,7 @@ export function MapCanvas() {
     const milesX = -transform.x / cellSize
     const milesY = transform.y / cellSize
     const mapCenter = milesToLatLng(milesX, milesY)
-    const leafletZoom = Math.round(12 + Math.log2(transform.scale))
+    const leafletZoom = 15 + Math.log2(transform.scale)
 
     return (
         <div
