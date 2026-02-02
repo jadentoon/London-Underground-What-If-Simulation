@@ -1,9 +1,14 @@
 'use client'
 /**
- * Client-side Leaflet map implementation for Next.js (App Router).
+ * LeafletMap.jsx
  * 
- * This file must be a Client Component because Leaflet depends on
- * browser-specific APIs (window, DOM) which are unavailable during SSR.
+ * Client-side Leaflet map implementation for the London Underground
+ * "What-If" simulator. Uses React-Leaflet to render stations and connections
+ * with smooth pan/zoom interaction.
+ * 
+ * NOTE: This component must be a Client Component in Next.js because
+ * Leaflet relies on browser APIs (window, DOM) that are unavailable
+ * during server-side rendering (SSR).
  */
 
 import { useEffect, useState } from "react";
@@ -17,10 +22,21 @@ import {
     ZoomControl
 } from "react-leaflet";
 
-const LONDON_CENTER = [51.5074, -0.1278];
+const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
 
+/**
+ * MapEvents
+ * 
+ * Attaches event listener to the Leaflet map instance.
+ * Reports map camera changes (pan/zoom) to the parent component
+ * via the `onChange` callback.
+ * 
+ * @param {function} onChange - Callback to report {center, zoom}. 
+ * @returns {null} This component does not render any UI.
+ */
 function MapEvents({ onChange }) {
     useMapEvents({
+        // Trigger when map stops moving after pan.
         moveend(e) {
             const map = e.target;
             onChange({
@@ -28,6 +44,7 @@ function MapEvents({ onChange }) {
                 zoom: map.getZoom(),
             });
         },
+        // Trigger when zoom level changes.
         zoomend(e) {
             const map = e.target;
             onChange({
@@ -43,21 +60,30 @@ function MapEvents({ onChange }) {
 /**
  * LeafletMap
  * 
- * Leaflet map container component.
+ * Renders a controlled Leaflet map container with:
+ * - Dark themed CartoDB basemap for reduced visual noise.
+ * - Stations rendered as Circlemarkers with popups.
+ * - Connections rendered as Polylines.
+ * - Native Leaflet zoom & pan interactions.
  * 
- * Provides a styled, controlled Leaflet map instance with a dark-themed
- * basemap. The map's view is controlled via props, allowing external
- * components (e.g. pathfinding results, UI interactions) to drive
- * camera movement in a predictable manner.
+ * Uses React state to load and render nodes (stations) and edges (connections).
+ * Map camera chanes are communicated to the parent component via
+ * the `onMapChange` callback.
  * 
- * @param {[number, number]} center - Initial and controlled map center
- * @param {number} zoom - Initial and controlled map zoom level 
- * @returns {JSX.Element} Configured Leaflet map container.
+ * @param {function} onMapChange - Callback invoked on pan/zoom. 
+ * @returns {JSX.Element} Leaflet Map container.
  */
 const LeafletMap = ({ onMapChange }) => {
+    // Local state for station nodes.
     const [nodes, setNodes] = useState([]);
+
+    // Local state for connection edges.
     const [edges, setEdges] = useState([]);
 
+    /**
+     * Load station and connection data from the API on the mount.
+     * This effect runs once.
+     */
     useEffect(() => {
         async function loadData() {
             const res = await fetch("/api/stations");
@@ -73,20 +99,22 @@ const LeafletMap = ({ onMapChange }) => {
         <MapContainer
             center={LONDON_CENTER}
             zoom={14}
-            minZoom={12}
-            maxZoom={16}
+            minZoom={12} // Prevent zooming out too far.
+            maxZoom={16} // Prevent zooming in too far.
             scrollWheelZoom
             dragging
             doubleClickZoom
-            zoomControl={false}
-            attributionControl={false}
+            zoomControl={false}         // Custom ZoomControl used.
+            attributionControl={false}  // Hide default attribtion for cleaner UI.
             style={{
                 position: "absolute",
                 inset: 0,
                 zIndex: 0,
             }}
         >
+            {/* Native Leaflet zoom control, positioned top-right */}
             <ZoomControl position="topright" />
+
             {/* Dark CartoDB basemap for reduced visual noise */}
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -95,6 +123,7 @@ const LeafletMap = ({ onMapChange }) => {
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
 
+            {/* Render stations as circle markers */}
             {nodes.map((s) => (
                 <CircleMarker
                     key={s.id}
@@ -112,6 +141,7 @@ const LeafletMap = ({ onMapChange }) => {
                 </CircleMarker>
             ))}
 
+            {/* Render connections as polylines */}
             {edges.map((edge, i) => {
                 const from = nodes.find(n => n.id === edge.from);
                 const to = nodes.find(n => n.id === edge.to);
