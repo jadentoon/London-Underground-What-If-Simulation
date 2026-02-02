@@ -115,6 +115,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  background-color: #000; /* keep the background black so that it doesnt flash when zooming */
+}
+
+.leaflet-container {
+  background-color: #000 !important;
+}
+
+.leaflet-tile {
+  background-color: transparent;
+  transition: opacity 160ms linear;
+}
+
 /* Hide Next.js dev overlay / badge in development for clean UI */
 /* multiple selectors to cover variants across Next/Turbopack versions */
 #next-devtools,
