@@ -7,41 +7,37 @@
  */
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, useMap, CircleMarker, Popup, Polyline } from "react-leaflet";
+import { 
+    MapContainer, 
+    TileLayer, 
+    CircleMarker, 
+    Popup, 
+    Polyline,
+    useMapEvents, 
+    ZoomControl
+} from "react-leaflet";
 
-/**
- * SyncMap
- * 
- * Synchronises the Leaflet map view with external React state.
- * 
- * This component listens for changes to the provided `center` and `zoom`
- * values and imperatively updates the underlying Leaflet map instance.
- * It renders no UI and exists solely to bridge declarative React state
- * with Leaflet's imperative API.
- * 
- * @param {[number, number]} center - Latitude/Longitude tuple for the map view.
- * @param {number} zoom - Zoom level for the map 
- * @returns {null} This component does not render any DOM elements.
- */
-function SyncMap({ center, zoom }) {
-    const map = useMap();
+const LONDON_CENTER = [51.5074, -0.1278];
 
-    useEffect(() => {
-        const currCenter = map.getCenter();
-        const currZoom = map.getZoom();
+function MapEvents({ onChange }) {
+    useMapEvents({
+        moveend(e) {
+            const map = e.target;
+            onChange({
+                center: map.getCenter(),
+                zoom: map.getZoom(),
+            });
+        },
+        zoomend(e) {
+            const map = e.target;
+            onChange({
+                center: map.getCenter(),
+                zoom: map.getZoom(),
+            });
+        },
+    });
 
-        const centerChanged =
-            currCenter.lat !== center[0] ||
-            currCenter.lng !== center[1];
-
-        if (centerChanged) {
-            map.setView(center, zoom, { animate: false });
-        } else if (currZoom !== zoom) {
-            map.setZoom(zoom, { animate: false });
-        }
-    }, [center, zoom, map])
-
-    return null
+    return null;
 }
 
 /**
@@ -58,49 +54,52 @@ function SyncMap({ center, zoom }) {
  * @param {number} zoom - Initial and controlled map zoom level 
  * @returns {JSX.Element} Configured Leaflet map container.
  */
-const LeafletMap = ({ center, zoom }) => {
+const LeafletMap = ({ onMapChange }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
 
     useEffect(() => {
-        async function loadStations() {
+        async function loadData() {
             const res = await fetch("/api/stations");
             const data = await res.json();
 
             setNodes(data.nodes);
             setEdges(data.edges);
         }
-
-        loadStations();
+        loadData();
     }, []);
 
     return (
         <MapContainer
-            center={center}
-            zoom={zoom}
-            zoomControl={false}             // Custom zoom controls handled in MapCanvas
-            attributionControl={false}      // Attribution hidden for custom UI layout
-            scrollWheelZoom={false}
-            doubleClickZoom={false}
+            center={LONDON_CENTER}
+            zoom={14}
+            minZoom={12}
+            maxZoom={16}
+            scrollWheelZoom
+            dragging
+            doubleClickZoom
+            zoomControl={false}
+            attributionControl={false}
             style={{
                 position: "absolute",
                 inset: 0,
                 zIndex: 0,
             }}
         >
+            <ZoomControl position="topright" />
             {/* Dark CartoDB basemap for reduced visual noise */}
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             />
 
-            {/* Keeps the Leaflet camera in sync with React state */}
-            <SyncMap center={center} zoom={zoom} />
+            {/* Camera Change Listener */}
+            <MapEvents onChange={onMapChange} />
 
             {nodes.map((s) => (
                 <CircleMarker
                     key={s.id}
                     center={[s.lat, s.lon]}
-                    radius={2}
+                    radius={3}
                     pathOptions={{
                         color: "#3b82f6",
                         fillColor: "#3b82f6",
