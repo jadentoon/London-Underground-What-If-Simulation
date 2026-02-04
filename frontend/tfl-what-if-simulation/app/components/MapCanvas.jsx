@@ -54,6 +54,9 @@ export function MapCanvas() {
 
     // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    
+    // State for hypothetical settings toggle
+    const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
 
     /**
      * Callback passed to LeafletMap to receive camera changes.
@@ -155,7 +158,48 @@ export function MapCanvas() {
                     gap: 20,
                 }}
             >
-                {/*placeholder*/}
+                {/* Hypothetical Settings Toggle */}
+                <div>
+                    <h2>Settings</h2>
+                    <button
+                        onClick={() => setHypotheticalSettingsEnabled(!hypotheticalSettingsEnabled)}
+                        style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            background: hypotheticalSettingsEnabled ? COLORS.accent : "rgba(0, 0, 0, 0.3)",
+                            border: `1px solid ${COLORS.border}`,
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            color: COLORS.text,
+                            fontSize: 14,
+                            fontWeight: 500,
+                            transition: "all 0.2s ease",
+                            outline: "none",
+                        }}
+                        onMouseEnter={(e) => {
+                            if (!hypotheticalSettingsEnabled) {
+                                e.currentTarget.style.background = "rgba(59, 130, 246, 0.2)";
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (!hypotheticalSettingsEnabled) {
+                                e.currentTarget.style.background = "rgba(0, 0, 0, 0.3)";
+                            }
+                        }}
+                    >
+                        <span>Hypothetical Settings</span>
+                        <span style={{ 
+                            fontSize: 12,
+                            color: hypotheticalSettingsEnabled ? "#fff" : COLORS.textMuted 
+                        }}>
+                            {hypotheticalSettingsEnabled ? "ON" : "OFF"}
+                        </span>
+                    </button>
+                </div>
+                {/*placeholder for additional tools*/}
                 <div style={{ flex: 1 }}>
                     {/*toolbar items*/}
                 </div>
