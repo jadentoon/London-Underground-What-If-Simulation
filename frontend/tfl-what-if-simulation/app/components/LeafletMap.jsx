@@ -157,7 +157,7 @@ const LeafletMap = ({ onMapChange }) => {
                         ]}
                         pathOptions={{
                             color: "#1e40af",
-                            weight: 1,
+                            weight: 5,
                             opacity: 0.5,
                         }}
                     />
