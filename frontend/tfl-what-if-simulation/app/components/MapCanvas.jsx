@@ -52,6 +52,9 @@ export function MapCanvas() {
         center: { lat: 51.5074, lng: -0.1278 },     // Default London Center.
     })
 
+    // collapse state
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
     /**
      * Callback passed to LeafletMap to receive camera changes.
      * Updates the mapStateRef with the latest center and zoom.
@@ -60,11 +63,7 @@ export function MapCanvas() {
         mapStateRef.current = state;
     }, []);
 
-    /**
-     * Periodically update the HUD state from the ref every 100ms.
-     * This decouples HUD updates from React rendering triggered by map movement,
-     * preventing flicker or excessive re-renders during pan/zoom.
-     */
+
     useEffect(() => {
         const id = setInterval(() => {
             if(!mapStateRef.current.center) return;
@@ -87,15 +86,33 @@ export function MapCanvas() {
                 backgroundColor: COLORS.bg,
             }}
         >
-            {/* Leaflet map component */}
+            
             <LeafletMap onMapChange={handleMapChange} />
 
-            {/* HUD overlay */}
+            {/* title - moves with panel but always visible */}
+            <div 
+                style={{ 
+                    position: "fixed", 
+                    top: 16, 
+                    left: isSidebarOpen ? 296 : 16,
+                    transition: "left 0.3s ease",
+                    zIndex: 1000,
+                }}
+            >
+                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text }}>
+                    London Underground <span style={{ color: COLORS.accent }}>What If Simulator</span>
+                </h1>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
+                    Interactive Map
+                </p>
+            </div>
+
+            {/* zoom info - moves with panel but always visible at bottom */}
             <div
                 style={{
-                    position: "absolute",
+                    position: "fixed",
                     bottom: 16,
-                    left: 16,
+                    left: isSidebarOpen ? 296 : 16,
                     background: COLORS.card,
                     backdropFilter: "blur(8px)",
                     border: `1px solid ${COLORS.border}`,
@@ -104,6 +121,8 @@ export function MapCanvas() {
                     fontFamily: "monospace",
                     fontSize: 13,
                     color: COLORS.text,
+                    transition: "left 0.3s ease",
+                    zIndex: 1000,
                 }}
             >
                 <div>
@@ -117,15 +136,65 @@ export function MapCanvas() {
                 </div>
             </div>
 
-            {/* Title and description overlay */}
-            <div style={{ position: "absolute", top: 16, left: 16 }}>
-                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text }}>
-                    London Underground <span style={{ color: COLORS.accent }}>What If Simulator</span>
-                </h1>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
-                    Interactive Map
-                </p>
+            {/*collapsing left sidebar */}
+            <div
+                style={{
+                    position: "fixed",
+                    top: 0,
+                    left: isSidebarOpen ? 0 : -280,
+                    width: 280,
+                    height: "100vh",
+                    background: COLORS.card,
+                    backdropFilter: "blur(8px)",
+                    borderRight: `1px solid ${COLORS.border}`,
+                    transition: "left 0.3s ease",
+                    zIndex: 1000,
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 20,
+                }}
+            >
+                {/*placeholder*/}
+                <div style={{ flex: 1 }}>
+                    {/*toolbar items*/}
+                </div>
             </div>
+
+            {/*toggle button */}
+            <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                style={{
+                    position: "fixed",
+                    top: "50%",
+                    left: isSidebarOpen ? 280 : 0,
+                    transform: "translateY(-50%)",
+                    width: 32,
+                    height: 64,
+                    background: COLORS.card,
+                    backdropFilter: "blur(8px)",
+                    border: `1px solid ${COLORS.border}`,
+                    borderLeft: isSidebarOpen ? `1px solid ${COLORS.border}` : "none",
+                    borderRadius: isSidebarOpen ? "0 8px 8px 0" : "0 8px 8px 0",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: COLORS.accent,
+                    fontSize: 16,
+                    zIndex: 1001,
+                    transition: "left 0.3s ease",
+                    outline: "none",
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(59, 130, 246, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = COLORS.card;
+                }}
+            >
+                {isSidebarOpen ? "◀" : "▶"}
+            </button>
         </div>
     )
 }
