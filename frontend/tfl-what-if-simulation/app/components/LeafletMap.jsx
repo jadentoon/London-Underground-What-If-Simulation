@@ -11,18 +11,52 @@
  * during server-side rendering (SSR).
  */
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { 
     MapContainer, 
     TileLayer, 
     CircleMarker, 
     Popup, 
     Polyline,
+    Tooltip,
     useMapEvents, 
     ZoomControl
 } from "react-leaflet";
 
 const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
+const LINE_COLORS = {
+    bakerloo: "#B36305",
+    central: "#E32017",
+    circle: "#FFD300",
+    district: "#00782A",
+    elizabeth: "#6950A1",
+    "hammersmith-city": "#F3A9BB",
+    jubilee: "#A0A5A9",
+    metropolitan: "#9B0056",
+    northern: "#000000",
+    piccadilly: "#003688",
+    victoria: "#0098D4",
+    "waterloo-city": "#95CDBA",
+};
+const LINE_LABELS = {
+    bakerloo: "Bakerloo Line",
+    central: "Central Line",
+    circle: "Circle Line",
+    district: "District Line",
+    elizabeth: "Elizabeth Line",
+    "hammersmith-city": "Hammersmith & City Line",
+    jubilee: "Jubilee Line",
+    metropolitan: "Metropolitan Line",
+    northern: "Northern Line",
+    piccadilly: "Piccadilly Line",
+    victoria: "Victoria Line",
+    "waterloo-city": "Waterloo & City Line",
+};
+const LINE_OUTLINE_COLOR = "#ffffff47";
+const LINE_OUTLINE_WEIGHT = 8;
+const LINE_STROKE_WEIGHT = 6;
+const LINE_OPACITY = 0.8;
+const LINE_SMOOTH_FACTOR = 5;
 
 /**
  * MapEvents
@@ -123,16 +157,68 @@ const LeafletMap = ({ onMapChange }) => {
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
 
+            {/* Render connections as polylines (white outline + coloured core) */}
+            {edges.map((edge, i) => {
+                const from = nodes.find(n => n.id === edge.from);
+                const to = nodes.find(n => n.id === edge.to);
+                const line = edge.line;
+
+                if (!from || !to) return null;
+
+                const color = LINE_COLORS[line] || "#1e40af";
+                const label = LINE_LABELS[line] || line;
+
+                return (
+                    <Fragment key={i}>
+                        <Polyline
+                            positions={[
+                                [from.lat, from.lon],
+                                [to.lat, to.lon],
+                            ]}
+                            pathOptions={{
+                                color: LINE_OUTLINE_COLOR,
+                                weight: LINE_OUTLINE_WEIGHT,
+                                opacity: LINE_OPACITY,
+                                lineCap: "round",
+                                lineJoin: "round",
+                                smoothFactor: LINE_SMOOTH_FACTOR,
+                                interactive: false,
+                            }}
+                        />
+                        <Polyline
+                            positions={[
+                                [from.lat, from.lon],
+                                [to.lat, to.lon],
+                            ]}
+                            pathOptions={{
+                                color,
+                                weight: LINE_STROKE_WEIGHT,
+                                opacity: LINE_OPACITY,
+                                lineCap: "round",
+                                lineJoin: "round",
+                                smoothFactor: LINE_SMOOTH_FACTOR,
+                                interactive: true,
+                            }}
+                        >
+                            <Tooltip direction="top" offset={[0, 0]} className="line-tooltip">
+                                {label}
+                            </Tooltip>
+                        </Polyline>
+                    </Fragment>
+                );
+            })}
+
             {/* Render stations as circle markers */}
             {nodes.map((s) => (
                 <CircleMarker
                     key={s.id}
                     center={[s.lat, s.lon]}
-                    radius={3}
+                    radius={4}
                     pathOptions={{
-                        color: "#3b82f6",
-                        fillColor: "#3b82f6",
-                        fillOpacity: 0.9,
+                        color: "#ffffff",
+                        weight: 2,
+                        fillColor: "#000000",
+                        fillOpacity: 1,
                     }}
                 >
                     <Popup>
@@ -140,29 +226,6 @@ const LeafletMap = ({ onMapChange }) => {
                     </Popup>
                 </CircleMarker>
             ))}
-
-            {/* Render connections as polylines */}
-            {edges.map((edge, i) => {
-                const from = nodes.find(n => n.id === edge.from);
-                const to = nodes.find(n => n.id === edge.to);
-
-                if (!from || !to) return null;
-
-                return (
-                    <Polyline
-                        key={i}
-                        positions={[
-                            [from.lat, from.lon],
-                            [to.lat, to.lon],
-                        ]}
-                        pathOptions={{
-                            color: "#1e40af",
-                            weight: 1,
-                            opacity: 0.5,
-                        }}
-                    />
-                );
-            })}
         </MapContainer>
     )
 }
