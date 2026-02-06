@@ -54,7 +54,7 @@ const LINE_LABELS = {
 };
 const LINE_OUTLINE_COLOR = "#ffffff47";
 const LINE_OUTLINE_WEIGHT = 8;
-const LINE_STROKE_WEIGHT = 6;
+const LINE_STROKE_WEIGHT = 4;
 const LINE_OPACITY = 0.8;
 const LINE_SMOOTH_FACTOR = 5;
 
@@ -227,28 +227,7 @@ const LeafletMap = ({ onMapChange }) => {
                 </CircleMarker>
             ))}
 
-            {/* Render connections as polylines */}
-            {edges.map((edge, i) => {
-                const from = nodes.find(n => n.id === edge.from);
-                const to = nodes.find(n => n.id === edge.to);
-
-                if (!from || !to) return null;
-
-                return (
-                    <Polyline
-                        key={i}
-                        positions={[
-                            [from.lat, from.lon],
-                            [to.lat, to.lon],
-                        ]}
-                        pathOptions={{
-                            color: "#1e40af",
-                            weight: 5,
-                            opacity: 0.5,
-                        }}
-                    />
-                );
-            })}
+           
         </MapContainer>
     )
 }
