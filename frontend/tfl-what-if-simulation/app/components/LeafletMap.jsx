@@ -226,6 +226,29 @@ const LeafletMap = ({ onMapChange }) => {
                     </Popup>
                 </CircleMarker>
             ))}
+
+            {/* Render connections as polylines */}
+            {edges.map((edge, i) => {
+                const from = nodes.find(n => n.id === edge.from);
+                const to = nodes.find(n => n.id === edge.to);
+
+                if (!from || !to) return null;
+
+                return (
+                    <Polyline
+                        key={i}
+                        positions={[
+                            [from.lat, from.lon],
+                            [to.lat, to.lon],
+                        ]}
+                        pathOptions={{
+                            color: "#1e40af",
+                            weight: 5,
+                            opacity: 0.5,
+                        }}
+                    />
+                );
+            })}
         </MapContainer>
     )
 }
