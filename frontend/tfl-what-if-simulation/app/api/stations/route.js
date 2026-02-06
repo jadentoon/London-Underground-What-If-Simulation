@@ -75,7 +75,7 @@ export async function GET() {
             // Record the connection between stations.
             edges.push({
                 from: fromId,
-                 to: toId,
+                to: toId,
                 line: record.get("line")
             });
         });
