@@ -11,21 +11,112 @@
  * during server-side rendering (SSR).
  */
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { 
     MapContainer, 
     TileLayer, 
     CircleMarker, 
     Popup, 
     Polyline,
+    Tooltip,
     useMapEvents, 
     ZoomControl
 } from "react-leaflet";
 
-import { buildGraph } from "../lib/graph.js";
-import { dijkstra } from "../lib/pathfinding.js";
+/* -------------------- Constants -------------------- */
 
-const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
+// Default center (London Coordinates)
+const LONDON_CENTER = [51.5074, -0.1278]; 
+
+const LINE_COLORS = {
+    bakerloo: "#B36305",
+    central: "#E32017",
+    circle: "#FFD300",
+    district: "#00782A",
+    elizabeth: "#6950A1",
+    "hammersmith-city": "#F3A9BB",
+    jubilee: "#A0A5A9",
+    metropolitan: "#9B0056",
+    northern: "#000000",
+    piccadilly: "#003688",
+    victoria: "#0098D4",
+    "waterloo-city": "#95CDBA",
+};
+
+const LINE_LABELS = {
+    bakerloo: "Bakerloo Line",
+    central: "Central Line",
+    circle: "Circle Line",
+    district: "District Line",
+    elizabeth: "Elizabeth Line",
+    "hammersmith-city": "Hammersmith & City Line",
+    jubilee: "Jubilee Line",
+    metropolitan: "Metropolitan Line",
+    northern: "Northern Line",
+    piccadilly: "Piccadilly Line",
+    victoria: "Victoria Line",
+    "waterloo-city": "Waterloo & City Line",
+};
+
+const LINE_OUTLINE_COLOR = "#ffffff47";
+const LINE_OUTLINE_WEIGHT = 8;
+const LINE_STROKE_WEIGHT = 4;
+const LINE_OPACITY = 0.8;
+const LINE_SMOOTH_FACTOR = 5;
+const OFFSET_STEP = 0.0001;
+
+/* -------------------- Helpers -------------------- */
+
+function groupEdges(edges) {
+    const groups = {};
+
+    for (const edge of edges) {
+        const a = String(edge.from);
+        const b = String(edge.to);
+        const key = a < b ? `${a}-${b}` : `${b}-${a}`;
+        
+        if(!groups[key])groups[key] = [];
+        groups[key].push(edge);
+    }
+
+    return groups;
+}
+
+function dedupeEdges(edges) {
+    const seen = new Set();
+    const result = [];
+
+    for (const edge of edges) {
+        const a = String(edge.from);
+        const b = String(edge.to);
+
+        const key =
+            a < b 
+                ? `${a}-${b}-${edge.line}`
+                : `${b}-${a}-${edge.line}`;
+        
+        if(seen.has(key)) continue;
+
+        seen.add(key);
+        result.push(edge);
+    }
+
+    return result;
+}
+
+function offsetSegment([lat1, lon1], [lat2, lon2], offset) {
+    const dx = lon2 - lon1;
+    const dy = lat2 - lat1;
+    const length = Math.sqrt(dx * dx + dy * dy) || 1;
+
+    const ox = (-dy / length) * offset;
+    const oy = (dx / length) *offset;
+
+    return [
+        [lat1 + oy, lon1 + ox],
+        [lat2 + oy, lon2 + ox],
+    ];
+}
 
 /**
  * MapEvents
@@ -60,6 +151,9 @@ function MapEvents({ onChange }) {
     return null;
 }
 
+/* -------------------- Main Component -------------------- */
+
+
 /**
  * LeafletMap
  * 
@@ -83,13 +177,6 @@ const LeafletMap = ({ onMapChange }) => {
     // Local state for connection edges.
     const [edges, setEdges] = useState([]);
 
-    const [graph, setGraph] = useState(null);
-
-    const [start, setStart] = useState(null);
-    const [end, setEnd] = useState(null);
-    const [path, setPath] = useState([]);
-    const [totalDistance, setTotalDistance] = useState(0);
-
     /**
      * Load station and connection data from the API on the mount.
      * This effect runs once.
@@ -101,46 +188,12 @@ const LeafletMap = ({ onMapChange }) => {
 
             setNodes(data.nodes);
             setEdges(data.edges);
-            setGraph(buildGraph(data.nodes, data.edges));
         }
         loadData();
     }, []);
 
-    useEffect(() => {
-        if (!graph || !start || !end) return;
-
-        const result = dijkstra(graph, start, end);
-        setPath(result);
-
-        let distance = 0;
-        for (let i = 0; i < result.length - 1; i++) {
-            const from = String(result[i]);
-            const to = String(result[i+1]);
-            const edge = graph[from].find(e => e.to === to);
-            if (edge) distance += edge.weight;
-        }
-
-        setTotalDistance(distance);
-        console.log(result);
-    }, [graph, start, end]);
-
-    const handleStationClick = (id) => {
-        const sid = String(id);
-
-        if (!start) setStart(sid);
-        else if (!end) setEnd(sid);
-        else {
-            setStart(sid);
-            setEnd(null);
-            setPath([]);
-            setTotalDistance(0);
-        }
-    };
-
-    const pathPositions = path
-        .map(id => nodes.find(n => String(n.id) === id))
-        .filter(Boolean)
-        .map(n => [n.lat, n.lon]);
+    const uniqueEdges = dedupeEdges(edges);
+    const groupedEdges = groupEdges(uniqueEdges);
 
     return (
         <MapContainer
@@ -170,71 +223,78 @@ const LeafletMap = ({ onMapChange }) => {
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
 
+            {/* Render connections as polylines (white outline + coloured core) */}
+            {Object.entries(groupedEdges).map(([pairKey, group]) => {
+                const from = nodes.find(n => n.id === String(group[0].from));
+                const to = nodes.find(n => n.id === String(group[0].to));
+                if (!from || !to) return null;
+
+                const base = [
+                    [from.lat, from.lon],
+                    [to.lat, to.lon],
+                ];
+
+                const mid = (group.length - 1) / 2;
+
+                return group.map((edge, index) => {
+                    const offset = (index - mid) * OFFSET_STEP;
+                    const positions = offsetSegment(base[0], base[1], offset);
+                    
+                    const line = edge.line;
+                    const color = LINE_COLORS[line] || "#3b82f6";
+                    const label = LINE_LABELS[line] || line;
+
+                    return (
+                        <Fragment key={`${pairKey}-${line}-${index}`}>
+                            <Polyline
+                                positions={positions}
+                                pathOptions={{
+                                    color: LINE_OUTLINE_COLOR,
+                                    weight: LINE_OUTLINE_WEIGHT,
+                                    opacity: LINE_OPACITY,
+                                    lineCap: "round",
+                                    lineJoin: "round",
+                                    smoothFactor: LINE_SMOOTH_FACTOR,
+                                    interactive: false,
+                                }}
+                            />
+                            <Polyline
+                                positions={positions}
+                                pathOptions={{
+                                    color,
+                                    weight: LINE_STROKE_WEIGHT,
+                                    opacity: LINE_OPACITY,
+                                    lineCap: "round",
+                                    lineJoin: "round",
+                                    smoothFactor: LINE_SMOOTH_FACTOR,
+                                    interactive: true,
+                                }}
+                            >
+                                <Tooltip sticky>{label}</Tooltip>
+                            </Polyline>
+                        </Fragment>
+                    );
+                });
+            })}
+
             {/* Render stations as circle markers */}
             {nodes.map((s) => (
                 <CircleMarker
                     key={s.id}
                     center={[s.lat, s.lon]}
-                    radius={4}
+                    radius={10}
                     pathOptions={{
-                        color: 
-                            s.id === start
-                                ? "#22c55e"
-                                : s.id === end
-                                ? "#ef4444"
-                                : "#3b82f6",
-                        fillOpacity: 0.9,
-                    }}
-                    eventHandlers={{
-                        click: () => handleStationClick(s.id),
+                        color: "#ffffff",
+                        weight: 2,
+                        fillColor: "#000000",
+                        fillOpacity: 1,
                     }}
                 >
                     <Popup>
                         <strong>{s.name}</strong>
-                        {s.id === start && <div>Start</div>}
-                        {s.id === end && <div>Destination</div>}
-                        {path.length > 1 && (
-                            <div>
-                                Route Distance: {totalDistance.toFixed(2)} km
-                            </div>
-                        )}
                     </Popup>
                 </CircleMarker>
             ))}
-
-            {/* Render connections as polylines */}
-            {edges.map((edge, i) => {
-                const from = nodes.find(n => n.id === edge.from);
-                const to = nodes.find(n => n.id === edge.to);
-
-                if (!from || !to) return null;
-
-                return (
-                    <Polyline
-                        key={i}
-                        positions={[
-                            [from.lat, from.lon],
-                            [to.lat, to.lon],
-                        ]}
-                        pathOptions={{
-                            color: "#1e40af",
-                            weight: 2,
-                            opacity: 0.5,
-                        }}
-                    />
-                );
-            })}
-
-            {pathPositions.length > 1 && (
-                <Polyline
-                    positions={pathPositions}
-                    pathOptions={{
-                        color: "#22c55e",
-                        weight: 7,
-                        opacity: 0.9,
-                    }}
-                />
-            )}
         </MapContainer>
     )
 }

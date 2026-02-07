@@ -128,6 +128,11 @@ body {
   transition: opacity 160ms linear;
 }
 
+.leaflet-tooltip.line-tooltip {
+  transform: translateY(-20px);
+  pointer-events: none;
+}
+
 /* Hide Next.js dev overlay / badge in development for clean UI */
 /* multiple selectors to cover variants across Next/Turbopack versions */
 #next-devtools,
