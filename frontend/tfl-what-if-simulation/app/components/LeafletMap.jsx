@@ -2,9 +2,14 @@
 /**
  * LeafletMap.jsx
  * 
- * Client-side Leaflet map implementation for the London Underground
- * "What-If" simulator. Uses React-Leaflet to render stations and connections
- * with smooth pan/zoom interaction.
+ * Client-side Leaflet map implementation for the London Underground 
+ * "What-If" simulator. 
+ * 
+ * Responsbilities:
+ * - Render stations as CircleMarkers with popups.
+ * - Render connections as multi-line Polylines with color coding per line.
+ * - Offset overlapping lines to improve visibility.
+ * - Smooth pan/zoom interactions.
  * 
  * NOTE: This component must be a Client Component in Next.js because
  * Leaflet relies on browser APIs (window, DOM) that are unavailable
@@ -16,7 +21,6 @@ import {
     MapContainer, 
     TileLayer, 
     CircleMarker, 
-    Popup, 
     Polyline,
     Tooltip,
     useMapEvents, 
@@ -25,9 +29,10 @@ import {
 
 /* -------------------- Constants -------------------- */
 
-// Default center (London Coordinates)
+// Default center of the map (London Coordinates).
 const LONDON_CENTER = [51.5074, -0.1278]; 
 
+// Line colours for each London Underground line.
 const LINE_COLORS = {
     bakerloo: "#B36305",
     central: "#E32017",
@@ -43,6 +48,7 @@ const LINE_COLORS = {
     "waterloo-city": "#95CDBA",
 };
 
+// Human-readable labels for tooltips.
 const LINE_LABELS = {
     bakerloo: "Bakerloo Line",
     central: "Central Line",
@@ -58,15 +64,24 @@ const LINE_LABELS = {
     "waterloo-city": "Waterloo & City Line",
 };
 
-const LINE_OUTLINE_COLOR = "#ffffff47";
-const LINE_OUTLINE_WEIGHT = 8;
-const LINE_STROKE_WEIGHT = 4;
+// Polyline rendering constants
+const LINE_OUTLINE_COLOR = "#ffffff47"; // Outline colour for better visibility.
+const LINE_OUTLINE_WEIGHT = 8;          // Outline thickness.
+const LINE_STROKE_WEIGHT = 4;           // Core line thickness.
 const LINE_OPACITY = 0.8;
-const LINE_SMOOTH_FACTOR = 5;
-const OFFSET_STEP = 0.0001;
+const LINE_SMOOTH_FACTOR = 5;           // Smooths polylines.
+const OFFSET_STEP = 0.0001;             // Offset for overlapping lines.
 
 /* -------------------- Helpers -------------------- */
 
+/**
+ * groupEdges
+ * 
+ * Group edges connecting the same pair of stations.
+ * 
+ * @param {Array} edges - List of edges from API.
+ * @returns {Object} - Keys are station pairs, values are arrays of edges connecting them.
+ */
 function groupEdges(edges) {
     const groups = {};
 
@@ -82,6 +97,14 @@ function groupEdges(edges) {
     return groups;
 }
 
+/**
+ * dedupeEdges
+ * 
+ * Remove duplicate edges between the same stations for the same line.
+ * 
+ * @param {Array} edges - List of edges from API.
+ * @returns {Array} - Deduplicated edges.
+ */
 function dedupeEdges(edges) {
     const seen = new Set();
     const result = [];
@@ -104,6 +127,17 @@ function dedupeEdges(edges) {
     return result;
 }
 
+/**
+ * offsetSegment
+ * 
+ * Compute offset coordinates for overlapping lines to display them side
+ * by side.
+ * 
+ * @param {Array} start - [lat, lon] of starting station. 
+ * @param {Array} end - [lat, lon] of ending station. 
+ * @param {number} offset - Distance offset in degrees.
+ * @returns {Array} - Two coordinates for the offset line.
+ */
 function offsetSegment([lat1, lon1], [lat2, lon2], offset) {
     const dx = lon2 - lon1;
     const dy = lat2 - lat1;
@@ -117,6 +151,8 @@ function offsetSegment([lat1, lon1], [lat2, lon2], offset) {
         [lat2 + oy, lon2 + ox],
     ];
 }
+
+/* -------------------- Leaflet Event Wrapper -------------------- */
 
 /**
  * MapEvents
@@ -152,7 +188,6 @@ function MapEvents({ onChange }) {
 }
 
 /* -------------------- Main Component -------------------- */
-
 
 /**
  * LeafletMap
@@ -192,7 +227,10 @@ const LeafletMap = ({ onMapChange }) => {
         loadData();
     }, []);
 
+    // Deduplicate edges to remove bidirectional duplicates.
     const uniqueEdges = dedupeEdges(edges);
+
+    // Group edges connecting the same station pair for offset rendering.
     const groupedEdges = groupEdges(uniqueEdges);
 
     return (
@@ -246,6 +284,7 @@ const LeafletMap = ({ onMapChange }) => {
 
                     return (
                         <Fragment key={`${pairKey}-${line}-${index}`}>
+                            {/* Outline for visibility */}
                             <Polyline
                                 positions={positions}
                                 pathOptions={{
@@ -258,6 +297,8 @@ const LeafletMap = ({ onMapChange }) => {
                                     interactive: false,
                                 }}
                             />
+
+                            {/* Core line with tooltip */}
                             <Polyline
                                 positions={positions}
                                 pathOptions={{
@@ -290,9 +331,7 @@ const LeafletMap = ({ onMapChange }) => {
                         fillOpacity: 1,
                     }}
                 >
-                    <Popup>
-                        <strong>{s.name}</strong>
-                    </Popup>
+                    <Tooltip sticky>{s.name}</Tooltip>
                 </CircleMarker>
             ))}
         </MapContainer>
