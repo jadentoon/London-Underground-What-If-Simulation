@@ -18,11 +18,40 @@ import {
     CircleMarker, 
     Popup, 
     Polyline,
-    useMapEvents, 
-    ZoomControl
+    useMapEvents,
+    useMap
 } from "react-leaflet";
+import L from "leaflet";
 
 const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
+
+/**
+ * ZoomControlTopRight
+ */
+function ZoomControlTopRight() {
+    const map = useMap();
+    
+    useEffect(() => {
+        if (map) {
+            const zoomControl = L.control.zoom({ position: 'topright' });
+            try {
+                zoomControl.addTo(map);
+            } catch (error) {
+                console.error('Failed to add zoom control:', error);
+            }
+            
+            return () => {
+                try {
+                    map.removeControl(zoomControl);
+                } catch (error) {
+                    // Control might already be removed
+                }
+            };
+        }
+    }, [map]);
+    
+    return null;
+}
 
 /**
  * MapEvents
@@ -104,7 +133,7 @@ const LeafletMap = ({ onMapChange }) => {
             scrollWheelZoom
             dragging
             doubleClickZoom
-            zoomControl={false}         // Custom ZoomControl used.
+            zoomControl={true}          // Enable default zoom control.
             attributionControl={false}  // Hide default attribtion for cleaner UI.
             style={{
                 position: "absolute",
@@ -112,9 +141,6 @@ const LeafletMap = ({ onMapChange }) => {
                 zIndex: 0,
             }}
         >
-            {/* Native Leaflet zoom control, positioned top-right */}
-            <ZoomControl position="topright" />
-
             {/* Dark CartoDB basemap for reduced visual noise */}
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

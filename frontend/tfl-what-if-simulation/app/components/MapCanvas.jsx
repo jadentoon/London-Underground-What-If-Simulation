@@ -58,6 +58,9 @@ export function MapCanvas() {
     // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
 
+    // Dynamic accent color based on hypothetical mode
+    const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
+
     /**
      * callback passed to LeafletMap to receive camera changes.
      * Updatting the mapStateRef with the latest center and zoom.
@@ -89,6 +92,49 @@ export function MapCanvas() {
                 backgroundColor: COLORS.bg,
             }}
         >
+            {/* Custom styling for Leaflet zoom controls and animations */}
+            <style jsx global>{`
+                .leaflet-control-zoom {
+                    position: fixed !important;
+                    top: 50% !important;
+                    right: 16px !important;
+                    left: auto !important;
+                    transform: translateY(-50%);
+                    border: none !important;
+                    box-shadow: none !important;
+                }
+                
+                .leaflet-control-zoom a {
+                    background: ${COLORS.card} !important;
+                    backdrop-filter: blur(8px);
+                    border: 1px solid ${COLORS.border} !important;
+                    color: ${accentColor} !important;
+                    width: 40px !important;
+                    height: 40px !important;
+                    line-height: 40px !important;
+                    font-size: 20px !important;
+                    transition: all 0.2s ease !important;
+                }
+                
+                .leaflet-control-zoom a:first-child {
+                    border-radius: 8px 8px 0 0 !important;
+                    border-bottom: none !important;
+                }
+                
+                .leaflet-control-zoom a:last-child {
+                    border-radius: 0 0 8px 8px !important;
+                }
+                
+                .leaflet-control-zoom a:hover {
+                    background: ${hypotheticalSettingsEnabled ? 'rgba(251, 191, 36, 0.2)' : 'rgba(59, 130, 246, 0.2)'} !important;
+                    color: ${accentColor} !important;
+                }
+                
+                @keyframes flash {
+                    0%, 100% { opacity: 1; }
+                    50% { opacity: 0.2; }
+                }
+            `}</style>
             
             <LeafletMap onMapChange={handleMapChange} />
 
@@ -96,14 +142,14 @@ export function MapCanvas() {
             <div 
                 style={{ 
                     position: "fixed", 
-                    top: 16, 
-                    left: isSidebarOpen ? 296 : 16,
-                    transition: "left 0.3s ease",
+                    top: hypotheticalSettingsEnabled ? 85 : 16,
+                    left: isSidebarOpen ? 296 : (hypotheticalSettingsEnabled ? 85 : 16),
+                    transition: "top 0.3s ease, left 0.3s ease",
                     zIndex: 1000,
                 }}
             >
                 <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text }}>
-                    London Underground <span style={{ color: COLORS.accent }}>What If Simulator</span>
+                    London Underground <span style={{ color: accentColor }}>What If Simulator</span>
                 </h1>
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
                     Interactive Map
@@ -114,8 +160,8 @@ export function MapCanvas() {
             <div
                 style={{
                     position: "fixed",
-                    bottom: 16,
-                    left: isSidebarOpen ? 296 : 16,
+                    bottom: hypotheticalSettingsEnabled ? 85 : 16,
+                    left: isSidebarOpen ? 296 : (hypotheticalSettingsEnabled ? 85 : 16),
                     background: COLORS.card,
                     backdropFilter: "blur(8px)",
                     border: `1px solid ${COLORS.border}`,
@@ -124,16 +170,16 @@ export function MapCanvas() {
                     fontFamily: "monospace",
                     fontSize: 13,
                     color: COLORS.text,
-                    transition: "left 0.3s ease",
+                    transition: "bottom 0.3s ease, left 0.3s ease",
                     zIndex: 1000,
                 }}
             >
                 <div>
-                    <span style={{ color: COLORS.accent }}>Zoom:</span> {" "}
+                    <span style={{ color: accentColor }}>Zoom:</span> {" "}
                     {hudState.zoom}
                 </div>
                 <div>
-                    <span style={{ color: COLORS.accent }}>Center:</span> {" "}
+                    <span style={{ color: accentColor }}>Center:</span> {" "}
                     {hudState.center.lat.toFixed(4)},{" "}
                     {hudState.center.lng.toFixed(4)}
                 </div>
@@ -189,7 +235,7 @@ export function MapCanvas() {
                                 position: "relative",
                                 width: 51,
                                 height: 31,
-                                background: hypotheticalSettingsEnabled ? COLORS.accent : "rgba(120, 120, 128, 0.32)",
+                                background: hypotheticalSettingsEnabled ? accentColor : "rgba(120, 120, 128, 0.32)",
                                 borderRadius: 15.5,
                                 border: "none",
                                 cursor: "pointer",
@@ -240,14 +286,14 @@ export function MapCanvas() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: COLORS.accent,
+                    color: accentColor,
                     fontSize: 16,
                     zIndex: 1001,
                     transition: "left 0.3s ease",
                     outline: "none",
                 }}
                 onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(59, 130, 246, 0.2)";
+                    e.currentTarget.style.background = hypotheticalSettingsEnabled ? "rgba(251, 191, 36, 0.2)" : "rgba(59, 130, 246, 0.2)";
                 }}
                 onMouseLeave={(e) => {
                     e.currentTarget.style.background = COLORS.card;
@@ -255,6 +301,106 @@ export function MapCanvas() {
             >
                 {isSidebarOpen ? "◀" : "▶"}
             </button>
+
+            {/* Recording brackets overlay - shows when hypothetical settings enabled */}
+            {hypotheticalSettingsEnabled && (
+                <>
+                    {/* Top-left bracket */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 40,
+                            left: 40,
+                            width: 80,
+                            height: 80,
+                            borderTop: `15px solid ${accentColor}`,
+                            borderLeft: `15px solid ${accentColor}`,
+                            zIndex: 999,
+                            opacity: 0.8,
+                            animation: "fadeIn 0.3s ease",
+                        }}
+                    />
+                    
+                    {/* Top-right bracket */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 40,
+                            right: 40,
+                            width: 80,
+                            height: 80,
+                            borderTop: `15px solid ${accentColor}`,
+                            borderRight: `15px solid ${accentColor}`,
+                            zIndex: 999,
+                            opacity: 0.8,
+                            animation: "fadeIn 0.3s ease",
+                        }}
+                    />
+                    
+                    {/* Bottom-left bracket */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            bottom: 40,
+                            left: 40,
+                            width: 80,
+                            height: 80,
+                            borderBottom: `15px solid ${accentColor}`,
+                            borderLeft: `15px solid ${accentColor}`,
+                            zIndex: 999,
+                            opacity: 0.8,
+                            animation: "fadeIn 0.3s ease",
+                        }}
+                    />
+                    
+                    {/* Bottom-right bracket */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            bottom: 40,
+                            right: 40,
+                            width: 80,
+                            height: 80,
+                            borderBottom: `15px solid ${accentColor}`,
+                            borderRight: `15px solid ${accentColor}`,
+                            zIndex: 999,
+                            opacity: 0.8,
+                            animation: "fadeIn 0.3s ease",
+                        }}
+                    />
+                    
+                    {/* WHAT-IF indicator with flashing dot - top right corner */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 80,
+                            right: 95,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            fontFamily: "monospace",
+                            fontSize: 40,
+                            fontWeight: 700,
+                            color: "#fff",
+                            zIndex: 999,
+                            textShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
+                        }}
+                    >
+                        <span>WHAT-IF</span>
+                        {/* Flashing yellow dot */}
+                        <div
+                            style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                backgroundColor: "#fbbf24",
+                                boxShadow: "0 0 10px #fbbf24",
+                                animation: "flash 1s ease-in-out infinite",
+                            }}
+                        />
+                    </div>
+                </>
+            )}
         </div>
     )
 }
