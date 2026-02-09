@@ -16,7 +16,7 @@
  * during server-side rendering (SSR).
  */
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useMemo } from "react";
 import { 
     MapContainer, 
     TileLayer, 
@@ -26,6 +26,9 @@ import {
     useMapEvents, 
     ZoomControl
 } from "react-leaflet";
+
+import { dijkstra } from "../lib/pathfinding.js";
+import { buildGraph } from "../lib/graph.js";
 
 /* -------------------- Constants -------------------- */
 
@@ -212,6 +215,10 @@ const LeafletMap = ({ onMapChange }) => {
     // Local state for connection edges.
     const [edges, setEdges] = useState([]);
 
+    const [start, setStart] = useState(null);
+    const [end, setEnd] = useState(null);
+    const [path, setPath] = useState([]);
+
     /**
      * Load station and connection data from the API on the mount.
      * This effect runs once.
@@ -227,11 +234,57 @@ const LeafletMap = ({ onMapChange }) => {
         loadData();
     }, []);
 
+    const graph = useMemo(() => {
+        if(!nodes.length || !edges.length) return null;
+        return buildGraph(nodes, edges);
+    }, [nodes, edges]);
+
+    function handleStationClick(stationId) {
+        if (!start && stationId != start) {
+            setStart(stationId);
+            setEnd(null);
+            setPath([]);
+            return;
+        }
+
+        if (!end && stationId != end) {
+            setEnd(stationId);
+            return;
+        }
+
+        setStart(stationId);
+        setEnd(null);
+        setPath([]);
+    }
+
+    useEffect(() => {
+        if (!graph || !start || !end) return;
+
+        const shortestPath = dijkstra(
+            graph,
+            String(start),
+            String(end),
+        );
+
+        console.log(graph);
+
+        setPath(shortestPath);
+    }, [graph, start, end]);
+
     // Deduplicate edges to remove bidirectional duplicates.
     const uniqueEdges = dedupeEdges(edges);
 
     // Group edges connecting the same station pair for offset rendering.
     const groupedEdges = groupEdges(uniqueEdges);
+
+    const pathPositions = useMemo(() => {
+        if (!path.length) return [];
+        
+        return path
+            .map(id => nodes.find((n => String(n.id) === id)))
+            .filter(Boolean)
+            .map(n => [n.lat, n.lon]);
+    }, [path, nodes]);
 
     return (
         <MapContainer
@@ -260,6 +313,19 @@ const LeafletMap = ({ onMapChange }) => {
 
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
+
+            {pathPositions.length > 1 && (
+                <Polyline
+                    positions={pathPositions}
+                    pathOptions={{
+                        color: "#22c55e",
+                        weight: 7,
+                        opacity: 0.9,
+                        lineCap: "round",
+                        lineJoin: "round",
+                    }}
+                />
+            )}
 
             {/* Render connections as polylines (white outline + coloured core) */}
             {Object.entries(groupedEdges).map(([pairKey, group]) => {
@@ -324,8 +390,16 @@ const LeafletMap = ({ onMapChange }) => {
                     key={s.id}
                     center={[s.lat, s.lon]}
                     radius={10}
+                    eventHandlers={{
+                        click: () => handleStationClick(String(s.id)),
+                    }}
                     pathOptions={{
-                        color: "#ffffff",
+                        color: 
+                            s.id === start
+                                ? "#22c55e"
+                                : s.id === end
+                                ? "#ef4444"
+                                : "#ffffff",
                         weight: 2,
                         fillColor: "#000000",
                         fillOpacity: 1,
