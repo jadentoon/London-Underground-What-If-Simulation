@@ -40,13 +40,13 @@ const COLORS = {
  * @returns {JSX.Element} Full-screen interactive map with HUD.
  */
 export function MapCanvas() {
-    // Ref to store the current map state (center & zoom) without triggering React renders.
+    // reference to store the current map state (center & zoom) without triggering React renders.
     const mapStateRef = useRef({
         center: null,
         zoom: null
     });
 
-    // React state for HUD display - updated periodically from ref.
+    // react state for HUD display - updated periodically from ref.
     const [hudState, setHudState] = useState({
         zoom: 14,
         center: { lat: 51.5074, lng: -0.1278 },     // Default London Center.
@@ -59,8 +59,8 @@ export function MapCanvas() {
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
 
     /**
-     * Callback passed to LeafletMap to receive camera changes.
-     * Updates the mapStateRef with the latest center and zoom.
+     * callback passed to LeafletMap to receive camera changes.
+     * Updatting the mapStateRef with the latest center and zoom.
      */
     const handleMapChange = useCallback((state) => {
         mapStateRef.current = state;
@@ -92,7 +92,7 @@ export function MapCanvas() {
             
             <LeafletMap onMapChange={handleMapChange} />
 
-            {/* title - moves with panel but always visible */}
+            {/* title moves with panel but always visible */}
             <div 
                 style={{ 
                     position: "fixed", 
@@ -110,7 +110,7 @@ export function MapCanvas() {
                 </p>
             </div>
 
-            {/* zoom info - moves with panel but always visible at bottom */}
+            {/* zoom info moves with panel but always visible at bottom */}
             <div
                 style={{
                     position: "fixed",
@@ -161,43 +161,59 @@ export function MapCanvas() {
                 {/* Hypothetical Settings Toggle */}
                 <div>
                     <h2>Settings</h2>
-                    <button
-                        onClick={() => setHypotheticalSettingsEnabled(!hypotheticalSettingsEnabled)}
+                    <div
                         style={{
                             width: "100%",
                             padding: "12px 16px",
-                            background: hypotheticalSettingsEnabled ? COLORS.accent : "rgba(0, 0, 0, 0.3)",
+                            background: "rgba(0, 0, 0, 0.3)",
                             border: `1px solid ${COLORS.border}`,
                             borderRadius: 8,
-                            cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "space-between",
                             color: COLORS.text,
                             fontSize: 14,
                             fontWeight: 500,
-                            transition: "all 0.2s ease",
-                            outline: "none",
-                        }}
-                        onMouseEnter={(e) => {
-                            if (!hypotheticalSettingsEnabled) {
-                                e.currentTarget.style.background = "rgba(59, 130, 246, 0.2)";
-                            }
-                        }}
-                        onMouseLeave={(e) => {
-                            if (!hypotheticalSettingsEnabled) {
-                                e.currentTarget.style.background = "rgba(0, 0, 0, 0.3)";
-                            }
                         }}
                     >
                         <span>Hypothetical Settings</span>
-                        <span style={{ 
-                            fontSize: 12,
-                            color: hypotheticalSettingsEnabled ? "#fff" : COLORS.textMuted 
-                        }}>
-                            {hypotheticalSettingsEnabled ? "ON" : "OFF"}
-                        </span>
-                    </button>
+                        {/* switch */}
+                        <button
+                            onClick={() => {
+                                setHypotheticalSettingsEnabled(!hypotheticalSettingsEnabled);
+                                setTimeout(() => {
+                                    setIsSidebarOpen(false);
+                                }, 1500);
+                            }}
+                            style={{
+                                position: "relative",
+                                width: 51,
+                                height: 31,
+                                background: hypotheticalSettingsEnabled ? COLORS.accent : "rgba(120, 120, 128, 0.32)",
+                                borderRadius: 15.5,
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "background-color 0.3s ease",
+                                outline: "none",
+                                padding: 0,
+                            }}
+                        >
+                            {/* toggle btn */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: 2,
+                                    left: hypotheticalSettingsEnabled ? 22 : 2,
+                                    width: 27,
+                                    height: 27,
+                                    background: "#fff",
+                                    borderRadius: "50%",
+                                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
+                                    transition: "left 0.3s ease",
+                                }}
+                            />
+                        </button>
+                    </div>
                 </div>
                 {/*placeholder for additional tools*/}
                 <div style={{ flex: 1 }}>
