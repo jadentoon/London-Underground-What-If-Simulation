@@ -22,12 +22,124 @@ import {
     TileLayer, 
     CircleMarker, 
     Polyline,
+    Tooltip,
     useMapEvents,
     useMap
 } from "react-leaflet";
 import L from "leaflet";
 
 const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
+
+// Line styling constants
+const LINE_OUTLINE_COLOR = "#ffffff";
+const LINE_OUTLINE_WEIGHT = 6;
+const LINE_STROKE_WEIGHT = 4;
+const LINE_OPACITY = 0.8;
+const LINE_SMOOTH_FACTOR = 1.0;
+const OFFSET_STEP = 0.00015; // Offset step for parallel lines in degrees
+
+// TfL Line colors (official Transport for London colors)
+const LINE_COLORS = {
+    "bakerloo": "#B36305",
+    "central": "#E32017",
+    "circle": "#FFD300",
+    "district": "#00782A",
+    "hammersmith-city": "#F3A9BB",
+    "jubilee": "#A0A5A9",
+    "metropolitan": "#9B0056",
+    "northern": "#000000",
+    "piccadilly": "#003688",
+    "victoria": "#0098D4",
+    "waterloo-city": "#95CDBA",
+    "dlr": "#00A4A7",
+    "elizabeth": "#7156A5",
+    "london-overground": "#EE7C0E",
+};
+
+// Line display labels
+const LINE_LABELS = {
+    "bakerloo": "Bakerloo",
+    "central": "Central",
+    "circle": "Circle",
+    "district": "District",
+    "hammersmith-city": "Hammersmith & City",
+    "jubilee": "Jubilee",
+    "metropolitan": "Metropolitan",
+    "northern": "Northern",
+    "piccadilly": "Piccadilly",
+    "victoria": "Victoria",
+    "waterloo-city": "Waterloo & City",
+    "dlr": "DLR",
+    "elizabeth": "Elizabeth",
+    "london-overground": "London Overground",
+};
+
+/**
+ * Deduplicate bidirectional edges
+ * Removes duplicate edges where from-to and to-from connections exist
+ * 
+ * @param {Array} edges - Array of edge objects with from, to, and line properties
+ * @returns {Array} Deduplicated array of edges
+ */
+function dedupeEdges(edges) {
+    const seen = new Set();
+    return edges.filter(edge => {
+        const key = [edge.from, edge.to].sort().join('-') + '-' + edge.line;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+}
+
+/**
+ * Group edges by station pair
+ * Groups all edges connecting the same two stations together
+ * 
+ * @param {Array} edges - Array of edge objects
+ * @returns {Object} Object with station pair keys and arrays of edges as values
+ */
+function groupEdges(edges) {
+    const groups = {};
+    edges.forEach(edge => {
+        const pairKey = [edge.from, edge.to].sort().join('-');
+        if (!groups[pairKey]) {
+            groups[pairKey] = [];
+        }
+        groups[pairKey].push(edge);
+    });
+    return groups;
+}
+
+/**
+ * Calculate offset positions for parallel lines
+ * Offsets a line segment perpendicular to its direction
+ * 
+ * @param {Array} from - [lat, lng] starting point
+ * @param {Array} to - [lat, lng] ending point
+ * @param {number} offset - Offset distance in degrees
+ * @returns {Array} Array of two [lat, lng] positions for the offset line
+ */
+function offsetSegment(from, to, offset) {
+    const [lat1, lng1] = from;
+    const [lat2, lng2] = to;
+    
+    // Calculate perpendicular offset
+    const dx = lng2 - lng1;
+    const dy = lat2 - lat1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    
+    if (len === 0) return [from, to];
+    
+    // Perpendicular unit vector
+    const perpX = -dy / len;
+    const perpY = dx / len;
+    
+    // Apply offset
+    return [
+        [lat1 + perpY * offset, lng1 + perpX * offset],
+        [lat2 + perpY * offset, lng2 + perpX * offset]
+    ];
+}
 
 /**
  * MapEvents
