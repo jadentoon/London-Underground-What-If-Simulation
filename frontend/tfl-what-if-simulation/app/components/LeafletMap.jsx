@@ -22,137 +22,12 @@ import {
     TileLayer, 
     CircleMarker, 
     Polyline,
-    Tooltip,
-    useMapEvents, 
-    ZoomControl
+    useMapEvents,
+    useMap
 } from "react-leaflet";
+import L from "leaflet";
 
-/* -------------------- Constants -------------------- */
-
-// Default center of the map (London Coordinates).
-const LONDON_CENTER = [51.5074, -0.1278]; 
-
-// Line colours for each London Underground line.
-const LINE_COLORS = {
-    bakerloo: "#B36305",
-    central: "#E32017",
-    circle: "#FFD300",
-    district: "#00782A",
-    elizabeth: "#6950A1",
-    "hammersmith-city": "#F3A9BB",
-    jubilee: "#A0A5A9",
-    metropolitan: "#9B0056",
-    northern: "#000000",
-    piccadilly: "#003688",
-    victoria: "#0098D4",
-    "waterloo-city": "#95CDBA",
-};
-
-// Human-readable labels for tooltips.
-const LINE_LABELS = {
-    bakerloo: "Bakerloo Line",
-    central: "Central Line",
-    circle: "Circle Line",
-    district: "District Line",
-    elizabeth: "Elizabeth Line",
-    "hammersmith-city": "Hammersmith & City Line",
-    jubilee: "Jubilee Line",
-    metropolitan: "Metropolitan Line",
-    northern: "Northern Line",
-    piccadilly: "Piccadilly Line",
-    victoria: "Victoria Line",
-    "waterloo-city": "Waterloo & City Line",
-};
-
-// Polyline rendering constants
-const LINE_OUTLINE_COLOR = "#ffffff47"; // Outline colour for better visibility.
-const LINE_OUTLINE_WEIGHT = 8;          // Outline thickness.
-const LINE_STROKE_WEIGHT = 4;           // Core line thickness.
-const LINE_OPACITY = 0.8;
-const LINE_SMOOTH_FACTOR = 5;           // Smooths polylines.
-const OFFSET_STEP = 0.0001;             // Offset for overlapping lines.
-
-/* -------------------- Helpers -------------------- */
-
-/**
- * groupEdges
- * 
- * Group edges connecting the same pair of stations.
- * 
- * @param {Array} edges - List of edges from API.
- * @returns {Object} - Keys are station pairs, values are arrays of edges connecting them.
- */
-function groupEdges(edges) {
-    const groups = {};
-
-    for (const edge of edges) {
-        const a = String(edge.from);
-        const b = String(edge.to);
-        const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-        
-        if(!groups[key])groups[key] = [];
-        groups[key].push(edge);
-    }
-
-    return groups;
-}
-
-/**
- * dedupeEdges
- * 
- * Remove duplicate edges between the same stations for the same line.
- * 
- * @param {Array} edges - List of edges from API.
- * @returns {Array} - Deduplicated edges.
- */
-function dedupeEdges(edges) {
-    const seen = new Set();
-    const result = [];
-
-    for (const edge of edges) {
-        const a = String(edge.from);
-        const b = String(edge.to);
-
-        const key =
-            a < b 
-                ? `${a}-${b}-${edge.line}`
-                : `${b}-${a}-${edge.line}`;
-        
-        if(seen.has(key)) continue;
-
-        seen.add(key);
-        result.push(edge);
-    }
-
-    return result;
-}
-
-/**
- * offsetSegment
- * 
- * Compute offset coordinates for overlapping lines to display them side
- * by side.
- * 
- * @param {Array} start - [lat, lon] of starting station. 
- * @param {Array} end - [lat, lon] of ending station. 
- * @param {number} offset - Distance offset in degrees.
- * @returns {Array} - Two coordinates for the offset line.
- */
-function offsetSegment([lat1, lon1], [lat2, lon2], offset) {
-    const dx = lon2 - lon1;
-    const dy = lat2 - lat1;
-    const length = Math.sqrt(dx * dx + dy * dy) || 1;
-
-    const ox = (-dy / length) * offset;
-    const oy = (dx / length) *offset;
-
-    return [
-        [lat1 + oy, lon1 + ox],
-        [lat2 + oy, lon2 + ox],
-    ];
-}
-
-/* -------------------- Leaflet Event Wrapper -------------------- */
+const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
 
 /**
  * MapEvents
@@ -242,7 +117,7 @@ const LeafletMap = ({ onMapChange }) => {
             scrollWheelZoom
             dragging
             doubleClickZoom
-            zoomControl={false}         // Custom ZoomControl used.
+            zoomControl={true}          // Enable default zoom control.
             attributionControl={false}  // Hide default attribtion for cleaner UI.
             style={{
                 position: "absolute",
@@ -250,9 +125,6 @@ const LeafletMap = ({ onMapChange }) => {
                 zIndex: 0,
             }}
         >
-            {/* Native Leaflet zoom control, positioned top-right */}
-            <ZoomControl position="topright" />
-
             {/* Dark CartoDB basemap for reduced visual noise */}
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
