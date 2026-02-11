@@ -28,7 +28,18 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 
-const LONDON_CENTER = [51.5074, -0.1278]; // Default center (London Coordinates)
+// import Leaflet CSS
+import "leaflet/dist/leaflet.css";
+
+// fix Leaflet's default icon issue with Next.js
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+});
+
+const LONDON_CENTER = [51.5074, -0.1278]; // default center (London coordinates)
 
 // Line styling constants
 const LINE_OUTLINE_COLOR = "#ffffff";
@@ -198,10 +209,19 @@ const LeafletMap = ({ onMapChange }) => {
 
     // Local state for connection edges.
     const [edges, setEdges] = useState([]);
+    
+    // state to track if component is mounted (client-side only)
+    const [isMounted, setIsMounted] = useState(false);
 
     /**
-     * Load station and connection data from the API on the mount.
-     * This effect runs once.
+     * ensure the component only renders on the client side.
+     */
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    /**
+     * load station and connection data from the API on the mount.
      */
     useEffect(() => {
         async function loadData() {
@@ -214,6 +234,10 @@ const LeafletMap = ({ onMapChange }) => {
         loadData();
     }, []);
 
+    if (!isMounted) {
+        return <div style={{ position: "absolute", inset: 0, backgroundColor: "#0a0f1a" }} />;
+    }
+
     // Deduplicate edges to remove bidirectional duplicates.
     const uniqueEdges = dedupeEdges(edges);
 
@@ -222,6 +246,7 @@ const LeafletMap = ({ onMapChange }) => {
 
     return (
         <MapContainer
+            key="leaflet-map"
             center={LONDON_CENTER}
             zoom={14}
             minZoom={12}                // Prevent zooming out too far.

@@ -222,7 +222,7 @@ export function MapCanvas() {
                             fontWeight: 500,
                         }}
                     >
-                        <span>Hypothetical Settings</span>
+                        <span>What-If Mode</span>
                         {/* switch */}
                         <button
                             onClick={() => {
