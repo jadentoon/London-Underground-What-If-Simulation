@@ -143,7 +143,7 @@ export function MapCanvas() {
                 style={{ 
                     position: "fixed", 
                     top: hypotheticalSettingsEnabled ? 85 : 16,
-                    left: isSidebarOpen ? 296 : (hypotheticalSettingsEnabled ? 85 : 16),
+                    left: isSidebarOpen ? 365 : (hypotheticalSettingsEnabled ? 85 : 16),
                     transition: "top 0.3s ease, left 0.3s ease",
                     zIndex: 1000,
                 }}
@@ -161,7 +161,7 @@ export function MapCanvas() {
                 style={{
                     position: "fixed",
                     bottom: hypotheticalSettingsEnabled ? 85 : 16,
-                    left: isSidebarOpen ? 296 : (hypotheticalSettingsEnabled ? 85 : 16),
+                    left: isSidebarOpen ? 365 : (hypotheticalSettingsEnabled ? 85 : 16),
                     background: COLORS.card,
                     backdropFilter: "blur(8px)",
                     border: `1px solid ${COLORS.border}`,
@@ -310,7 +310,7 @@ export function MapCanvas() {
                         style={{
                             position: "fixed",
                             top: 40,
-                            left: 40,
+                            left: isSidebarOpen ? 320 : 40,
                             width: 80,
                             height: 80,
                             borderTop: `15px solid ${accentColor}`,
@@ -318,6 +318,7 @@ export function MapCanvas() {
                             zIndex: 999,
                             opacity: 0.8,
                             animation: "fadeIn 0.3s ease",
+                            transition: "left 0.3s ease",
                         }}
                     />
                     
@@ -342,7 +343,7 @@ export function MapCanvas() {
                         style={{
                             position: "fixed",
                             bottom: 40,
-                            left: 40,
+                            left: isSidebarOpen ? 320 : 40,
                             width: 80,
                             height: 80,
                             borderBottom: `15px solid ${accentColor}`,
@@ -350,6 +351,7 @@ export function MapCanvas() {
                             zIndex: 999,
                             opacity: 0.8,
                             animation: "fadeIn 0.3s ease",
+                            transition: "left 0.3s ease",
                         }}
                     />
                     

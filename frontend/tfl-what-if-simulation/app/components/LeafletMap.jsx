@@ -16,7 +16,7 @@
  * during server-side rendering (SSR).
  */
 
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useState, useRef } from "react";
 import { 
     MapContainer, 
     TileLayer, 
@@ -212,12 +212,21 @@ const LeafletMap = ({ onMapChange }) => {
     
     // state to track if component is mounted (client-side only)
     const [isMounted, setIsMounted] = useState(false);
+    
+    const containerIdRef = useRef(`map-container-${Math.random().toString(36).substr(2, 9)}`);
 
     /**
      * ensure the component only renders on the client side.
      */
     useEffect(() => {
         setIsMounted(true);
+        
+        return () => {
+            const container = document.getElementById(containerIdRef.current);
+            if (container && container._leaflet_id) {
+                container._leaflet_id = null;
+            }
+        };
     }, []);
 
     /**
@@ -245,27 +254,30 @@ const LeafletMap = ({ onMapChange }) => {
     const groupedEdges = groupEdges(uniqueEdges);
 
     return (
-        <MapContainer
-            key="leaflet-map"
-            center={LONDON_CENTER}
-            zoom={14}
-            minZoom={12}                // Prevent zooming out too far.
-            maxZoom={16}                // Prevent zooming in too far.
-            scrollWheelZoom
-            dragging
-            doubleClickZoom
-            zoomControl={true}          // Enable default zoom control.
-            attributionControl={false}  // Hide default attribtion for cleaner UI.
-            style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 0,
-            }}
+        <div 
+            id={containerIdRef.current}
+            style={{ position: "absolute", inset: 0 }}
         >
-            {/* Dark CartoDB basemap for reduced visual noise */}
-            <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            />
+            <MapContainer
+                center={LONDON_CENTER}
+                zoom={14}
+                minZoom={12}                
+                maxZoom={16}                
+                scrollWheelZoom
+                dragging
+                doubleClickZoom
+                zoomControl={true}          
+                attributionControl={false}  
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 0,
+                }}
+            >
+                {/* Dark CartoDB basemap for reduced visual noise */}
+                <TileLayer
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                />
 
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
@@ -344,6 +356,7 @@ const LeafletMap = ({ onMapChange }) => {
                 </CircleMarker>
             ))}
         </MapContainer>
+        </div>
     )
 }
 
