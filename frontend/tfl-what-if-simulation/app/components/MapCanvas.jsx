@@ -57,6 +57,9 @@ export function MapCanvas() {
     
     // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
+    
+    // State to track closed stations (set of station IDs)
+    const [closedStations, setClosedStations] = useState(new Set());
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -68,6 +71,23 @@ export function MapCanvas() {
     const handleMapChange = useCallback((state) => {
         mapStateRef.current = state;
     }, []);
+    
+    /**
+     * Toggle a station's closed state (only in what-if mode)
+     */
+    const handleStationClick = useCallback((stationId) => {
+        if (!hypotheticalSettingsEnabled) return;
+        
+        setClosedStations(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(stationId)) {
+                newSet.delete(stationId);
+            } else {
+                newSet.add(stationId);
+            }
+            return newSet;
+        });
+    }, [hypotheticalSettingsEnabled]);
 
 
     useEffect(() => {
@@ -136,7 +156,12 @@ export function MapCanvas() {
                 }
             `}</style>
             
-            <LeafletMap onMapChange={handleMapChange} />
+            <LeafletMap 
+                onMapChange={handleMapChange} 
+                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                closedStations={closedStations}
+                onStationClick={handleStationClick}
+            />
 
             {/* title moves with panel but always visible */}
             <div 

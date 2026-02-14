@@ -16,7 +16,7 @@
  * during server-side rendering (SSR).
  */
 
-import { Fragment, useEffect, useState, useRef } from "react";
+import { Fragment, useEffect, useState, useRef, useMemo } from "react";
 import { 
     MapContainer, 
     TileLayer, 
@@ -24,7 +24,8 @@ import {
     Polyline,
     Tooltip,
     useMapEvents,
-    useMap
+    useMap,
+    Marker
 } from "react-leaflet";
 import L from "leaflet";
 
@@ -200,10 +201,13 @@ function MapEvents({ onChange }) {
  * Map camera chanes are communicated to the parent component via
  * the `onMapChange` callback.
  * 
- * @param {function} onMapChange - Callback invoked on pan/zoom. 
+ * @param {function} onMapChange - callback invoked on pan/zoom
+ * @param {boolean} hypotheticalSettingsEnabled - what-if mode
+ * @param {Set} closedStations - set of stations IDs that are marked as closed (will need for djikstra's algo)
+ * @param {function} onStationClick - callback when a station is clicked
  * @returns {JSX.Element} Leaflet Map container.
  */
-const LeafletMap = ({ onMapChange }) => {
+const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), onStationClick }) => {
     // Local state for station nodes.
     const [nodes, setNodes] = useState([]);
 
@@ -214,6 +218,36 @@ const LeafletMap = ({ onMapChange }) => {
     const [isMounted, setIsMounted] = useState(false);
     
     const containerIdRef = useRef(`map-container-${Math.random().toString(36).substr(2, 9)}`);
+
+    //create a custom icon for the red X mark to indicate closed stations
+    const redXIcon = useMemo(() => {
+        if (typeof window === 'undefined') return null;
+        
+        return L.divIcon({
+            className: 'custom-red-x-icon',
+            html: `
+                <div style="
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 40px;
+                    font-weight: bold;
+                    color: #ef4444;
+                    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(239, 68, 68, 0.5);
+                    pointer-events: none;
+                    z-index: 1000;
+                ">✕</div>
+            `,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
+        });
+    }, []);
 
     /**
      * ensure the component only renders on the client side.
@@ -339,22 +373,47 @@ const LeafletMap = ({ onMapChange }) => {
                 });
             })}
 
-            {/* Render stations as circle markers */}
-            {nodes.map((s) => (
-                <CircleMarker
-                    key={s.id}
-                    center={[s.lat, s.lon]}
-                    radius={10}
-                    pathOptions={{
-                        color: "#ffffff",
-                        weight: 2,
-                        fillColor: "#000000",
-                        fillOpacity: 1,
-                    }}
-                >
-                    <Tooltip sticky>{s.name}</Tooltip>
-                </CircleMarker>
-            ))}
+            {/* rendering stations as circle markers */}
+            {nodes.map((s) => {
+                const isClosed = hypotheticalSettingsEnabled && closedStations.has(s.id);
+                
+                return (
+                    <CircleMarker
+                        key={s.id}
+                        center={[s.lat, s.lon]}
+                        radius={10}
+                        pathOptions={{
+                            color: isClosed ? "#ef4444" : "#ffffff", // change colour to red if station is closed
+                            weight: 2,
+                            fillColor: isClosed ? "#7f1d1d" : "#000000",
+                            fillOpacity: 1,
+                        }}
+                        eventHandlers={{
+                            click: () => {
+                                if (hypotheticalSettingsEnabled && onStationClick) {
+                                    onStationClick(s.id);
+                                }
+                            },
+                        }}
+                    >
+                        <Tooltip sticky>{s.name}</Tooltip>
+                    </CircleMarker>
+                );
+            })}
+            
+            {/* render red X marks over closed stations */}
+            {hypotheticalSettingsEnabled && redXIcon && nodes.map((s) => {
+                if (!closedStations.has(s.id)) return null;
+                
+                return (
+                    <Marker
+                        key={`closed-${s.id}`}
+                        position={[s.lat, s.lon]}
+                        icon={redXIcon}
+                        interactive={false}
+                    />
+                );
+            })}
         </MapContainer>
         </div>
     )
