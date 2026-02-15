@@ -227,7 +227,7 @@ function MapInstance({ onReady }) {
  * @param {function} onStationClick - callback when a station is clicked
  * @returns {JSX.Element} Leaflet Map container.
  */
-const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), onStationClick, onMapReady }) => {    
+const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), onStationClick, onMapReady, onStationsLoaded }) => {    
     // Local state for station nodes.
     const [nodes, setNodes] = useState([]);
 
@@ -287,15 +287,20 @@ const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedSt
      * load station and connection data from the API on the mount.
      */
     useEffect(() => {
-        async function loadData() {
-            const res = await fetch("/api/stations");
-            const data = await res.json();
+    async function loadData() {
+        const res = await fetch("/api/stations");
+        const data = await res.json();
 
-            setNodes(data.nodes);
-            setEdges(data.edges);
+        setNodes(data.nodes);
+        setEdges(data.edges);
+
+        //provide stations to parent for search
+        if (onStationsLoaded && data.nodes) {
+            onStationsLoaded(data.nodes);
         }
-        loadData();
-    }, []);
+    }
+    loadData();
+}, [onStationsLoaded]);
 
     if (!isMounted) {
         return <div style={{ position: "absolute", inset: 0, backgroundColor: "#0a0f1a" }} />;

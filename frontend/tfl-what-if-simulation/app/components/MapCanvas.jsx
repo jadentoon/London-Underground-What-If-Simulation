@@ -46,7 +46,7 @@ export function MapCanvas() {
         zoom: null
     });
 
-    //ref to store Leaflet map instance for reset view
+    //Ref to store the Leaflet map instance for programmatic controls (reset view + search)
     const leafletMapRef = useRef(null);
 
     // react state for HUD display - updated periodically from ref.
@@ -63,6 +63,12 @@ export function MapCanvas() {
     
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
+
+    // Stations list for search (filled by LeafletMap once loaded)
+    const [stationsForSearch, setStationsForSearch] = useState([]);
+
+    //Search input value
+    const [stationQuery, setStationQuery] = useState("");
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -92,15 +98,41 @@ export function MapCanvas() {
         });
     }, [hypotheticalSettingsEnabled]);
 
-    //Reset View handler (only resets camera, nothing else)
-    const handleResetView = useCallback(() => {
-        if (!leafletMapRef.current) return;
-
-        leafletMapRef.current.setView(
-            [51.5074, -0.1278], // original London center
-            14                  // original zoom
-        );
+    const handleStationsLoaded = useCallback((nodes) => {
+        setStationsForSearch(nodes || []);
     }, []);
+
+    /**
+     * Reset the map view to its original center and zoom level.
+     * Also resets any filters / what-if state to the original defaults.
+     */
+    const handleResetView = useCallback(() => {
+        // reset camera
+        if (leafletMapRef.current) {
+            leafletMapRef.current.setView([51.5074, -0.1278], 14);
+        }
+
+        // reset filters / UI state
+        setClosedStations(new Set());
+        setIsSidebarOpen(false);
+        setStationQuery("");
+    }, []);
+
+    /**
+     * Pan/zoom to a station.
+     */
+    const goToStation = useCallback((station) => {
+        if (!station || !leafletMapRef.current) return;
+
+        leafletMapRef.current.setView([station.lat, station.lon], 16);
+        setStationQuery(station.name);
+    }, []);
+
+    const stationMatches = stationQuery.trim().length === 0
+        ? []
+        : stationsForSearch
+            .filter(s => (s.name || "").toLowerCase().includes(stationQuery.trim().toLowerCase()))
+            .slice(0, 8);
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -173,8 +205,10 @@ export function MapCanvas() {
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onStationClick={handleStationClick}
-                // ✅ ADDED: capture map instance (requires LeafletMap to accept onMapReady)
+
                 onMapReady={(map) => { leafletMapRef.current = map; }}
+
+                onStationsLoaded={handleStationsLoaded}
             />
 
             {/* title moves with panel but always visible */}
@@ -193,6 +227,67 @@ export function MapCanvas() {
                 <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
                     Interactive Map
                 </p>
+            </div>
+
+            {/*Station search box */}
+            <div
+                style={{
+                    position: "fixed",
+                    top: hypotheticalSettingsEnabled ? 85 : 16,
+                    right: 16,
+                    width: 280,
+                    background: COLORS.card,
+                    backdropFilter: "blur(8px)",
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 8,
+                    padding: 10,
+                    zIndex: 1000,
+                    fontFamily: "monospace",
+                }}
+            >
+                <input
+                    value={stationQuery}
+                    onChange={(e) => setStationQuery(e.target.value)}
+                    placeholder="Search station..."
+                    style={{
+                        width: "100%",
+                        padding: "8px 10px",
+                        borderRadius: 6,
+                        border: `1px solid ${COLORS.border}`,
+                        background: "rgba(0, 0, 0, 0.3)",
+                        color: COLORS.text,
+                        outline: "none",
+                        fontSize: 13,
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && stationMatches.length > 0) {
+                            goToStation(stationMatches[0]);
+                        }
+                    }}
+                />
+
+                {stationMatches.length > 0 && (
+                    <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
+                        {stationMatches.map((s) => (
+                            <button
+                                key={s.id}
+                                onClick={() => goToStation(s)}
+                                style={{
+                                    textAlign: "left",
+                                    padding: "8px 10px",
+                                    borderRadius: 6,
+                                    border: `1px solid ${COLORS.border}`,
+                                    background: "rgba(0, 0, 0, 0.25)",
+                                    color: COLORS.text,
+                                    cursor: "pointer",
+                                    fontSize: 12,
+                                }}
+                            >
+                                <span style={{ color: accentColor }}>{s.name}</span>
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* zoom info moves with panel but always visible at bottom */}
@@ -223,7 +318,7 @@ export function MapCanvas() {
                     {hudState.center.lng.toFixed(4)}
                 </div>
 
-                {/*Reset View button (camera only) */}
+                {/*Reset view button (resets camera + what-if filters) */}
                 <button
                     onClick={handleResetView}
                     style={{
