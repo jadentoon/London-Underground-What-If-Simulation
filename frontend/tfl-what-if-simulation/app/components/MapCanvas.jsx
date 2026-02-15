@@ -46,6 +46,9 @@ export function MapCanvas() {
         zoom: null
     });
 
+    //ref to store Leaflet map instance for reset view
+    const leafletMapRef = useRef(null);
+
     // react state for HUD display - updated periodically from ref.
     const [hudState, setHudState] = useState({
         zoom: 14,
@@ -89,6 +92,15 @@ export function MapCanvas() {
         });
     }, [hypotheticalSettingsEnabled]);
 
+    //Reset View handler (only resets camera, nothing else)
+    const handleResetView = useCallback(() => {
+        if (!leafletMapRef.current) return;
+
+        leafletMapRef.current.setView(
+            [51.5074, -0.1278], // original London center
+            14                  // original zoom
+        );
+    }, []);
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -161,6 +173,8 @@ export function MapCanvas() {
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onStationClick={handleStationClick}
+                // ✅ ADDED: capture map instance (requires LeafletMap to accept onMapReady)
+                onMapReady={(map) => { leafletMapRef.current = map; }}
             />
 
             {/* title moves with panel but always visible */}
@@ -208,6 +222,25 @@ export function MapCanvas() {
                     {hudState.center.lat.toFixed(4)},{" "}
                     {hudState.center.lng.toFixed(4)}
                 </div>
+
+                {/*Reset View button (camera only) */}
+                <button
+                    onClick={handleResetView}
+                    style={{
+                        marginTop: 10,
+                        width: "100%",
+                        padding: "8px 10px",
+                        background: accentColor,
+                        color: "#0a0f1a",
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        fontWeight: 700,
+                        fontFamily: "monospace",
+                    }}
+                >
+                    Reset View
+                </button>
             </div>
 
             {/*collapsing left sidebar */}

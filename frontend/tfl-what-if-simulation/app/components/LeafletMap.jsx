@@ -186,6 +186,26 @@ function MapEvents({ onChange }) {
     return null;
 }
 
+
+/**
+ * MapInstance
+ * 
+ * Captures the Leaflet map instance and provides it to the parent
+ * via the onReady callback.
+ * 
+ * @param {function} onReady - callback that receives the Leaflet map instance
+ * @returns {null}
+ */
+function MapInstance({ onReady }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (onReady) onReady(map);
+    }, [map, onReady]);
+
+    return null;
+}
+
 /* -------------------- Main Component -------------------- */
 
 /**
@@ -207,7 +227,7 @@ function MapEvents({ onChange }) {
  * @param {function} onStationClick - callback when a station is clicked
  * @returns {JSX.Element} Leaflet Map container.
  */
-const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), onStationClick }) => {
+const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), onStationClick, onMapReady }) => {    
     // Local state for station nodes.
     const [nodes, setNodes] = useState([]);
 
@@ -315,6 +335,7 @@ const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedSt
 
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
+            <MapInstance onReady={onMapReady} />
 
             {/* Render connections as polylines (white outline + coloured core) */}
             {Object.entries(groupedEdges).map(([pairKey, group]) => {
