@@ -27,6 +27,20 @@ const COLORS = {
     textMuted: "#64748b",           // Secondary / muted text.
 }
 
+const LINE_META = [
+    { id: "bakerloo", label: "Bakerloo", color: "#B36305" },
+    { id: "central", label: "Central", color: "#E32017" },
+    { id: "circle", label: "Circle", color: "#FFD300" },
+    { id: "district", label: "District", color: "#00782A" },
+    { id: "hammersmith-city", label: "Hammersmith & City", color: "#F3A9BB" },
+    { id: "jubilee", label: "Jubilee", color: "#A0A5A9" },
+    { id: "metropolitan", label: "Metropolitan", color: "#9B0056" },
+    { id: "northern", label: "Northern", color: "#000000" },
+    { id: "piccadilly", label: "Piccadilly", color: "#003688" },
+    { id: "victoria", label: "Victoria", color: "#0098D4" },
+    { id: "waterloo-city", label: "Waterloo & City", color: "#95CDBA" },
+];
+
 /**
  * MapCanvas
  * 
@@ -63,9 +77,14 @@ export function MapCanvas() {
     
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
+    // State to track closed lines (set of line ids)
+    const [closedLines, setClosedLines] = useState(new Set());
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
+    const titleShadow = hypotheticalSettingsEnabled
+        ? "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000"
+        : "none";
 
     /**
      * callback passed to LeafletMap to receive camera changes.
@@ -90,6 +109,32 @@ export function MapCanvas() {
             }
             return newSet;
         });
+    }, [hypotheticalSettingsEnabled]);
+    
+    /**
+     * Toggle a line's closed state (only in what-if mode)
+     */
+    const handleLineToggle = useCallback((lineId) => {
+        if (!hypotheticalSettingsEnabled) return;
+
+        setClosedLines(prev => {
+            const next = new Set(prev);
+            if (next.has(lineId)) {
+                next.delete(lineId);
+            } else {
+                next.add(lineId);
+            }
+            return next;
+        });
+    }, [hypotheticalSettingsEnabled]);
+
+    /**
+     * Reset all closures (stations and lines) in what-if mode
+     */
+    const handleResetClosures = useCallback(() => {
+        if (!hypotheticalSettingsEnabled) return;
+        setClosedStations(new Set());
+        setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
     //Reset View handler (only resets camera, nothing else)
@@ -172,7 +217,9 @@ export function MapCanvas() {
                 onMapChange={handleMapChange} 
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
+                closedLines={closedLines}
                 onStationClick={handleStationClick}
+                onLineToggle={handleLineToggle}
                 // ✅ ADDED: capture map instance (requires LeafletMap to accept onMapReady)
                 onMapReady={(map) => { leafletMapRef.current = map; }}
             />
@@ -187,10 +234,10 @@ export function MapCanvas() {
                     zIndex: 1000,
                 }}
             >
-                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text }}>
+                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text, textShadow: titleShadow }}>
                     London Underground <span style={{ color: accentColor }}>What If Simulator</span>
                 </h1>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted, textShadow: titleShadow }}>
                     Interactive Map
                 </p>
             </div>
@@ -260,6 +307,7 @@ export function MapCanvas() {
                     display: "flex",
                     flexDirection: "column",
                     gap: 20,
+                    overflowY: "auto",
                 }}
             >
                 {/* Hypothetical Settings Toggle */}
@@ -320,8 +368,69 @@ export function MapCanvas() {
                     </div>
                 </div>
                 {/*placeholder for additional tools*/}
-                <div style={{ flex: 1 }}>
-                    {/*toolbar items*/}
+                <div style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
+                    <button
+                        onClick={handleResetClosures}
+                        disabled={!hypotheticalSettingsEnabled}
+                        style={{
+                            width: "100%",
+                            padding: "10px 12px",
+                            marginBottom: 12,
+                            background: hypotheticalSettingsEnabled ? "#ef4444" : "rgba(100, 116, 139, 0.2)",
+                            color: "#fff",
+                            border: "none",
+                            borderRadius: 8,
+                            cursor: hypotheticalSettingsEnabled ? "pointer" : "not-allowed",
+                            fontWeight: 700,
+                            boxShadow: hypotheticalSettingsEnabled ? "0 0 10px rgba(239,68,68,0.4)" : "none",
+                            transition: "background-color 0.2s ease, box-shadow 0.2s ease",
+                        }}
+                    >
+                        Reset all closures
+                    </button>
+                    <h3 style={{ margin: "0 0 8px", color: COLORS.text }}>Lines</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {LINE_META.map(line => {
+                            const isClosed = closedLines.has(line.id);
+                            const disabled = !hypotheticalSettingsEnabled;
+                            return (
+                                <button
+                                    key={line.id}
+                                    onClick={() => handleLineToggle(line.id)}
+                                    disabled={disabled}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        width: "100%",
+                                        padding: "10px 12px",
+                                        background: disabled ? "rgba(100, 116, 139, 0.2)" : "rgba(0,0,0,0.3)",
+                                        border: `1px solid ${COLORS.border}`,
+                                        borderRadius: 8,
+                                        color: COLORS.text,
+                                        cursor: disabled ? "not-allowed" : "pointer",
+                                        opacity: isClosed ? 0.6 : 1,
+                                        transition: "background-color 0.2s ease, opacity 0.2s ease",
+                                    }}
+                                >
+                                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <span style={{
+                                            width: 14,
+                                            height: 14,
+                                            borderRadius: 999,
+                                            backgroundColor: line.color,
+                                            border: "1px solid #fff",
+                                            boxShadow: isClosed ? "none" : `0 0 8px ${line.color}80`,
+                                        }} />
+                                        {line.label}
+                                    </span>
+                                    <span style={{ fontSize: 12, color: isClosed ? "#f87171" : "#22c55e" }}>
+                                        {isClosed ? "Closed" : "Open"}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 

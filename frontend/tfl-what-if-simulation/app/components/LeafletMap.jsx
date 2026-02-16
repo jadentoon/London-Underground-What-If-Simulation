@@ -49,6 +49,8 @@ const LINE_STROKE_WEIGHT = 4;
 const LINE_OPACITY = 0.8;
 const LINE_SMOOTH_FACTOR = 1.0;
 const OFFSET_STEP = 0.00015; // Offset step for parallel lines in degrees
+const CLOSED_LINE_COLOR = "#ffffff"; // bright white core for closed lines
+const CLOSED_LINE_OUTLINE = "#ff1a1a"; // red outline for closed lines
 
 // TfL Line colors (official Transport for London colors)
 const LINE_COLORS = {
@@ -164,7 +166,7 @@ function offsetSegment(from, to, offset) {
  * @returns {null} This component does not render any UI.
  */
 function MapEvents({ onChange }) {
-    useMapEvents({
+    const map = useMapEvents({
         // Trigger when map stops moving after pan.
         moveend(e) {
             const map = e.target;
@@ -182,6 +184,11 @@ function MapEvents({ onChange }) {
             });
         },
     });
+
+    // Hard disable double-click zoom (guards against Leaflet defaults)
+    useEffect(() => {
+        map.doubleClickZoom.disable();
+    }, [map]);
 
     return null;
 }
@@ -224,10 +231,13 @@ function MapInstance({ onReady }) {
  * @param {function} onMapChange - callback invoked on pan/zoom
  * @param {boolean} hypotheticalSettingsEnabled - what-if mode
  * @param {Set} closedStations - set of stations IDs that are marked as closed (will need for djikstra's algo)
- * @param {function} onStationClick - callback when a station is clicked
+ * @param {function} onStationClick - callback when a station is double-clicked (close/open)
+ * @param {function} onStationSelect - callback when a station is single-clicked (route planning)
+ * @param {Set} closedLines - set of line ids that are marked as closed
+ * @param {function} onLineToggle - callback when a line is toggled on map
  * @returns {JSX.Element} Leaflet Map container.
  */
-const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), onStationClick, onMapReady }) => {    
+const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedStations = new Set(), closedLines = new Set(), onStationClick, onStationSelect, onLineToggle, onMapReady }) => {    
     // Local state for station nodes.
     const [nodes, setNodes] = useState([]);
 
@@ -319,7 +329,7 @@ const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedSt
                 maxZoom={16}                
                 scrollWheelZoom
                 dragging
-                doubleClickZoom
+                doubleClickZoom={!hypotheticalSettingsEnabled} 
                 zoomControl={true}          
                 attributionControl={false}  
                 style={{
@@ -355,24 +365,25 @@ const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedSt
                     const positions = offsetSegment(base[0], base[1], offset);
                     
                     const line = edge.line;
-                    const color = LINE_COLORS[line] || "#3b82f6";
+                    const isClosedLine = hypotheticalSettingsEnabled && closedLines.has(line);
+                    const color = isClosedLine ? CLOSED_LINE_COLOR : (LINE_COLORS[line] || "#3b82f6");
                     const label = LINE_LABELS[line] || line;
 
-                    return (
-                        <Fragment key={`${pairKey}-${line}-${index}`}>
-                            {/* Outline for visibility */}
-                            <Polyline
-                                positions={positions}
-                                pathOptions={{
-                                    color: LINE_OUTLINE_COLOR,
-                                    weight: LINE_OUTLINE_WEIGHT,
-                                    opacity: LINE_OPACITY,
-                                    lineCap: "round",
-                                    lineJoin: "round",
-                                    smoothFactor: LINE_SMOOTH_FACTOR,
-                                    interactive: false,
-                                }}
-                            />
+                return (
+                    <Fragment key={`${pairKey}-${line}-${index}`}>
+                        {/* Outline for visibility */}
+                        <Polyline
+                            positions={positions}
+                            pathOptions={{
+                                color: isClosedLine ? CLOSED_LINE_OUTLINE : LINE_OUTLINE_COLOR,
+                                weight: isClosedLine ? LINE_OUTLINE_WEIGHT + 2 : LINE_OUTLINE_WEIGHT,
+                                opacity: isClosedLine ? 0.95 : LINE_OPACITY,
+                                lineCap: "round",
+                                lineJoin: "round",
+                                smoothFactor: LINE_SMOOTH_FACTOR,
+                                interactive: false,
+                            }}
+                        />
 
                             {/* Core line with tooltip */}
                             <Polyline
@@ -380,14 +391,24 @@ const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedSt
                                 pathOptions={{
                                     color,
                                     weight: LINE_STROKE_WEIGHT,
-                                    opacity: LINE_OPACITY,
+                                    opacity: isClosedLine ? 1 : LINE_OPACITY,
                                     lineCap: "round",
                                     lineJoin: "round",
                                     smoothFactor: LINE_SMOOTH_FACTOR,
                                     interactive: true,
+                                    className: isClosedLine ? "closed-line" : "",
+                                }}
+                                eventHandlers={{
+                                    dblclick: (e) => {
+                                        e.originalEvent?.preventDefault();
+                                        e.originalEvent?.stopPropagation();
+                                        if (hypotheticalSettingsEnabled && onLineToggle) {
+                                            onLineToggle(line);
+                                        }
+                                    }
                                 }}
                             >
-                                <Tooltip sticky>{label}</Tooltip>
+                                <Tooltip sticky>{isClosedLine ? `${label} (closed)` : label}</Tooltip>
                             </Polyline>
                         </Fragment>
                     );
@@ -411,6 +432,14 @@ const LeafletMap = ({ onMapChange, hypotheticalSettingsEnabled = false, closedSt
                         }}
                         eventHandlers={{
                             click: () => {
+                                if (onStationSelect) {
+                                    onStationSelect(s.id);
+                                }
+                            },
+                            dblclick: (e) => {
+                                // prevent map double-click zoom when using station close action
+                                e.originalEvent?.preventDefault();
+                                e.originalEvent?.stopPropagation();
                                 if (hypotheticalSettingsEnabled && onStationClick) {
                                     onStationClick(s.id);
                                 }
