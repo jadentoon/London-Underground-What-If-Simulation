@@ -27,18 +27,32 @@ const COLORS = {
     textMuted: "#64748b",           // Secondary / muted text.
 }
 
-const LINE_META = [
-    { id: "bakerloo", label: "Bakerloo", color: "#B36305" },
-    { id: "central", label: "Central", color: "#E32017" },
-    { id: "circle", label: "Circle", color: "#FFD300" },
-    { id: "district", label: "District", color: "#00782A" },
-    { id: "hammersmith-city", label: "Hammersmith & City", color: "#F3A9BB" },
-    { id: "jubilee", label: "Jubilee", color: "#A0A5A9" },
-    { id: "metropolitan", label: "Metropolitan", color: "#9B0056" },
-    { id: "northern", label: "Northern", color: "#000000" },
-    { id: "piccadilly", label: "Piccadilly", color: "#003688" },
-    { id: "victoria", label: "Victoria", color: "#0098D4" },
-    { id: "waterloo-city", label: "Waterloo & City", color: "#95CDBA" },
+const LINE_COLOR_MAP = {
+    "bakerloo": "#B36305",
+    "central": "#E32017",
+    "circle": "#FFD300",
+    "district": "#00782A",
+    "hammersmith-city": "#F3A9BB",
+    "jubilee": "#A0A5A9",
+    "metropolitan": "#9B0056",
+    "northern": "#000000",
+    "piccadilly": "#003688",
+    "victoria": "#0098D4",
+    "waterloo-city": "#95CDBA",
+};
+
+const FALLBACK_LINES = [
+    { id: "bakerloo", label: "Bakerloo", color: LINE_COLOR_MAP["bakerloo"] },
+    { id: "central", label: "Central", color: LINE_COLOR_MAP["central"] },
+    { id: "circle", label: "Circle", color: LINE_COLOR_MAP["circle"] },
+    { id: "district", label: "District", color: LINE_COLOR_MAP["district"] },
+    { id: "hammersmith-city", label: "Hammersmith & City", color: LINE_COLOR_MAP["hammersmith-city"] },
+    { id: "jubilee", label: "Jubilee", color: LINE_COLOR_MAP["jubilee"] },
+    { id: "metropolitan", label: "Metropolitan", color: LINE_COLOR_MAP["metropolitan"] },
+    { id: "northern", label: "Northern", color: LINE_COLOR_MAP["northern"] },
+    { id: "piccadilly", label: "Piccadilly", color: LINE_COLOR_MAP["piccadilly"] },
+    { id: "victoria", label: "Victoria", color: LINE_COLOR_MAP["victoria"] },
+    { id: "waterloo-city", label: "Waterloo & City", color: LINE_COLOR_MAP["waterloo-city"] },
 ];
 
 /**
@@ -79,12 +93,14 @@ export function MapCanvas() {
     const [closedStations, setClosedStations] = useState(new Set());
     // State to track closed lines (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
+    // Live line metadata (default to fallback)
+    const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
+    const [linesSource, setLinesSource] = useState("fallback");
+    const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
-    const titleShadow = hypotheticalSettingsEnabled
-        ? "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000"
-        : "none";
+    const titleShadow = "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000";
 
     /**
      * callback passed to LeafletMap to receive camera changes.
@@ -137,6 +153,42 @@ export function MapCanvas() {
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
+    // Fetch live line metadata from TfL Unified API (client-side)
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchLines() {
+            try {
+                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube");
+                if (!res.ok) throw new Error(`TfL API ${res.status}`);
+                const data = await res.json();
+                const mapped = data
+                    .map((line) => {
+                        const color = LINE_COLOR_MAP[line.id];
+                        if (!color) return null;
+                        return {
+                            id: line.id,
+                            label: line.name || line.id,
+                            color,
+                        };
+                    })
+                    .filter(Boolean);
+                if (!cancelled && mapped.length) {
+                    setLineOptions(mapped);
+                    setLinesSource("live");
+                    setLinesUpdatedAt(new Date());
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setLineOptions(FALLBACK_LINES);
+                    setLinesSource("fallback");
+                    setLinesUpdatedAt(null);
+                }
+            }
+        }
+        fetchLines();
+        return () => { cancelled = true; };
+    }, []);
+
     //Reset View handler (only resets camera, nothing else)
     const handleResetView = useCallback(() => {
         if (!leafletMapRef.current) return;
@@ -159,6 +211,14 @@ export function MapCanvas() {
 
         return () => clearInterval(id);
     }, []);
+
+    const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
+    const isLiveLines = !hypotheticalSettingsEnabled && linesSource === "live";
+    const lineStatusLabel = hypotheticalSettingsEnabled
+        ? "Fallback (What-If mode)"
+        : (isLiveLines ? "Live TfL data" : "Fallback (TfL API unavailable)");
+    const lineStatusColor = isLiveLines ? "#22c55e" : "#f97316";
+    const lineStatusBg = isLiveLines ? "rgba(34, 197, 94, 0.12)" : "rgba(249, 115, 22, 0.12)";
 
     return (
         <div
@@ -369,28 +429,54 @@ export function MapCanvas() {
                 </div>
                 {/*placeholder for additional tools*/}
                 <div style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
-                    <button
-                        onClick={handleResetClosures}
-                        disabled={!hypotheticalSettingsEnabled}
+                    {hypotheticalSettingsEnabled && (
+                        <button
+                            onClick={handleResetClosures}
+                            style={{
+                                width: "100%",
+                                padding: "10px 12px",
+                                marginBottom: 12,
+                                background: "#ef4444",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                fontWeight: 700,
+                                boxShadow: "0 0 10px rgba(239,68,68,0.4)",
+                                transition: "background-color 0.2s ease, box-shadow 0.2s ease",
+                            }}
+                        >
+                            Reset all closures
+                        </button>
+                    )}
+                    <h3 style={{ margin: "0 0 4px", color: COLORS.text }}>Lines</h3>
+                    <div
                         style={{
-                            width: "100%",
-                            padding: "10px 12px",
-                            marginBottom: 12,
-                            background: hypotheticalSettingsEnabled ? "#ef4444" : "rgba(100, 116, 139, 0.2)",
-                            color: "#fff",
-                            border: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "6px 8px",
+                            marginBottom: 8,
                             borderRadius: 8,
-                            cursor: hypotheticalSettingsEnabled ? "pointer" : "not-allowed",
-                            fontWeight: 700,
-                            boxShadow: hypotheticalSettingsEnabled ? "0 0 10px rgba(239,68,68,0.4)" : "none",
-                            transition: "background-color 0.2s ease, box-shadow 0.2s ease",
+                            background: lineStatusBg,
+                            color: lineStatusColor,
+                            fontSize: 12,
                         }}
                     >
-                        Reset all closures
-                    </button>
-                    <h3 style={{ margin: "0 0 8px", color: COLORS.text }}>Lines</h3>
+                        <span style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 999,
+                            background: lineStatusColor,
+                            boxShadow: `0 0 8px ${lineStatusColor}80`,
+                        }} />
+                        <span>
+                            {lineStatusLabel}
+                            {isLiveLines && linesUpdatedAt ? ` · ${linesUpdatedAt.toLocaleTimeString()}` : ""}
+                        </span>
+                    </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        {LINE_META.map(line => {
+                        {effectiveLines.map(line => {
                             const isClosed = closedLines.has(line.id);
                             const disabled = !hypotheticalSettingsEnabled;
                             return (
