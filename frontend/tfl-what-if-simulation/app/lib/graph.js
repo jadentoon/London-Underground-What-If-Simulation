@@ -17,14 +17,13 @@ export function buildGraph(nodes, edges) {
 
         graph[from].push({
             to,
-            weight: edge.distance,
+            weight: edge.travel_time,
         });
 
         graph[to].push({
             to: from,
-            weight: edge.distance,
+            weight: edge.travel_time,
         });
     });
-
     return graph;
 }
