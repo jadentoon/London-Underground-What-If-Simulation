@@ -10,6 +10,7 @@
  */
 import { NextResponse } from "next/server";
 import driver from "../../lib/neo4j.js";
+import neo4j from "neo4j-driver";
 
 /**
  * GET /api/stations
@@ -31,7 +32,8 @@ export async function GET() {
             RETURN
                 s1.id AS fromId, s1.name AS fromName, s1.lat AS fromLat, s1.lon AS fromLon,
                 s2.id AS toId, s2.name AS toName, s2.lat AS toLat, s2.lon AS toLon,
-                r.line AS line
+                r.line AS line,
+                r.travel_time_seconds AS travel_time
         `);
 
         /**
@@ -72,11 +74,16 @@ export async function GET() {
                 });
             }
 
+            const travelTime = record.get("travel_time");
+
             // Record the connection between stations.
             edges.push({
                 from: fromId,
                 to: toId,
-                line: record.get("line")
+                line: record.get("line"),
+                travel_time: neo4j.integer.inSafeRange(travelTime)
+                    ? travelTime.toNumber()
+                    : Number(travelTime.toString()),
             });
         });
 

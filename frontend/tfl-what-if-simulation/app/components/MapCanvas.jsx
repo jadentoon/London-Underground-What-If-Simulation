@@ -84,16 +84,14 @@ export function MapCanvas() {
     /**
      * Toggle a station's closed state (only in what-if mode)
      */
-    const handleStationClick = useCallback((stationId) => {
+    const toggleClosedStation = useCallback((stationId) => {
         if (!hypotheticalSettingsEnabled) return;
         
         setClosedStations(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(stationId)) {
-                newSet.delete(stationId);
-            } else {
-                newSet.add(stationId);
-            }
+            const id = String(stationId);
+            if (newSet.has(id)) newSet.delete(id);
+            else newSet.add(id);
             return newSet;
         });
     }, [hypotheticalSettingsEnabled]);
@@ -204,10 +202,8 @@ export function MapCanvas() {
                 onMapChange={handleMapChange} 
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
-                onStationClick={handleStationClick}
-
+                onToggleStationClosed={toggleClosedStation}
                 onMapReady={(map) => { leafletMapRef.current = map; }}
-
                 onStationsLoaded={handleStationsLoaded}
             />
 
