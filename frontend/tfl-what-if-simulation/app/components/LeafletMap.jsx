@@ -266,25 +266,36 @@ const LeafletMap = ({ onMapChange }) => {
             String(end),
         );
 
-        console.log(graph);
-
         setPath(shortestPath);
     }, [graph, start, end]);
 
     // Deduplicate edges to remove bidirectional duplicates.
-    const uniqueEdges = dedupeEdges(edges);
+    const uniqueEdges = useMemo(() => dedupeEdges(edges), [edges]);
 
     // Group edges connecting the same station pair for offset rendering.
-    const groupedEdges = groupEdges(uniqueEdges);
+    const groupedEdges = useMemo(() => groupEdges(uniqueEdges), [uniqueEdges]);
 
     const pathPositions = useMemo(() => {
         if (!path.length) return [];
         
         return path
-            .map(id => nodes.find((n => String(n.id) === id)))
+            .map(id => nodes.find((n) => String(n.id) === String(id)))
             .filter(Boolean)
             .map(n => [n.lat, n.lon]);
     }, [path, nodes]);
+
+    const hasPath = pathPositions.length > 1;
+
+    const pathSet = useMemo(() => new Set(path.map(String)), [path]);
+
+    const midPos = useMemo(() => {
+        if (!hasPath) return null;
+        const midIndex = Math.floor(pathPositions.length / 2);
+        return pathPositions[midIndex] || null;
+    }, [hasPath, pathPositions]);
+
+    const edgeCoreOpacity = hasPath ? 0.18 : LINE_OPACITY;
+    const edgeOutlineOpacity = hasPath ? 0.12 : LINE_OPACITY;
 
     return (
         <MapContainer
@@ -314,23 +325,64 @@ const LeafletMap = ({ onMapChange }) => {
             {/* Camera Change Listener */}
             <MapEvents onChange={onMapChange} />
 
-            {pathPositions.length > 1 && (
-                <Polyline
-                    positions={pathPositions}
-                    pathOptions={{
-                        color: "#22c55e",
-                        weight: 7,
-                        opacity: 0.9,
-                        lineCap: "round",
-                        lineJoin: "round",
-                    }}
-                />
+            {hasPath && (
+                <>
+                    {/* Halo / glow */}
+                    <Polyline
+                        positions={pathPositions}
+                        pathOptions={{
+                            color: "#22c55e",
+                            weight: 14,
+                            opacity: 0.25,
+                            lineCap: "round",
+                            lineJoin: "round",
+                            interactive: false,
+                        }}
+                    />
+                    {/* Main Route */}
+                    <Polyline
+                        positions={pathPositions}
+                        pathOptions={{
+                            color: "#22c55e",
+                            weight: 7,
+                            opacity: 0.95,
+                            lineCap: "round",
+                            lineJoin: "round",
+                        }}
+                    />
+                    {/* Dashed overlay for "route feel" */}
+                    <Polyline
+                        positions={pathPositions}
+                        pathOptions={{
+                            color: "#ffffff",
+                            weight: 3,
+                            opacity: 0.7,
+                            dashArray: "8 10",
+                            lineCap: "round",
+                            lineJoin: "round",
+                            interactive: false,
+                        }}
+                    />
+                    {/* Midpoint label */}
+                    {midPos && (
+                        <CircleMarker
+                            center={midPos}
+                            radius={1}
+                            pathOptions={{ opacity: 0, fillOpacity: 0 }}
+                            interactive
+                        >
+                            <Tooltip direction="top" offset={[0, -10]} permanent>
+                                {`Route: ${pathPositions.length - 1} stops`}
+                            </Tooltip>
+                        </CircleMarker>
+                    )}
+                </>
             )}
 
             {/* Render connections as polylines (white outline + coloured core) */}
             {Object.entries(groupedEdges).map(([pairKey, group]) => {
-                const from = nodes.find(n => n.id === String(group[0].from));
-                const to = nodes.find(n => n.id === String(group[0].to));
+                const from = nodes.find(n => String(n.id) === String(group[0].from));
+                const to = nodes.find(n => String(n.id) === String(group[0].to));
                 if (!from || !to) return null;
 
                 const base = [
@@ -356,7 +408,7 @@ const LeafletMap = ({ onMapChange }) => {
                                 pathOptions={{
                                     color: LINE_OUTLINE_COLOR,
                                     weight: LINE_OUTLINE_WEIGHT,
-                                    opacity: LINE_OPACITY,
+                                    opacity: edgeOutlineOpacity,
                                     lineCap: "round",
                                     lineJoin: "round",
                                     smoothFactor: LINE_SMOOTH_FACTOR,
@@ -370,14 +422,14 @@ const LeafletMap = ({ onMapChange }) => {
                                 pathOptions={{
                                     color,
                                     weight: LINE_STROKE_WEIGHT,
-                                    opacity: LINE_OPACITY,
+                                    opacity: edgeCoreOpacity,
                                     lineCap: "round",
                                     lineJoin: "round",
                                     smoothFactor: LINE_SMOOTH_FACTOR,
                                     interactive: true,
                                 }}
                             >
-                                <Tooltip sticky>{label}</Tooltip>
+                                {!hasPath && <Tooltip sticky>{label}</Tooltip>}
                             </Polyline>
                         </Fragment>
                     );
@@ -385,29 +437,39 @@ const LeafletMap = ({ onMapChange }) => {
             })}
 
             {/* Render stations as circle markers */}
-            {nodes.map((s) => (
-                <CircleMarker
-                    key={s.id}
-                    center={[s.lat, s.lon]}
-                    radius={10}
-                    eventHandlers={{
-                        click: () => handleStationClick(String(s.id)),
-                    }}
-                    pathOptions={{
-                        color: 
-                            s.id === start
-                                ? "#22c55e"
-                                : s.id === end
-                                ? "#ef4444"
-                                : "#ffffff",
-                        weight: 2,
-                        fillColor: "#000000",
-                        fillOpacity: 1,
-                    }}
-                >
-                    <Tooltip sticky>{s.name}</Tooltip>
-                </CircleMarker>
-            ))}
+            {nodes.map((s) => {
+                const idStr = String(s.id);
+                const isStart = idStr === String(start);
+                const isEnd = idStr === String(end);
+                const isOnPath = pathSet.has(idStr);
+
+                return (
+                    <CircleMarker
+                        key={s.id}
+                        center={[s.lat, s.lon]}
+                        radius={isStart || isEnd ? 11 : isOnPath ? 10 : 9}
+                        eventHandlers={{
+                            click: () => handleStationClick(String(idStr)),
+                        }}
+                        pathOptions={{
+                            color: 
+                                isStart
+                                    ? "#22c55e"
+                                    : isEnd
+                                    ? "#ef4444"
+                                    : isOnPath
+                                    ? "#22c55e"
+                                    : "#ffffff",
+                            weight: isStart || isEnd || isOnPath ? 3 : 2,
+                            fillColor: isOnPath ? "#052e16" : "#000000",
+                            fillOpacity: 1,
+                            opacity: hasPath && !isOnPath && !isStart && !isEnd ? 0.6 : 1,
+                        }}
+                    >
+                        {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
+                    </CircleMarker>
+                )
+            })}
         </MapContainer>
     )
 }
