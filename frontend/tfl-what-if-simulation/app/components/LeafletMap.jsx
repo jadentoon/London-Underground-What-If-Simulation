@@ -213,6 +213,7 @@ const LeafletMap = ({
             <StationLayer
                 nodes={nodes}
                 startId={start}
+                setStartId={setStart}
                 pathSet={pathSet}
                 closedSet={closedSet}
                 hasPath={hasPath}

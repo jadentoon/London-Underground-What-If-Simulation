@@ -4,6 +4,7 @@ import { CircleMarker, Tooltip, Marker } from "react-leaflet";
 export default function StationLayer({
     nodes,
     startId,
+    setStartId,
     pathSet,
     closedSet,
     hasPath,
@@ -29,6 +30,7 @@ export default function StationLayer({
                             radius={isStart ? 11 : isOnPath ? 10 : 9}
                             eventHandlers={{
                                 click: (e) => {
+                                    if (isStart || isClosed) return;
                                     e?.originalEvent?.stopPropagation?.();
                                     onSingleClickStation(id);
                                 },
@@ -38,6 +40,7 @@ export default function StationLayer({
 
                                     if (hypotheticalSettingsEnabled) {
                                         onDoubleClickStation?.(id);
+                                        setStartId(null);
                                     }
                                 },
                             }}

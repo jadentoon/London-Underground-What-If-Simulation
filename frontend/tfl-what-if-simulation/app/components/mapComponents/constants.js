@@ -7,7 +7,7 @@ export const LINE_STYLE = {
     STROKE_WEIGHT: 4,
     OPACITY: 0.8,
     SMOOTH_FACTOR: 5,
-    OFFSET_STEP: 0.00012        // Offset step for parallel lines in degrees
+    OFFSET_STEP: 0.00015        // Offset step for parallel lines in degrees
 };             
 
 // TfL Line colors (official Transport for London colors)
