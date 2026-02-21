@@ -32,7 +32,7 @@ setupLeafletDefaultIcons();
  * @returns {null} This component does not render any UI.
  */
 function MapEvents({ onChange }) {
-    useMapEvents({
+    const map = useMapEvents({
         // Trigger when map stops moving after pan.
         moveend(e) {
             const map = e.target;
@@ -50,6 +50,11 @@ function MapEvents({ onChange }) {
             });
         },
     });
+
+    // Hard disable double-click zoom (guards against Leaflet defaults)
+    useEffect(() => {
+        map.doubleClickZoom.disable();
+    }, [map]);
 
     return null;
 }
@@ -98,14 +103,19 @@ function ClearOnMapClick({ enabled, onClear }) {
  * @param {function} onMapChange - callback invoked on pan/zoom
  * @param {boolean} hypotheticalSettingsEnabled - what-if mode
  * @param {Set} closedStations - set of stations IDs that are marked as closed (will need for djikstra's algo)
- * @param {function} onStationClick - callback when a station is clicked
+ * @param {function} onStationClick - callback when a station is double-clicked (close/open)
+ * @param {function} onStationSelect - callback when a station is single-clicked (route planning)
+ * @param {Set} closedLines - set of line ids that are marked as closed
+ * @param {function} onLineToggle - callback when a line is toggled on map
  * @returns {JSX.Element} Leaflet Map container.
  */
 const LeafletMap = ({
     onMapChange,
     hypotheticalSettingsEnabled = false,
     closedStations = new Set(),
+    closedLines = new Set(),
     onToggleStationClosed,
+    onLineToggle,
     onMapReady,
     onStationsLoaded
 }) => {
@@ -208,7 +218,14 @@ const LeafletMap = ({
 
             <RouteLayer pathPositions={pathPositions} />
 
-            <EdgeLayer groupedEdges={groupedEdges} nodeById={nodeById} dimmed={hasPath} />
+            <EdgeLayer 
+                groupedEdges={groupedEdges} 
+                nodeById={nodeById} 
+                dimmed={hasPath} 
+                closedLines={closedLines} 
+                onLineToggle={onLineToggle}
+                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+            />
 
             <StationLayer
                 nodes={nodes}

@@ -27,6 +27,34 @@ const COLORS = {
     textMuted: "#64748b",           // Secondary / muted text.
 }
 
+const LINE_COLOR_MAP = {
+    "bakerloo": "#B36305",
+    "central": "#E32017",
+    "circle": "#FFD300",
+    "district": "#00782A",
+    "hammersmith-city": "#F3A9BB",
+    "jubilee": "#A0A5A9",
+    "metropolitan": "#9B0056",
+    "northern": "#000000",
+    "piccadilly": "#003688",
+    "victoria": "#0098D4",
+    "waterloo-city": "#95CDBA",
+};
+
+const FALLBACK_LINES = [
+    { id: "bakerloo", label: "Bakerloo", color: LINE_COLOR_MAP["bakerloo"] },
+    { id: "central", label: "Central", color: LINE_COLOR_MAP["central"] },
+    { id: "circle", label: "Circle", color: LINE_COLOR_MAP["circle"] },
+    { id: "district", label: "District", color: LINE_COLOR_MAP["district"] },
+    { id: "hammersmith-city", label: "Hammersmith & City", color: LINE_COLOR_MAP["hammersmith-city"] },
+    { id: "jubilee", label: "Jubilee", color: LINE_COLOR_MAP["jubilee"] },
+    { id: "metropolitan", label: "Metropolitan", color: LINE_COLOR_MAP["metropolitan"] },
+    { id: "northern", label: "Northern", color: LINE_COLOR_MAP["northern"] },
+    { id: "piccadilly", label: "Piccadilly", color: LINE_COLOR_MAP["piccadilly"] },
+    { id: "victoria", label: "Victoria", color: LINE_COLOR_MAP["victoria"] },
+    { id: "waterloo-city", label: "Waterloo & City", color: LINE_COLOR_MAP["waterloo-city"] },
+];
+
 /**
  * MapCanvas
  * 
@@ -70,8 +98,16 @@ export function MapCanvas() {
     //Search input value
     const [stationQuery, setStationQuery] = useState("");
 
+    // State to track closed lines (set of line ids)
+    const [closedLines, setClosedLines] = useState(new Set());
+    // Live line metadata (default to fallback)
+    const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
+    const [linesSource, setLinesSource] = useState("fallback");
+    const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
+
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
+    const titleShadow = "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000";
 
     /**
      * callback passed to LeafletMap to receive camera changes.
@@ -98,6 +134,68 @@ export function MapCanvas() {
 
     const handleStationsLoaded = useCallback((nodes) => {
         setStationsForSearch(nodes || []);
+    }, []);
+
+    /**
+     * Toggle a line's closed state (only in what-if mode)
+     */
+    const handleLineToggle = useCallback((lineId) => {
+        if (!hypotheticalSettingsEnabled) return;
+
+        setClosedLines(prev => {
+            const next = new Set(prev);
+            if (next.has(lineId)) {
+                next.delete(lineId);
+            } else {
+                next.add(lineId);
+            }
+            return next;
+        });
+    }, [hypotheticalSettingsEnabled]);
+
+    /**
+     * Reset all closures (stations and lines) in what-if mode
+     */
+    const handleResetClosures = useCallback(() => {
+        if (!hypotheticalSettingsEnabled) return;
+        setClosedStations(new Set());
+        setClosedLines(new Set());
+    }, [hypotheticalSettingsEnabled]);
+
+    // Fetch live line metadata from TfL Unified API (client-side)
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchLines() {
+            try {
+                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube");
+                if (!res.ok) throw new Error(`TfL API ${res.status}`);
+                const data = await res.json();
+                const mapped = data
+                    .map((line) => {
+                        const color = LINE_COLOR_MAP[line.id];
+                        if (!color) return null;
+                        return {
+                            id: line.id,
+                            label: line.name || line.id,
+                            color,
+                        };
+                    })
+                    .filter(Boolean);
+                if (!cancelled && mapped.length) {
+                    setLineOptions(mapped);
+                    setLinesSource("live");
+                    setLinesUpdatedAt(new Date());
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setLineOptions(FALLBACK_LINES);
+                    setLinesSource("fallback");
+                    setLinesUpdatedAt(null);
+                }
+            }
+        }
+        fetchLines();
+        return () => { cancelled = true; };
     }, []);
 
     /**
@@ -144,6 +242,14 @@ export function MapCanvas() {
 
         return () => clearInterval(id);
     }, []);
+
+    const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
+    const isLiveLines = !hypotheticalSettingsEnabled && linesSource === "live";
+    const lineStatusLabel = hypotheticalSettingsEnabled
+        ? "Fallback (What-If mode)"
+        : (isLiveLines ? "Live TfL data" : "Fallback (TfL API unavailable)");
+    const lineStatusColor = isLiveLines ? "#22c55e" : "#f97316";
+    const lineStatusBg = isLiveLines ? "rgba(34, 197, 94, 0.12)" : "rgba(249, 115, 22, 0.12)";
 
     return (
         <div
@@ -203,6 +309,8 @@ export function MapCanvas() {
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onToggleStationClosed={toggleClosedStation}
+                closedLines={closedLines}
+                onLineToggle={handleLineToggle}
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
             />
@@ -217,10 +325,10 @@ export function MapCanvas() {
                     zIndex: 1000,
                 }}
             >
-                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text }}>
+                <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text, textShadow: titleShadow }}>
                     London Underground <span style={{ color: accentColor }}>What If Simulator</span>
                 </h1>
-                <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted }}>
+                <p style={{ margin: "4px 0 0", fontSize: 13, color: COLORS.textMuted, textShadow: titleShadow }}>
                     Interactive Map
                 </p>
             </div>
@@ -351,6 +459,7 @@ export function MapCanvas() {
                     display: "flex",
                     flexDirection: "column",
                     gap: 20,
+                    overflowY: "auto",
                 }}
             >
                 {/* Hypothetical Settings Toggle */}
@@ -376,6 +485,7 @@ export function MapCanvas() {
                         <button
                             onClick={() => {
                                 setHypotheticalSettingsEnabled(!hypotheticalSettingsEnabled);
+                                setClosedLines(new Set());
                                 setTimeout(() => {
                                     setIsSidebarOpen(false);
                                 }, 1500);
@@ -411,8 +521,95 @@ export function MapCanvas() {
                     </div>
                 </div>
                 {/*placeholder for additional tools*/}
-                <div style={{ flex: 1 }}>
-                    {/*toolbar items*/}
+                <div style={{ flex: 1, overflowY: "auto", paddingRight: 4 }}>
+                    {hypotheticalSettingsEnabled && (
+                        <button
+                            onClick={handleResetClosures}
+                            style={{
+                                width: "100%",
+                                padding: "10px 12px",
+                                marginBottom: 12,
+                                background: "#ef4444",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: 8,
+                                cursor: "pointer",
+                                fontWeight: 700,
+                                boxShadow: "0 0 10px rgba(239,68,68,0.4)",
+                                transition: "background-color 0.2s ease, box-shadow 0.2s ease",
+                            }}
+                        >
+                            Reset all closures
+                        </button>
+                    )}
+                    <h3 style={{ margin: "0 0 4px", color: COLORS.text }}>Lines</h3>
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "6px 8px",
+                            marginBottom: 8,
+                            borderRadius: 8,
+                            background: lineStatusBg,
+                            color: lineStatusColor,
+                            fontSize: 12,
+                        }}
+                    >
+                        <span style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 999,
+                            background: lineStatusColor,
+                            boxShadow: `0 0 8px ${lineStatusColor}80`,
+                        }} />
+                        <span>
+                            {lineStatusLabel}
+                            {isLiveLines && linesUpdatedAt ? ` · ${linesUpdatedAt.toLocaleTimeString()}` : ""}
+                        </span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {effectiveLines.map(line => {
+                            const isClosed = closedLines.has(line.id);
+                            const disabled = !hypotheticalSettingsEnabled;
+                            return (
+                                <button
+                                    key={line.id}
+                                    onClick={() => handleLineToggle(line.id)}
+                                    disabled={disabled}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        width: "100%",
+                                        padding: "10px 12px",
+                                        background: disabled ? "rgba(100, 116, 139, 0.2)" : "rgba(0,0,0,0.3)",
+                                        border: `1px solid ${COLORS.border}`,
+                                        borderRadius: 8,
+                                        color: COLORS.text,
+                                        cursor: disabled ? "not-allowed" : "pointer",
+                                        opacity: isClosed ? 0.6 : 1,
+                                        transition: "background-color 0.2s ease, opacity 0.2s ease",
+                                    }}
+                                >
+                                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <span style={{
+                                            width: 14,
+                                            height: 14,
+                                            borderRadius: 999,
+                                            backgroundColor: line.color,
+                                            border: "1px solid #fff",
+                                            boxShadow: isClosed ? "none" : `0 0 8px ${line.color}80`,
+                                        }} />
+                                        {line.label}
+                                    </span>
+                                    <span style={{ fontSize: 12, color: isClosed ? "#f87171" : "#22c55e" }}>
+                                        {isClosed ? "Closed" : "Open"}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
