@@ -1,7 +1,9 @@
-export function dijkstra(graph, start, end) {
+export function dijkstra(graph, start, end, closedStations = new Set()) {
     const distances = {};
     const previous = {};
     const unvisited = new Set(Object.keys(graph));
+
+    const closedSet = new Set([...closedStations].map(String));
 
     for (const node of unvisited){
         distances[node] = Infinity;
@@ -21,6 +23,12 @@ export function dijkstra(graph, start, end) {
 
         for (const edge of graph[current]) {
             const neighbour = String(edge.to);
+            
+            // akip all the closed stations 
+            if (closedSet.has(neighbour) && neighbour !== end) {
+                continue;
+            }
+            
             const alt = distances[current] + edge.weight;
 
             if(alt < distances[neighbour]) {

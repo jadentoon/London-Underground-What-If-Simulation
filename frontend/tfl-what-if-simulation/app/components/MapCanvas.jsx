@@ -21,6 +21,7 @@ import { MapHud } from "./MapHud";
 import { MapSidebar } from "./MapSidebar";
 import { SidebarToggleButton } from "./SidebarToggleButton";
 import { MapWhatIfOverlay } from "./MapWhatIfOverlay";
+import { RoutingErrorBox } from "./RoutingErrorBox";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -92,6 +93,9 @@ export function MapCanvas() {
     const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
     const [linesSource, setLinesSource] = useState("fallback");
     const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
+
+    // State for routing errors
+    const [routingError, setRoutingError] = useState(null);
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -273,6 +277,7 @@ export function MapCanvas() {
                 onLineToggle={handleLineToggle}
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
+                onRoutingError={setRoutingError}
             />
 
             <MapTitleOverlay
@@ -338,6 +343,12 @@ export function MapCanvas() {
                     accentColor={accentColor}
                 />
             )}
+
+            <RoutingErrorBox
+                error={routingError}
+                COLORS={COLORS}
+                onClose={() => setRoutingError(null)}
+            />
         </div>
     )
 }

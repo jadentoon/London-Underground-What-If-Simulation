@@ -117,7 +117,8 @@ const LeafletMap = ({
     onToggleStationClosed,
     onLineToggle,
     onMapReady,
-    onStationsLoaded
+    onStationsLoaded,
+    onRoutingError
 }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
@@ -172,8 +173,30 @@ const LeafletMap = ({
 
         if (!graph) return;
 
-        const newPath = dijkstra(graph, String(start), id);
-        setPath(newPath);
+        // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
+        const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
+        const newPath = dijkstra(graph, String(start), id, stationsToAvoid);
+        
+        //check if path is found 
+        if (newPath.length === 0 && start !== id) {
+            // if not possible then show the routing error box 
+            if (onRoutingError) {
+                const startStation = nodeById.get(String(start));
+                const endStation = nodeById.get(id);
+                onRoutingError({
+                    from: startStation?.name || start,
+                    to: endStation?.name || id,
+                    reason: hypotheticalSettingsEnabled ? 'closed-stations' : 'no-connection'
+                });
+            }
+            setPath([]);
+        } else {
+            if (onRoutingError) {
+                onRoutingError(null);
+            }
+            setPath(newPath);
+        }
+        
         setStart(id);
     }
 
