@@ -1,5 +1,19 @@
 import { Fragment } from "react";
 import { CircleMarker, Tooltip, Marker } from "react-leaflet";
+import { ZOOM_LEVELS } from "./constants";
+
+/**
+ * zoom level 12 - radius 5
+ * zoom level 13 - radius 7
+ * zoom level 14 - radius 9
+ * zoom level 15 - radius 11
+ * zoom level 16 - radius 13
+ */
+
+function getRadiusForZoom(zoom) {
+    const z = Math.min(16, Math.max(12, Math.round(zoom ?? 14)));
+    return ZOOM_LEVELS[z] ?? 9;
+}
 
 export default function StationLayer({
     nodes,
@@ -12,7 +26,9 @@ export default function StationLayer({
     redXIcon,
     onSingleClickStation,
     onDoubleClickStation,
+    zoomLevel,
 }) {
+
     return (
         <>
             {nodes.map((s) => {
@@ -23,11 +39,18 @@ export default function StationLayer({
                 const isClosed = hypotheticalSettingsEnabled && closedSet.has(id);
                 const dim = hasPath && !isOnPath && !isStart;
 
+                const baseRadius = getRadiusForZoom(zoomLevel);
+
+                const radius =
+                    isStart ? baseRadius + 2 :
+                        isOnPath ? baseRadius + 1 :
+                            baseRadius;
+
                 return (
                     <Fragment key={id}>
                         <CircleMarker
                             center={[s.lat, s.lon]}
-                            radius={isStart ? 11 : isOnPath ? 10 : 9}
+                            radius={radius}
                             eventHandlers={{
                                 click: (e) => {
                                     if (isStart || isClosed) return;
@@ -48,14 +71,14 @@ export default function StationLayer({
                                 color: isClosed
                                     ? "#ef4444"
                                     : isStart || isOnPath
-                                    ? "#22c55e"    
-                                    : "#ffffff",
+                                        ? "#22c55e"
+                                        : "#ffffff",
                                 weight: isStart || isOnPath || isClosed ? 3 : 2,
                                 fillColor: isClosed
                                     ? "#7f1d1d"
                                     : isOnPath
-                                    ? "#052e16"
-                                    : "#000000",
+                                        ? "#052e16"
+                                        : "#000000",
                                 fillOpacity: dim ? 0.6 : 1,
                                 opacity: dim ? 0.35 : 1,
                             }}
