@@ -1,9 +1,10 @@
-export function dijkstra(graph, start, end, closedStations = new Set()) {
+export function dijkstra(graph, start, end, closedStations = new Set(), closedLines = new Set()) {
     const distances = {};
     const previous = {};
     const unvisited = new Set(Object.keys(graph));
 
     const closedSet = new Set([...closedStations].map(String));
+    const closedLineSet = new Set([...closedLines].map(String));
 
     for (const node of unvisited){
         distances[node] = Infinity;
@@ -23,9 +24,15 @@ export function dijkstra(graph, start, end, closedStations = new Set()) {
 
         for (const edge of graph[current]) {
             const neighbour = String(edge.to);
+            const line = String(edge.line ?? "");
             
             // akip all the closed stations 
             if (closedSet.has(neighbour) && neighbour !== end) {
+                continue;
+            }
+
+            // Skip connections that belong to a closed line.
+            if (line && closedLineSet.has(line)) {
                 continue;
             }
             

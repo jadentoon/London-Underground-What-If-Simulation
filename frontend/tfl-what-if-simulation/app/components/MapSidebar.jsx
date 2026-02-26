@@ -13,6 +13,7 @@ export function MapSidebar({
     onResetClosures,
     effectiveLines,
     closedLines,
+    partialLines,
     onLineToggle,
     lineStatusLabel,
     lineStatusColor,
@@ -20,6 +21,8 @@ export function MapSidebar({
     isLiveLines,
     linesUpdatedAt,
 }) {
+    const partlyClosedLines = partialLines || new Set();
+
     return (
         <div
             style={{
@@ -142,7 +145,17 @@ export function MapSidebar({
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {effectiveLines.map((line) => {
                         const isClosed = closedLines.has(line.id);
+                        const isPartlyClosed = !isClosed && partlyClosedLines.has(line.id);
                         const disabled = !hypotheticalSettingsEnabled;
+                        const statusLabel = isClosed ? "Closed" : (isPartlyClosed ? "Partly Closed" : "Open");
+                        const statusColor = isClosed ? "#f87171" : (isPartlyClosed ? "#f59e0b" : "#22c55e");
+                        const buttonBackground = disabled
+                            ? (
+                                isClosed
+                                    ? "rgba(239, 68, 68, 0.18)"
+                                    : (isPartlyClosed ? "rgba(245, 158, 11, 0.18)" : "rgba(100, 116, 139, 0.2)")
+                            )
+                            : "rgba(0,0,0,0.3)";
                         return (
                             <button
                                 key={line.id}
@@ -154,12 +167,12 @@ export function MapSidebar({
                                     justifyContent: "space-between",
                                     width: "100%",
                                     padding: "10px 12px",
-                                    background: disabled ? "rgba(100, 116, 139, 0.2)" : "rgba(0,0,0,0.3)",
+                                    background: buttonBackground,
                                     border: `1px solid ${COLORS.border}`,
                                     borderRadius: 8,
                                     color: COLORS.text,
                                     cursor: disabled ? "not-allowed" : "pointer",
-                                    opacity: isClosed ? 0.6 : 1,
+                                    opacity: isClosed ? 0.6 : (isPartlyClosed ? 0.9 : 1),
                                     transition: "background-color 0.2s ease, opacity 0.2s ease",
                                 }}
                             >
@@ -171,13 +184,13 @@ export function MapSidebar({
                                             borderRadius: 999,
                                             backgroundColor: line.color,
                                             border: "1px solid #fff",
-                                            boxShadow: isClosed ? "none" : `0 0 8px ${line.color}80`,
+                                            boxShadow: isClosed ? "none" : (isPartlyClosed ? "0 0 8px #f59e0b80" : `0 0 8px ${line.color}80`),
                                         }}
                                     />
                                     {line.label}
                                 </span>
-                                <span style={{ fontSize: 12, color: isClosed ? "#f87171" : "#22c55e" }}>
-                                    {isClosed ? "Closed" : "Open"}
+                                <span style={{ fontSize: 12, color: statusColor }}>
+                                    {statusLabel}
                                 </span>
                             </button>
                         );

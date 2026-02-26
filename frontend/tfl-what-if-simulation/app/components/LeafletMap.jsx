@@ -106,6 +106,7 @@ function ClearOnMapClick({ enabled, onClear }) {
  * @param {function} onStationClick - callback when a station is double-clicked (close/open)
  * @param {function} onStationSelect - callback when a station is single-clicked (route planning)
  * @param {Set} closedLines - set of line ids that are marked as closed
+ * @param {Set} partialLines - set of line ids that are marked as partly closed
  * @param {function} onLineToggle - callback when a line is toggled on map
  * @returns {JSX.Element} Leaflet Map container.
  */
@@ -114,6 +115,7 @@ const LeafletMap = ({
     hypotheticalSettingsEnabled = false,
     closedStations = new Set(),
     closedLines = new Set(),
+    partialLines = new Set(),
     onToggleStationClosed,
     onLineToggle,
     onMapReady,
@@ -128,6 +130,7 @@ const LeafletMap = ({
 
     const redXIcon = useMemo(() => createRedXIcon(), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
+    const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
 
     const clearRoute = () => {
         setPath([]);
@@ -175,7 +178,8 @@ const LeafletMap = ({
 
         // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
-        const newPath = dijkstra(graph, String(start), id, stationsToAvoid);
+        const linesToAvoid = closedLineSet;
+        const newPath = dijkstra(graph, String(start), id, stationsToAvoid, linesToAvoid);
         
         //check if path is found 
         if (newPath.length === 0 && start !== id) {
@@ -183,10 +187,14 @@ const LeafletMap = ({
             if (onRoutingError) {
                 const startStation = nodeById.get(String(start));
                 const endStation = nodeById.get(id);
+                const hasClosedStations = hypotheticalSettingsEnabled && closedSet.size > 0;
+                const hasClosedLines = closedLineSet.size > 0;
                 onRoutingError({
                     from: startStation?.name || start,
                     to: endStation?.name || id,
-                    reason: hypotheticalSettingsEnabled ? 'closed-stations' : 'no-connection'
+                    reason: hasClosedStations
+                        ? "closed-stations"
+                        : (hasClosedLines ? "closed-lines" : "no-connection")
                 });
             }
             setPath([]);
@@ -246,6 +254,7 @@ const LeafletMap = ({
                 nodeById={nodeById} 
                 dimmed={hasPath} 
                 closedLines={closedLines} 
+                partialLines={partialLines}
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />

@@ -3,7 +3,17 @@ import { Polyline, Tooltip } from "react-leaflet";
 import { offsetSegment } from "./utils.js";
 import { LINE_COLOURS, LINE_LABELS, LINE_STYLE } from "./constants.js";
 
-export default function EdgeLayer({ groupedEdges, nodeById, dimmed, closedLines, onLineToggle, hypotheticalSettingsEnabled }) {
+const PARTIAL_LINE_COLOUR = "#f59e0b";
+
+export default function EdgeLayer({
+    groupedEdges,
+    nodeById,
+    dimmed,
+    closedLines,
+    partialLines = new Set(),
+    onLineToggle,
+    hypotheticalSettingsEnabled
+}) {
     const edgeCoreOpacity = dimmed ? 0.18 : LINE_STYLE.OPACITY;
     const edgeOutlineOpacity = dimmed ? 0.12 : LINE_STYLE.OPACITY;
 
@@ -26,15 +36,17 @@ export default function EdgeLayer({ groupedEdges, nodeById, dimmed, closedLines,
                     const positions = offsetSegment(base[0], base[1], offset);
 
                     const line = edge.line;
-                    const isClosedLine = 
-                        Boolean(hypotheticalSettingsEnabled) && closedLines.has(line);
+                    const isClosedLine = closedLines.has(line);
+                    const isPartlyClosedLine = !isClosedLine && partialLines.has(line);
 
                     const color = isClosedLine 
                         ? LINE_STYLE.CLOSED_LINE_COLOUR 
                         : (LINE_COLOURS[line] || "#3b82f6");
 
                     const label = LINE_LABELS[line] || line;
-                    const tooltipText = isClosedLine ? `${label} (closed)` : label;
+                    const tooltipText = isClosedLine
+                        ? `${label} (closed)`
+                        : (isPartlyClosedLine ? `${label} (partly closed)` : label);
 
                     return (
                         <Fragment key={`${pairKey}-${line}-${index}`}>
@@ -44,10 +56,10 @@ export default function EdgeLayer({ groupedEdges, nodeById, dimmed, closedLines,
                                 pathOptions={{
                                     color: isClosedLine 
                                         ? LINE_STYLE.CLOSED_LINE_OUTLINE 
-                                        : LINE_STYLE.OUTLINE_COLOR,
+                                        : (isPartlyClosedLine ? PARTIAL_LINE_COLOUR : LINE_STYLE.OUTLINE_COLOR),
                                     weight: isClosedLine 
                                         ? LINE_STYLE.OUTLINE_WEIGHT + 2 
-                                        : LINE_STYLE.OUTLINE_WEIGHT,
+                                        : (isPartlyClosedLine ? LINE_STYLE.OUTLINE_WEIGHT + 1 : LINE_STYLE.OUTLINE_WEIGHT),
                                     opacity: edgeOutlineOpacity,
                                     lineCap: "round",
                                     lineJoin: "round",
@@ -66,8 +78,9 @@ export default function EdgeLayer({ groupedEdges, nodeById, dimmed, closedLines,
                                     lineCap: "round",
                                     lineJoin: "round",
                                     smoothFactor: LINE_STYLE.SMOOTH_FACTOR,
+                                    dashArray: isPartlyClosedLine ? "8 8" : undefined,
                                     interactive: true,
-                                    className: isClosedLine ? "closed-line" : "",
+                                    className: isClosedLine ? "closed-line" : (isPartlyClosedLine ? "partial-line" : ""),
                                 }}
                                 eventHandlers={{
                                     dblclick: (e) => {
