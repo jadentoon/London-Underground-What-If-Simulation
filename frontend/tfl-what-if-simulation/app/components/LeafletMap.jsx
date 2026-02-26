@@ -12,7 +12,7 @@ import { dijkstra } from "../lib/pathfinding.js";
 import { buildGraph } from "../lib/graph.js";
 
 import { LONDON_CENTER } from "./mapComponents/constants.js";
-import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet } from "./mapComponents/utils.js";
+import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, buildUndirectedLineEdgeKey } from "./mapComponents/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "./mapComponents/icons.js";
 
 import RouteLayer from "./mapComponents/RouteLayer.jsx";
@@ -106,7 +106,7 @@ function ClearOnMapClick({ enabled, onClear }) {
  * @param {function} onStationClick - callback when a station is double-clicked (close/open)
  * @param {function} onStationSelect - callback when a station is single-clicked (route planning)
  * @param {Set} closedLines - set of line ids that are marked as closed
- * @param {Set} partialLines - set of line ids that are marked as partly closed
+ * @param {Map<string, Set<string>>} partialStationIdsByLine - live partial disruption station ids by line
  * @param {function} onLineToggle - callback when a line is toggled on map
  * @returns {JSX.Element} Leaflet Map container.
  */
@@ -115,7 +115,7 @@ const LeafletMap = ({
     hypotheticalSettingsEnabled = false,
     closedStations = new Set(),
     closedLines = new Set(),
-    partialLines = new Set(),
+    partialStationIdsByLine = new Map(),
     onToggleStationClosed,
     onLineToggle,
     onMapReady,
@@ -164,6 +164,28 @@ const LeafletMap = ({
         const unique = dedupeEdges(edges);
         return groupEdges(unique);
     }, [edges]);
+
+    const partialEdgeKeys = useMemo(() => {
+        if (hypotheticalSettingsEnabled) return new Set();
+        if (!partialStationIdsByLine || partialStationIdsByLine.size === 0) return new Set();
+
+        const out = new Set();
+        const uniqueEdges = dedupeEdges(edges);
+
+        for (const edge of uniqueEdges) {
+            const line = String(edge.line);
+            const affectedStops = partialStationIdsByLine.get(line);
+            if (!affectedStops || affectedStops.size < 2) continue;
+
+            const from = String(edge.from);
+            const to = String(edge.to);
+            if (affectedStops.has(from) && affectedStops.has(to)) {
+                out.add(buildUndirectedLineEdgeKey(from, to, line));
+            }
+        }
+
+        return out;
+    }, [edges, hypotheticalSettingsEnabled, partialStationIdsByLine]);
 
     function handleSingleClickStation(stationId) {
         const id = String(stationId);
@@ -254,7 +276,7 @@ const LeafletMap = ({
                 nodeById={nodeById} 
                 dimmed={hasPath} 
                 closedLines={closedLines} 
-                partialLines={partialLines}
+                partialEdgeKeys={partialEdgeKeys}
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />

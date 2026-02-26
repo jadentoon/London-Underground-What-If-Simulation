@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LINE_COLOURS, LINE_LABELS } from "./constants";
 
 const EMPTY_LINE_SET = new Set();
+const EMPTY_LINE_MAP = new Map();
 const LIVE_STATUS_POLL_MS = 60_000;
 const PARTIAL_CLOSURE_KEYWORDS = [
     "part closure",
@@ -50,9 +51,37 @@ function classifyLineStatus(status) {
     return "open";
 }
 
+function normalizeTflStopId(rawId) {
+    const id = String(rawId || "");
+    if (!id) return "";
+
+    // Convert platform-level NaPTAN IDs to station-level IDs used by our graph.
+    if (id.startsWith("9400ZZ")) {
+        let body = id.slice(4);
+        if (body.startsWith("ZZLU") && /\d$/.test(body)) {
+            body = body.slice(0, -1);
+        }
+        return `940G${body}`;
+    }
+
+    return id;
+}
+
+function getStopId(stop) {
+    const rawId =
+        stop?.stationNaptanId ||
+        stop?.stationNaptan ||
+        stop?.naptanId ||
+        stop?.id ||
+        stop?.parentId;
+
+    return normalizeTflStopId(rawId);
+}
+
 function getLiveLineDisruptions(lines) {
     const closed = new Set();
     const partial = new Set();
+    const partialStationIdsByLine = new Map();
 
     for (const line of lines) {
         const statuses = Array.isArray(line?.lineStatuses) ? line.lineStatuses : [];
@@ -73,10 +102,26 @@ function getLiveLineDisruptions(lines) {
             closed.add(line.id);
         } else if (lineState === "partial") {
             partial.add(line.id);
+
+            const affectedStops = new Set();
+            for (const status of statuses) {
+                if (classifyLineStatus(status) !== "partial") continue;
+                const stops = Array.isArray(status?.disruption?.affectedStops)
+                    ? status.disruption.affectedStops
+                    : [];
+                for (const stop of stops) {
+                    const stopId = getStopId(stop);
+                    if (stopId) affectedStops.add(stopId);
+                }
+            }
+
+            if (affectedStops.size > 0) {
+                partialStationIdsByLine.set(String(line.id), affectedStops);
+            }
         }
     }
 
-    return { closed, partial };
+    return { closed, partial, partialStationIdsByLine };
 }
 
 export function useLineStatus({
@@ -88,6 +133,7 @@ export function useLineStatus({
     const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
     const [liveClosedLines, setLiveClosedLines] = useState(new Set());
     const [livePartialLines, setLivePartialLines] = useState(new Set());
+    const [livePartialStationIdsByLine, setLivePartialStationIdsByLine] = useState(new Map());
 
     useEffect(() => {
         let cancelled = false;
@@ -95,7 +141,7 @@ export function useLineStatus({
 
         async function fetchLinesAndStatus() {
             try {
-                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube/Status");
+                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube/Status?detail=true");
                 if (!res.ok) throw new Error(`TfL API ${res.status}`);
 
                 const data = await res.json();
@@ -113,10 +159,11 @@ export function useLineStatus({
                     .filter(Boolean);
 
                 if (!cancelled) {
-                    const { closed, partial } = getLiveLineDisruptions(lines);
+                    const { closed, partial, partialStationIdsByLine } = getLiveLineDisruptions(lines);
                     setLineOptions(mapped.length ? mapped : FALLBACK_LINES);
                     setLiveClosedLines(closed);
                     setLivePartialLines(partial);
+                    setLivePartialStationIdsByLine(partialStationIdsByLine);
                     setLinesSource(mapped.length ? "live" : "fallback");
                     setLinesUpdatedAt(mapped.length ? new Date() : null);
                 }
@@ -125,6 +172,7 @@ export function useLineStatus({
                     setLineOptions(FALLBACK_LINES);
                     setLiveClosedLines(new Set());
                     setLivePartialLines(new Set());
+                    setLivePartialStationIdsByLine(new Map());
                     setLinesSource("fallback");
                     setLinesUpdatedAt(null);
                 }
@@ -143,6 +191,9 @@ export function useLineStatus({
     const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
     const effectiveClosedLines = hypotheticalSettingsEnabled ? simulatedClosedLines : liveClosedLines;
     const effectivePartialLines = hypotheticalSettingsEnabled ? EMPTY_LINE_SET : livePartialLines;
+    const effectivePartialStationIdsByLine = hypotheticalSettingsEnabled
+        ? EMPTY_LINE_MAP
+        : livePartialStationIdsByLine;
     const isLiveLines = !hypotheticalSettingsEnabled && linesSource === "live";
     const liveClosedCount = liveClosedLines.size;
     const livePartialCount = livePartialLines.size;
@@ -186,6 +237,7 @@ export function useLineStatus({
         effectiveLines,
         effectiveClosedLines,
         effectivePartialLines,
+        effectivePartialStationIdsByLine,
         isLiveLines,
         linesUpdatedAt,
         lineStatusLabel,

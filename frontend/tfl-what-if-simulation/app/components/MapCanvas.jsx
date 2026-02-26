@@ -194,6 +194,7 @@ export function MapCanvas() {
         effectiveLines,
         effectiveClosedLines,
         effectivePartialLines,
+        effectivePartialStationIdsByLine,
         isLiveLines,
         linesUpdatedAt,
         lineStatusLabel,
@@ -233,7 +234,7 @@ export function MapCanvas() {
                 closedStations={closedStations}
                 onToggleStationClosed={toggleClosedStation}
                 closedLines={effectiveClosedLines}
-                partialLines={effectivePartialLines}
+                partialStationIdsByLine={effectivePartialStationIdsByLine}
                 onLineToggle={handleLineToggle}
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}

@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { Polyline, Tooltip } from "react-leaflet";
-import { offsetSegment } from "./utils.js";
+import { offsetSegment, buildUndirectedLineEdgeKey } from "./utils.js";
 import { LINE_COLOURS, LINE_LABELS, LINE_STYLE } from "./constants.js";
 
 const PARTIAL_LINE_COLOUR = "#f59e0b";
@@ -10,7 +10,7 @@ export default function EdgeLayer({
     nodeById,
     dimmed,
     closedLines,
-    partialLines = new Set(),
+    partialEdgeKeys = new Set(),
     onLineToggle,
     hypotheticalSettingsEnabled
 }) {
@@ -36,8 +36,9 @@ export default function EdgeLayer({
                     const positions = offsetSegment(base[0], base[1], offset);
 
                     const line = edge.line;
+                    const edgeKey = buildUndirectedLineEdgeKey(edge.from, edge.to, line);
                     const isClosedLine = closedLines.has(line);
-                    const isPartlyClosedLine = !isClosedLine && partialLines.has(line);
+                    const isPartlyClosedLine = !isClosedLine && partialEdgeKeys.has(edgeKey);
 
                     const color = isClosedLine 
                         ? LINE_STYLE.CLOSED_LINE_COLOUR 
