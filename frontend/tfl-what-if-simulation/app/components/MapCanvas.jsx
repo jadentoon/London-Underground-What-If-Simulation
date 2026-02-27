@@ -364,6 +364,7 @@ export function MapCanvas() {
                 routeInfo={routeInfo}
                 COLORS={COLORS}
                 accentColor={accentColor}
+                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
 
             <RoutingErrorBox

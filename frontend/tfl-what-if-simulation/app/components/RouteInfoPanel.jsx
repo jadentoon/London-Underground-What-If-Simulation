@@ -6,16 +6,20 @@ export function RouteInfoPanel({
     routeInfo,
     COLORS,
     accentColour,
+    hypotheticalSettingsEnabled = false,
 }) {
     const hasPath = !!routeInfo?.hasPath;
     const stops = routeInfo?.stops ?? [];
+
+    const rightOffset = hypotheticalSettingsEnabled ? 70 : 16;
+    const bottomOffset = hypotheticalSettingsEnabled ? 70 : 16;
 
     return (
         <div
             style={{
                 position: "absolute",
-                right: 16,
-                bottom: 16,
+                right: rightOffset,
+                bottom: bottomOffset,
                 zIndex: 1200,
                 width: 340,
                 maxWidth: "calc(100vw - 32px)",
@@ -45,7 +49,7 @@ export function RouteInfoPanel({
                         <div style={{ fontWeight: 700, color: "#e2e8f0" }}>Route</div>
                         <div style={{ fontSize: 12, color: COLORS.textMuted }}>
                             {hasPath
-                                ? `${stops.length} stops: ${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
+                                ? `${stops.length - 1} stops: ${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
                                 : "No route selected"
                             }
                         </div>
@@ -92,7 +96,7 @@ export function RouteInfoPanel({
                             <div style={{ fontWeight: 800, color: "#e2e8f0" }}>Route Details</div>
                             <div style={{ fontSize: 12, color: COLORS.textMuted }}>
                                 {hasPath
-                                    ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}: ${stops.length} stops`
+                                    ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}: ${stops.length - 1} stops`
                                     : "Select two stations to generate a route"
                                 }
                             </div>
