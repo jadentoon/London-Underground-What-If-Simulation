@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
     MapContainer,
     TileLayer,
@@ -39,7 +39,7 @@ function MapEvents({ onChange }) {
         },
         // Trigger when zoom level changes.
         zoomend() {
-            onChange({ center: map.getCenter(), zoom: map.getZoom(),});
+            onChange({ center: map.getCenter(), zoom: map.getZoom(), });
         },
     });
 
@@ -111,12 +111,14 @@ const LeafletMap = ({
     onLineToggle,
     onMapReady,
     onStationsLoaded,
-    onRoutingError
+    onRoutingError,
+    onRouteChange,
 }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
 
     const [start, setStart] = useState(null);
+    const [end, setEnd] = useState(null);
     const [path, setPath] = useState([]);
 
     const [zoomLevel, setZoomLevel] = useState(14);
@@ -162,6 +164,7 @@ const LeafletMap = ({
 
         if (!start) {
             setStart(id);
+            setEnd(null);
             setPath([]);
             return;
         }
@@ -171,7 +174,7 @@ const LeafletMap = ({
         // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
         const newPath = dijkstra(graph, String(start), id, stationsToAvoid);
-        
+
         //check if path is found 
         if (newPath.length === 0 && start !== id) {
             // if not possible then show the routing error box 
@@ -191,8 +194,8 @@ const LeafletMap = ({
             }
             setPath(newPath);
         }
-        
-        setStart(id);
+
+        setEnd(id);
     }
 
     const pathSet = useMemo(() => new Set(path.map(String)), [path]);
@@ -206,6 +209,52 @@ const LeafletMap = ({
     }, [path, nodeById]);
 
     const hasPath = pathPositions.length > 1;
+
+    const pathStops = useMemo(() => {
+        return path
+            .map((id, idx) => {
+                const n = nodeById.get(String(id));
+                if (!n) return null;
+                return {
+                    id: String(id),
+                    index: idx,
+                    name: n.name,
+                    lat: n.lat,
+                    lon: n.lon,
+                }
+            })
+            .filter(Boolean);
+    }, [path, nodeById]);
+
+    const lastRouteKeyRef = useRef("");
+
+    useEffect(() => {
+        if (!onRouteChange) return;
+
+        const startNode = start ? nodeById.get(String(start)) : null;
+        const endNode = end ? nodeById.get(String(end)) : null;
+
+        const info = {
+            hasPath,
+            startId: start ? String(start) : null,
+            endId: endNode ? String(endNode.id) : (path.length ? String(path[path.length - 1]) : null),
+            startName: startNode?.name ?? null,
+            endName: endNode?.name ?? null,
+            stops: pathStops,
+        };
+
+        const key = JSON.stringify({
+            hasPath: info.hasPath,
+            startId: info.startId,
+            endId: info.endId,
+            stopIds: info.stops.map(s => s.id),
+        });
+
+        if (key === lastRouteKeyRef.current) return;
+        lastRouteKeyRef.current = key;
+
+        onRouteChange(info);
+    }, [onRouteChange, start, path, pathStops, nodeById]);
 
     const handleMapChange = (state) => {
         setZoomLevel(state.zoom);
@@ -241,11 +290,11 @@ const LeafletMap = ({
 
             <RouteLayer pathPositions={pathPositions} />
 
-            <EdgeLayer 
-                groupedEdges={groupedEdges} 
-                nodeById={nodeById} 
-                dimmed={hasPath} 
-                closedLines={closedLines} 
+            <EdgeLayer
+                groupedEdges={groupedEdges}
+                nodeById={nodeById}
+                dimmed={hasPath}
+                closedLines={closedLines}
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
