@@ -59,7 +59,7 @@ export function RoutingErrorBox({ error, COLORS, onClose }) {
                         )}
                         {error.reason === 'closed-lines' && (
                             <div style={{ marginTop: 6 }}>
-                                Line closures may be blocking all available paths.
+                                Line closures or partial closures may be blocking all available paths.
                             </div>
                         )}
                     </div>

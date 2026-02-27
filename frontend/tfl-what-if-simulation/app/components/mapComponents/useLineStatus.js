@@ -51,7 +51,7 @@ function classifyLineStatus(status) {
     return "open";
 }
 
-function normalizeTflStopId(rawId) {
+function normaliseTflStopId(rawId) {
     const id = String(rawId || "");
     if (!id) return "";
 
@@ -75,7 +75,7 @@ function getStopId(stop) {
         stop?.id ||
         stop?.parentId;
 
-    return normalizeTflStopId(rawId);
+    return normaliseTflStopId(rawId);
 }
 
 function getLiveLineDisruptions(lines) {

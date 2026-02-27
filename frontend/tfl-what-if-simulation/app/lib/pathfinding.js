@@ -1,10 +1,25 @@
-export function dijkstra(graph, start, end, closedStations = new Set(), closedLines = new Set()) {
+function buildUndirectedLineEdgeKey(from, to, line) {
+    const a = String(from);
+    const b = String(to);
+    const l = String(line);
+    return a < b ? `${a}-${b}-${l}` : `${b}-${a}-${l}`;
+}
+
+export function dijkstra(
+    graph,
+    start,
+    end,
+    closedStations = new Set(),
+    closedLines = new Set(),
+    blockedEdges = new Set()
+) {
     const distances = {};
     const previous = {};
     const unvisited = new Set(Object.keys(graph));
 
     const closedSet = new Set([...closedStations].map(String));
     const closedLineSet = new Set([...closedLines].map(String));
+    const blockedEdgeSet = new Set([...blockedEdges].map(String));
 
     for (const node of unvisited){
         distances[node] = Infinity;
@@ -25,6 +40,7 @@ export function dijkstra(graph, start, end, closedStations = new Set(), closedLi
         for (const edge of graph[current]) {
             const neighbour = String(edge.to);
             const line = String(edge.line ?? "");
+            const edgeKey = buildUndirectedLineEdgeKey(current, neighbour, line);
             
             // akip all the closed stations 
             if (closedSet.has(neighbour) && neighbour !== end) {
@@ -33,6 +49,11 @@ export function dijkstra(graph, start, end, closedStations = new Set(), closedLi
 
             // Skip connections that belong to a closed line.
             if (line && closedLineSet.has(line)) {
+                continue;
+            }
+
+            // Skip blocked segments (used for partial-closure station ranges).
+            if (blockedEdgeSet.has(edgeKey)) {
                 continue;
             }
             

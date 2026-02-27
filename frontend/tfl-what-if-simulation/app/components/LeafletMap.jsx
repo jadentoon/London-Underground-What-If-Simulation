@@ -201,7 +201,8 @@ const LeafletMap = ({
         // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
         const linesToAvoid = closedLineSet;
-        const newPath = dijkstra(graph, String(start), id, stationsToAvoid, linesToAvoid);
+        const blockedEdges = partialEdgeKeys;
+        const newPath = dijkstra(graph, String(start), id, stationsToAvoid, linesToAvoid, blockedEdges);
         
         //check if path is found 
         if (newPath.length === 0 && start !== id) {
@@ -210,13 +211,13 @@ const LeafletMap = ({
                 const startStation = nodeById.get(String(start));
                 const endStation = nodeById.get(id);
                 const hasClosedStations = hypotheticalSettingsEnabled && closedSet.size > 0;
-                const hasClosedLines = closedLineSet.size > 0;
+                const hasLineDisruptions = closedLineSet.size > 0 || partialEdgeKeys.size > 0;
                 onRoutingError({
                     from: startStation?.name || start,
                     to: endStation?.name || id,
                     reason: hasClosedStations
                         ? "closed-stations"
-                        : (hasClosedLines ? "closed-lines" : "no-connection")
+                        : (hasLineDisruptions ? "closed-lines" : "no-connection")
                 });
             }
             setPath([]);
