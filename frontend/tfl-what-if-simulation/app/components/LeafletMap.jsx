@@ -129,6 +129,7 @@ const LeafletMap = ({
     const clearRoute = () => {
         setPath([]);
         setStart(null);
+        setEnd(null);
     }
 
     useEffect(() => {
@@ -210,6 +211,17 @@ const LeafletMap = ({
 
     const hasPath = pathPositions.length > 1;
 
+    const edgeByPair = useMemo(() => {
+        const m = new Map();
+        for (const e of edges) {
+            const a = String(e.from);
+            const b = String(e.to);
+            m.set(`${a}|${b}`, e);
+            m.set(`${b}|${a}`, e);
+        }
+        return m;
+    }, [edges]);
+
     const pathStops = useMemo(() => {
         return path
             .map((id, idx) => {
@@ -226,35 +238,96 @@ const LeafletMap = ({
             .filter(Boolean);
     }, [path, nodeById]);
 
+    const pathLegs = useMemo(() => {
+        if (pathStops.length < 2) return [];
+        const legs = [];
+
+        for (let i = 0; i < pathStops.length - 1; i++) {
+            const from = pathStops[i];
+            const to = pathStops[i + 1];
+            const edge = edgeByPair.get(`${from.id}|${to.id}`);
+
+            legs.push({
+                fromId: from.id,
+                toId: to.id,
+                fromName: from.name,
+                toName: to.name,
+                line: edge?.line ?? null,
+                travelTimeSeconds: Number.isFinite(edge?.travel_time)
+                    ? Number(edge.travel_time)
+                    : 0,
+            });
+        }
+
+        return legs;
+    }, [pathStops, edgeByPair]);
+
+    const groupedLegs = useMemo(() => {
+        if (!pathLegs.length) return [];
+
+        const groups = [];
+        let current = null;
+
+        for (const leg of pathLegs) {
+            const line = leg.line ?? "unknown";
+
+            if (!current || current.line !== line) {
+                current = {
+                    line,
+                    fromName: leg.fromName,
+                    toName: leg.toName,
+                    stops: 1,
+                    travelTimeSeconds: leg.travelTimeSeconds ?? 0,
+                };
+                groups.push(current);
+            } else {
+                current.toName = leg.toName;
+                current.stops += 1;
+                current.travelTimeSeconds += leg.travelTimeSeconds ?? 0;
+            }
+        }
+
+        return groups;
+    }, [pathLegs]);
+
+    const totalTravelSeconds = useMemo(() => {
+        return pathLegs.reduce((sum, leg) => sum + (leg.travelTimeSeconds ?? 0), 0);
+    }, [pathLegs]);
+
+    const changeCount = useMemo(() => {
+        return Math.max(0, groupedLegs.length - 1);
+    }, [groupedLegs]);
+
     const lastRouteKeyRef = useRef("");
 
     useEffect(() => {
         if (!onRouteChange) return;
 
-        const startNode = start ? nodeById.get(String(start)) : null;
-        const endNode = end ? nodeById.get(String(end)) : null;
+        const hasPathNow = pathStops.length > 1;
 
-        const info = {
-            hasPath,
-            startId: start ? String(start) : null,
-            endId: endNode ? String(endNode.id) : (path.length ? String(path[path.length - 1]) : null),
-            startName: startNode?.name ?? null,
-            endName: endNode?.name ?? null,
+        const payload = {
+            hasPath: hasPathNow,
+            startName: pathStops[0]?.name ?? null,
+            endName: pathStops[pathStops.length - 1]?.name ?? null,
             stops: pathStops,
+            groupedLegs,
+            totalTravelSeconds,
+            changeCount,
         };
 
         const key = JSON.stringify({
-            hasPath: info.hasPath,
-            startId: info.startId,
-            endId: info.endId,
-            stopIds: info.stops.map(s => s.id),
+            hasPath: payload.hasPath,
+            stopIds: payload.stops.map(s => s.id),
+            grouped: payload.groupedLegs.map(g => `${g.line}|${g.fromName}|${g.toName}|${g.stops}|${g.travelTimeSeconds}`),
+            total: payload.totalTravelSeconds,
+            changes: payload.changeCount,
         });
 
         if (key === lastRouteKeyRef.current) return;
         lastRouteKeyRef.current = key;
 
-        onRouteChange(info);
-    }, [onRouteChange, start, path, pathStops, nodeById]);
+        onRouteChange(payload);
+    }, [onRouteChange, pathStops, groupedLegs, totalTravelSeconds, changeCount]);
 
     const handleMapChange = (state) => {
         setZoomLevel(state.zoom);

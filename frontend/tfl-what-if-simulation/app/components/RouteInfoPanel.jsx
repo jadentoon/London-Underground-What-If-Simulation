@@ -1,5 +1,14 @@
 'use client';
 
+function formatDuration(seconds) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "-";
+    const mins = Math.round(seconds / 60);
+    if (mins < 60) return `${mins} min`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+}
+
 export function RouteInfoPanel({
     isOpen,
     onToggle,
@@ -7,9 +16,15 @@ export function RouteInfoPanel({
     COLORS,
     accentColour,
     hypotheticalSettingsEnabled = false,
+    lineColours,
+    lineLabels
 }) {
     const hasPath = !!routeInfo?.hasPath;
     const stops = routeInfo?.stops ?? [];
+
+    const groupedLegs = routeInfo?.groupedLegs ?? [];
+    const totalLabel = formatDuration(routeInfo?.totalTravelSeconds);
+    const changes = routeInfo?.changeCount ?? 0;
 
     const rightOffset = hypotheticalSettingsEnabled ? 70 : 16;
     const bottomOffset = hypotheticalSettingsEnabled ? 70 : 16;
@@ -49,7 +64,7 @@ export function RouteInfoPanel({
                         <div style={{ fontWeight: 700, color: "#e2e8f0" }}>Route</div>
                         <div style={{ fontSize: 12, color: COLORS.textMuted }}>
                             {hasPath
-                                ? `${stops.length - 1} stops: ${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
+                                ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
                                 : "No route selected"
                             }
                         </div>
@@ -110,7 +125,7 @@ export function RouteInfoPanel({
                                 background: "rgba(0,0,0,0.15)",
                                 color: COLORS.text,
                                 padding: "6px 10px",
-                                cursor: "pointer", 
+                                cursor: "pointer",
                             }}
                         >
                             Close
@@ -125,18 +140,67 @@ export function RouteInfoPanel({
                             </div>
                         ) : (
                             <>
-                                {/* Stops List */}
-                                <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
-                                    Stops (in order)
+                                <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontSize: 12, color: COLORS.textMuted, marginBottom: 8 }}>
+                                        Line Segments
+                                    </div>
                                 </div>
 
-                                <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6}}>
-                                    {stops.map((s) => (
-                                        <li key={s.id} style={{ fontSize: 13, lineHeight: 1.3 }}>
-                                            <span style={{ color: "#e2e8f0, fonWeight: 650" }}>{s.name}</span>
-                                        </li>
-                                    ))}
-                                </ol>
+                                <div style={{ display: "grid", gap: 10 }}>
+                                    {groupedLegs.map((g, idx) => {
+                                        const colour = lineColours?.[g.line] ?? "#94a3b8";
+                                        const label = g.line === "unknown"
+                                            ? "Unknown line"
+                                            : `${(lineLabels?.[g.line] ?? g.line)}`;
+
+                                        return (
+                                            <div
+                                                key={`${g.line}-${idx}-${g.fromName}-${g.toName}`}
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "flex-start",
+                                                    justifyContent: "space-between",
+                                                    gap: 12,
+                                                    padding: "10px 10px",
+                                                    borderRadius: 12,
+                                                    border: `1px solid ${COLORS.border}`,
+                                                    background: "rgba(0,0,0,0.12)",
+                                                }}
+                                            >
+                                                <div style={{ display: "flex", gap: 10, minWidth: 0 }}>
+                                                    {/* dot */}
+                                                    <div
+                                                        style={{
+                                                            width: 10,
+                                                            height: 10,
+                                                            marginTop: 4,
+                                                            borderRadius: 999,
+                                                            background: colour,
+                                                            boxShadow: "0 0 0 2px rgba(0,0,0,0.25)",
+                                                            flex: "0 0 auto",
+                                                        }}
+                                                        title={label}
+                                                    />
+
+                                                    {/* text */}
+                                                    <div style={{ minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 750, color: "#e2e8f0", fontSize: 13 }}>
+                                                            {label}
+                                                        </div>
+                                                        <div style={{ fontSize: 12, color: COLORS.textMuted }}>
+                                                            {g.fromName} {"->"} {g.toName} • {g.stops} stop{g.stops === 1 ? "" : "s"}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* time */}
+                                                <div style={{ whiteSpace: "nowrap", fontWeight: 800, color: "#e2e8f0" }}>
+                                                    {formatDuration(g.travelTimeSeconds)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </>
                         )}
                     </div>

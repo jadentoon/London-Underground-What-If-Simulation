@@ -365,6 +365,8 @@ export function MapCanvas() {
                 COLORS={COLORS}
                 accentColor={accentColor}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                lineColours={LINE_COLOURS}
+                lineLabels={LINE_LABELS}
             />
 
             <RoutingErrorBox
