@@ -113,7 +113,8 @@ const LeafletMap = ({
     onLineToggle,
     onMapReady,
     onStationsLoaded,
-    onRoutingError
+    onRoutingError,
+    liveClosedStations = new Set(),
 }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
@@ -126,6 +127,7 @@ const LeafletMap = ({
     const redXIcon = useMemo(() => createRedXIcon(), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
     const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
+    const liveClosedSet = new Set(Array.from(liveClosedStations ?? []).map((id) => String(id)));
 
     const clearRoute = () => {
         setPath([]);
@@ -294,6 +296,7 @@ const LeafletMap = ({
                 onSingleClickStation={handleSingleClickStation}
                 onDoubleClickStation={(id) => onToggleStationClosed?.(id)}
                 zoomLevel={zoomLevel}
+                liveClosedSet={liveClosedSet}
             />
         </MapContainer>
     )

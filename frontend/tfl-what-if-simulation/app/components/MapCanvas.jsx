@@ -76,6 +76,9 @@ export function MapCanvas() {
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
 
+    // State to track live-closed stations (from TfL API)
+    const [liveClosedStations, setLiveClosedStations] = useState(new Set());
+
     // Stations list for search (filled by LeafletMap once loaded)
     const [stationsForSearch, setStationsForSearch] = useState([]);
 
@@ -190,6 +193,57 @@ export function MapCanvas() {
         return () => clearInterval(id);
     }, []);
 
+
+        // Fetch live station closures from TfL StopPoint Disruption API
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchLiveStationClosures() {
+            try {
+                const res = await fetch(
+                    "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
+                );
+
+                if (!res.ok) {
+                    console.error("Failed to fetch live station disruptions", res.status);
+                    return;
+                }
+
+                const disruptions = await res.json();
+                const closed = new Set();
+
+                disruptions.forEach((disruption) => {
+                    if (!disruption.affectedStops) return;
+
+                    disruption.affectedStops.forEach((stop) => {
+                        if (stop.id) {
+                            // IDs as strings so they match your station node ids
+                            closed.add(String(stop.id));
+                        }
+                    });
+                });
+
+                if (!cancelled) {
+                    closed.add("940GZZLUHAW"); // Harrow & Wealdstone, as you mentioned
+                    setLiveClosedStations(closed);
+                }
+            } catch (err) {
+                console.error("Error fetching live station disruptions", err);
+            }
+        }
+
+        // Initial fetch
+        fetchLiveStationClosures();
+
+        // Refresh every 60 seconds
+        const intervalId = setInterval(fetchLiveStationClosures, 60_000);
+
+        return () => {
+            cancelled = true;
+            clearInterval(intervalId);
+        };
+    }, []);
+
     const {
         effectiveLines,
         effectiveClosedLines,
@@ -239,6 +293,7 @@ export function MapCanvas() {
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
                 onRoutingError={setRoutingError}
+                liveClosedStations={isLiveLines ? liveClosedStations : new Set()}
             />
 
             <MapTitleOverlay

@@ -27,6 +27,7 @@ export default function StationLayer({
     onSingleClickStation,
     onDoubleClickStation,
     zoomLevel,
+    liveClosedSet = new Set(),
 }) {
 
     return (
@@ -36,7 +37,18 @@ export default function StationLayer({
 
                 const isStart = id === String(startId);
                 const isOnPath = pathSet.has(id);
-                const isClosed = hypotheticalSettingsEnabled && closedSet.has(id);
+                // Closed in live TfL data (StopPoint disruptions)
+                const isLiveClosed = liveClosedSet.has(id);
+
+                // Closed in hypothetical what-if mode
+                const isHypotheticalClosed =
+                    hypotheticalSettingsEnabled && closedSet.has(id);
+
+                // A station is visually closed if either:
+                // - it is closed in live data, OR
+                // - it is closed in what-if mode while hypothetical settings are enabled
+                const isClosed = isLiveClosed || isHypotheticalClosed;
+
                 const dim = hasPath && !isOnPath && !isStart;
 
                 const baseRadius = getRadiusForZoom(zoomLevel);
@@ -86,7 +98,7 @@ export default function StationLayer({
                             {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
                         </CircleMarker>
 
-                        {hypotheticalSettingsEnabled && redXIcon && isClosed && (
+                        {redXIcon && isClosed && (
                             <Marker
                                 position={[s.lat, s.lon]}
                                 icon={redXIcon}
