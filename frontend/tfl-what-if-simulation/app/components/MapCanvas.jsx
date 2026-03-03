@@ -13,8 +13,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { LONDON_CENTER } from "./mapComponents/constants";
-import { useLineStatus } from "./mapComponents/useLineStatus";
+import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "./mapComponents/constants";
 import { MapLeafletChrome } from "./MapLeafletChrome";
 import { MapTitleOverlay } from "./MapTitleOverlay";
 import { MapSearchBox } from "./MapSearchBox";
@@ -38,6 +37,12 @@ const COLORS = {
 };
 
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
+
+const FALLBACK_LINES = Object.keys(LINE_COLOURS).map((id) => ({
+    id,
+    label: LINE_LABELS[id] || id,
+    color: LINE_COLOURS[id],
+}));
 
 /**
  * MapCanvas
@@ -82,11 +87,12 @@ export function MapCanvas() {
     //Search input value
     const [stationQuery, setStationQuery] = useState("");
 
-    // State to track user-simulated closed lines in What-If mode.
+    // State to track closed lines (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
-
-    // State to track live closed stations from the TfL API (by station id)
-    const [liveClosedStations, setLiveClosedStations] = useState(new Set());
+    // Live line metadata (default to fallback)
+    const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
+    const [linesSource, setLinesSource] = useState("fallback");
+    const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
 
     // State to track live closed stations from the TfL API (by station id)
     const [liveClosedStations, setLiveClosedStations] = useState(new Set());
@@ -151,8 +157,6 @@ export function MapCanvas() {
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
-<<<<<<< Updated upstream
-=======
     // Fetch live line metadata from TfL Unified API (client-side)
     useEffect(() => {
         let cancelled = false;
@@ -193,17 +197,23 @@ export function MapCanvas() {
 
 
     useEffect(() => {
+    // Only bother hitting TfL when live mode is ON
+    if (!liveMode) return;
+
     let cancelled = false;
 
     async function fetchLiveStationClosures() {
         try {
-            // TfL StopPoint disruption data by mode
             const res = await fetch(
                 "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
             );
 
             if (!res.ok) {
                 console.error("Failed to fetch live station disruptions", res.status);
+                if (!cancelled) {
+                    // In live mode, if station fetch fails, don't crash – just clear live closures
+                    setLiveClosedStations(new Set());
+                }
                 return;
             }
 
@@ -211,11 +221,15 @@ export function MapCanvas() {
 
             const closed = new Set();
 
-            // Each disruption normally lists affectedStops with StopPoint ids
             disruptions.forEach((disruption) => {
-                if (!disruption.affectedStops) return;
+                // TfL disruptions usually list affected stops; depending on the exact payload
+                // this may be `affectedStops` or `affectedStopPoints`. We defensively check both.
+                const stops =
+                    disruption.affectedStops ||
+                    disruption.affectedStopPoints ||
+                    [];
 
-                disruption.affectedStops.forEach((stop) => {
+                stops.forEach((stop) => {
                     if (stop.id) {
                         closed.add(String(stop.id));
                     }
@@ -223,50 +237,32 @@ export function MapCanvas() {
             });
 
             if (!cancelled) {
-                setLiveClosedStations(closed);
+
+    //  FORCE-CLOSED TEST STATION (Harrow & Wealdstone)
+    closed.add("940GZZLUHAW");
+
+    setLiveClosedStations(closed);
             }
         } catch (err) {
             console.error("Error fetching live station disruptions", err);
+            if (!cancelled) {
+                setLiveClosedStations(new Set());
+            }
         }
-
-
-        const disruptions = await res.json();
-
-console.log("Disruptions from TfL:", disruptions);
-
-const closed = new Set();
-
-disruptions.forEach((disruption) => {
-    if (!disruption.affectedStops) return;
-
-    disruption.affectedStops.forEach((stop) => {
-        if (stop.id) {
-            closed.add(String(stop.id));
-        }
-    });
-});
-
-console.log("Closed station IDs from disruptions:", Array.from(closed));
-
-
     }
 
     // Initial fetch
     fetchLiveStationClosures();
 
-    // Refresh every 60 seconds
+    // Refresh every 60 seconds while live mode is on
     const intervalId = setInterval(fetchLiveStationClosures, 60_000);
 
     return () => {
         cancelled = true;
         clearInterval(intervalId);
     };
-}, []);
+}, [liveMode]);
 
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     /**
      * Reset the map view to its original center and zoom level.
      * Also resets any filters / what-if state to the original defaults.
@@ -312,20 +308,15 @@ console.log("Closed station IDs from disruptions:", Array.from(closed));
         return () => clearInterval(id);
     }, []);
 
-    const {
-        effectiveLines,
-        effectiveClosedLines,
-        effectivePartialLines,
-        effectivePartialStationIdsByLine,
-        isLiveLines,
-        linesUpdatedAt,
-        lineStatusLabel,
-        lineStatusColor,
-        lineStatusBg,
-    } = useLineStatus({
-        hypotheticalSettingsEnabled,
-        simulatedClosedLines: closedLines,
-    });
+    const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
+    const isLiveLines = !hypotheticalSettingsEnabled && linesSource === "live";
+    const lineStatusLabel = hypotheticalSettingsEnabled
+        ? "Fallback (What-If mode)"
+        : isLiveLines
+            ? "Live TfL data"
+            : "Fallback (TfL API unavailable)";
+    const lineStatusColor = isLiveLines ? "#22c55e" : "#f97316";
+    const lineStatusBg = isLiveLines ? "rgba(34, 197, 94, 0.12)" : "rgba(249, 115, 22, 0.12)";
 
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
@@ -355,8 +346,7 @@ console.log("Closed station IDs from disruptions:", Array.from(closed));
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onToggleStationClosed={toggleClosedStation}
-                closedLines={effectiveClosedLines}
-                partialStationIdsByLine={effectivePartialStationIdsByLine}
+                closedLines={closedLines}
                 onLineToggle={handleLineToggle}
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
@@ -404,8 +394,7 @@ console.log("Closed station IDs from disruptions:", Array.from(closed));
                 onToggleWhatIfMode={handleToggleWhatIfMode}
                 onResetClosures={handleResetClosures}
                 effectiveLines={effectiveLines}
-                closedLines={effectiveClosedLines}
-                partialLines={effectivePartialLines}
+                closedLines={closedLines}
                 onLineToggle={handleLineToggle}
                 lineStatusLabel={lineStatusLabel}
                 lineStatusColor={lineStatusColor}
