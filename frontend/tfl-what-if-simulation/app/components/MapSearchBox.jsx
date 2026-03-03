@@ -3,6 +3,8 @@
  * 
  */
 
+import { useState } from "react";
+
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
     COLORS,
@@ -13,22 +15,53 @@ export function MapSearchBox({
     onSelectStation,
     onEnterFirstMatch,
 }) {
+    const [isOpen, setIsOpen] = useState(false);
+
     return (
-        <div
-            style={{
-                position: "fixed",
-                top: hypotheticalSettingsEnabled ? 85 : 16,
-                right: 16,
-                width: 280,
-                background: COLORS.card,
-                backdropFilter: "blur(8px)",
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 8,
-                padding: 10,
-                zIndex: 1000,
-                fontFamily: "monospace",
-            }}
-        >
+        <>
+            {/* Search Icon Button */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                style={{
+                    position: "fixed",
+                    top: hypotheticalSettingsEnabled ? 150 : 170,
+                    right: 16,
+                    width: 40,
+                    height: 40,
+                    background: COLORS.card,
+                    backdropFilter: "blur(8px)",
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    zIndex: 1001,
+                    color: COLORS.text,
+                    fontSize: 18,
+                }}
+                title={isOpen ? "Close search" : "Open search"}
+            >
+                {isOpen ? "✕" : "🔍"}
+            </button>
+
+            {/* Search Box */}
+            <div
+                style={{
+                    position: "fixed",
+                    top: hypotheticalSettingsEnabled ? 150 : 170,
+                    right: isOpen ? 64 : -320,
+                    width: 280,
+                    background: COLORS.card,
+                    backdropFilter: "blur(8px)",
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 8,
+                    padding: 10,
+                    zIndex: 1000,
+                    fontFamily: "monospace",
+                    transition: "right 0.3s ease-in-out",
+                }}
+            >
             <input
                 value={stationQuery}
                 onChange={(e) => onStationQueryChange(e.target.value)}
@@ -72,6 +105,7 @@ export function MapSearchBox({
                     ))}
                 </div>
             )}
-        </div>
+            </div>
+        </>
     );
 }

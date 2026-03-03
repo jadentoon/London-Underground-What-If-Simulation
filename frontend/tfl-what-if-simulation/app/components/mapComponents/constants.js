@@ -41,3 +41,18 @@ export const LINE_LABELS = {
     "victoria": "Victoria",
     "waterloo-city": "Waterloo & City",
 };
+
+/**
+ * zoom level 12 - radius 5
+ * zoom level 13 - radius 7
+ * zoom level 14 - radius 9
+ * zoom level 15 - radius 11
+ * zoom level 16 - radius 13
+ */
+export const ZOOM_LEVELS = {
+    12: 5,
+    13: 7,
+    14: 9,
+    15: 11,
+    16: 13
+}

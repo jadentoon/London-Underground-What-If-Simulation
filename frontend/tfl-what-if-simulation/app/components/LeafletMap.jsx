@@ -33,28 +33,21 @@ setupLeafletDefaultIcons();
  */
 function MapEvents({ onChange }) {
     const map = useMapEvents({
-        // Trigger when map stops moving after pan.
-        moveend(e) {
-            const map = e.target;
-            onChange({
-                center: map.getCenter(),
-                zoom: map.getZoom(),
-            });
+        // Trigger when map stops moving after pan.0
+        moveend() {
+            onChange({ center: map.getCenter(), zoom: map.getZoom() });
         },
         // Trigger when zoom level changes.
-        zoomend(e) {
-            const map = e.target;
-            onChange({
-                center: map.getCenter(),
-                zoom: map.getZoom(),
-            });
+        zoomend() {
+            onChange({ center: map.getCenter(), zoom: map.getZoom(),});
         },
     });
 
     // Hard disable double-click zoom (guards against Leaflet defaults)
     useEffect(() => {
         map.doubleClickZoom.disable();
-    }, [map]);
+        onChange({ center: map.getCenter(), zoom: map.getZoom() });
+    }, [map, onChange]);
 
     return null;
 }
@@ -127,6 +120,8 @@ const LeafletMap = ({
 
     const [start, setStart] = useState(null);
     const [path, setPath] = useState([]);
+
+    const [zoomLevel, setZoomLevel] = useState(14);
 
     const redXIcon = useMemo(() => createRedXIcon(), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
@@ -243,10 +238,15 @@ const LeafletMap = ({
 
     const hasPath = pathPositions.length > 1;
 
+    const handleMapChange = (state) => {
+        setZoomLevel(state.zoom);
+        onMapChange?.(state);
+    }
+
     return (
         <MapContainer
             center={LONDON_CENTER}
-            zoom={14}
+            zoom={zoomLevel}
             minZoom={12}
             maxZoom={16}
             scrollWheelZoom
@@ -266,7 +266,7 @@ const LeafletMap = ({
             />
 
             {/* Camera Change Listener */}
-            <MapEvents onChange={onMapChange} />
+            <MapEvents onChange={handleMapChange} />
             <MapInstance onReady={onMapReady} />
             <ClearOnMapClick enabled={hasPath} onClear={clearRoute} />
 
@@ -293,6 +293,7 @@ const LeafletMap = ({
                 redXIcon={redXIcon}
                 onSingleClickStation={handleSingleClickStation}
                 onDoubleClickStation={(id) => onToggleStationClosed?.(id)}
+                zoomLevel={zoomLevel}
             />
         </MapContainer>
     )
