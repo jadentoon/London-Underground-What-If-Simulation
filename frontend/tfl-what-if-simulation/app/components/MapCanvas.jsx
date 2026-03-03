@@ -88,6 +88,9 @@ export function MapCanvas() {
     // State to track live closed stations from the TfL API (by station id)
     const [liveClosedStations, setLiveClosedStations] = useState(new Set());
 
+    // State to track live closed stations from the TfL API (by station id)
+    const [liveClosedStations, setLiveClosedStations] = useState(new Set());
+
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
 
@@ -260,6 +263,9 @@ console.log("Closed station IDs from disruptions:", Array.from(closed));
     };
 }, []);
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     /**
      * Reset the map view to its original center and zoom level.

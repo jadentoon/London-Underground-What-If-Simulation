@@ -25,6 +25,7 @@ export default function StationLayer({
                 const isOnPath = pathSet.has(id);
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 // Closed in live TfL data
 const isLiveClosed =
     liveClosedSet.has(id) ||
@@ -38,6 +39,8 @@ const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);
 // - it is closed in what-if mode while hypothetical settings are enabled
 const isClosed = isLiveClosed || isHypotheticalClosed;
 =======
+=======
+>>>>>>> Stashed changes
                 // ✅ Distinguish what-if vs live closures
                 const isClosedWhatIf =
                     hypotheticalSettingsEnabled && closedSet.has(id);
@@ -47,6 +50,9 @@ const isClosed = isLiveClosed || isHypotheticalClosed;
                 // Station is considered closed if either live OR what-if says so
                 const isClosed = isClosedWhatIf || isClosedLive;
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                 const dim = hasPath && !isOnPath && !isStart;
 
@@ -92,7 +98,12 @@ const isClosed = isLiveClosed || isHypotheticalClosed;
                         </CircleMarker>
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                         {redXIcon && (isLiveClosed || (hypotheticalSettingsEnabled && isHypotheticalClosed)) &&  (
+=======
+                        {/* ✅ Now shows X for live closures too */}
+                        {redXIcon && isClosed && (
+>>>>>>> Stashed changes
 =======
                         {/* ✅ Now shows X for live closures too */}
                         {redXIcon && isClosed && (

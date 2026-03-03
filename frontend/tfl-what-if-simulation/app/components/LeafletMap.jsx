@@ -139,6 +139,11 @@ const LeafletMap = ({
     [liveClosedStations]
     );
 
+    const liveClosedSet = useMemo(
+    () => normaliseIdSet(liveClosedStations),
+    [liveClosedStations]
+    );
+
     const clearRoute = () => {
         setPath([]);
         setStart(null);
