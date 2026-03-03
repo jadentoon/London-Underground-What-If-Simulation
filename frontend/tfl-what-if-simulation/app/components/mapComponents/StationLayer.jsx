@@ -7,14 +7,14 @@ export default function StationLayer({
     setStartId,
     pathSet,
     closedSet,
-    liveClosedSet,                 // ✅ NEW
+    liveClosedSet,                 
     hasPath,
     hypotheticalSettingsEnabled,
     redXIcon,
     onSingleClickStation,
     onDoubleClickStation,
+    liveClosedSet = new Set(),
 }) {
-    const safeLiveClosedSet = liveClosedSet ?? new Set();
 
     return (
         <>
