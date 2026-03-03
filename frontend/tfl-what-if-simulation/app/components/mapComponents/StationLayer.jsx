@@ -7,6 +7,7 @@ export default function StationLayer({
     setStartId,
     pathSet,
     closedSet,
+    liveClosedSet,                 // ✅ NEW
     hasPath,
     hypotheticalSettingsEnabled,
     redXIcon,
@@ -14,14 +15,16 @@ export default function StationLayer({
     onDoubleClickStation,
     liveClosedSet = new Set(),
 }) {
+    const safeLiveClosedSet = liveClosedSet ?? new Set();
+
     return (
         <>
             {nodes.map((s) => {
                 const id = String(s.id);
-
                 const isStart = id === String(startId);
                 const isOnPath = pathSet.has(id);
 
+<<<<<<< Updated upstream
                 // Closed in live TfL data
 const isLiveClosed =
     liveClosedSet.has(id) ||
@@ -34,6 +37,17 @@ const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);
 // - it is closed in live data (any mode), OR
 // - it is closed in what-if mode while hypothetical settings are enabled
 const isClosed = isLiveClosed || isHypotheticalClosed;
+=======
+                // ✅ Distinguish what-if vs live closures
+                const isClosedWhatIf =
+                    hypotheticalSettingsEnabled && closedSet.has(id);
+                const isClosedLive =
+                    !hypotheticalSettingsEnabled && safeLiveClosedSet.has(id);
+
+                // Station is considered closed if either live OR what-if says so
+                const isClosed = isClosedWhatIf || isClosedLive;
+
+>>>>>>> Stashed changes
                 const dim = hasPath && !isOnPath && !isStart;
 
                 return (
@@ -43,7 +57,8 @@ const isClosed = isLiveClosed || isHypotheticalClosed;
                             radius={isStart ? 11 : isOnPath ? 10 : 9}
                             eventHandlers={{
                                 click: (e) => {
-                                    if (isStart || isClosed) return;
+                                    // still block clicking closed stations
+                                    if (isStart || isClosedWhatIf) return;
                                     e?.originalEvent?.stopPropagation?.();
                                     onSingleClickStation(id);
                                 },
@@ -61,7 +76,7 @@ const isClosed = isLiveClosed || isHypotheticalClosed;
                                 color: isClosed
                                     ? "#ef4444"
                                     : isStart || isOnPath
-                                    ? "#22c55e"    
+                                    ? "#22c55e"
                                     : "#ffffff",
                                 weight: isStart || isOnPath || isClosed ? 3 : 2,
                                 fillColor: isClosed
@@ -76,7 +91,12 @@ const isClosed = isLiveClosed || isHypotheticalClosed;
                             {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
                         </CircleMarker>
 
+<<<<<<< Updated upstream
                         {redXIcon && (isLiveClosed || (hypotheticalSettingsEnabled && isHypotheticalClosed)) &&  (
+=======
+                        {/* ✅ Now shows X for live closures too */}
+                        {redXIcon && isClosed && (
+>>>>>>> Stashed changes
                             <Marker
                                 position={[s.lat, s.lon]}
                                 icon={redXIcon}

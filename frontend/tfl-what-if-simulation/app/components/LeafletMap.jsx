@@ -134,6 +134,11 @@ const LeafletMap = ({
     const liveClosedSet = useMemo(() => normaliseIdSet(liveClosedStations),[liveClosedStations]);
     const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
 
+    const liveClosedSet = useMemo(
+    () => normaliseIdSet(liveClosedStations),
+    [liveClosedStations]
+    );
+
     const clearRoute = () => {
         setPath([]);
         setStart(null);
@@ -290,6 +295,7 @@ const LeafletMap = ({
                 setStartId={setStart}
                 pathSet={pathSet}
                 closedSet={closedSet}
+                liveClosedSet={liveClosedSet} 
                 hasPath={hasPath}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 redXIcon={redXIcon}

@@ -85,6 +85,9 @@ export function MapCanvas() {
     // State to track user-simulated closed lines in What-If mode.
     const [closedLines, setClosedLines] = useState(new Set());
 
+    // State to track live closed stations from the TfL API (by station id)
+    const [liveClosedStations, setLiveClosedStations] = useState(new Set());
+
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
 
@@ -145,6 +148,119 @@ export function MapCanvas() {
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
+<<<<<<< Updated upstream
+=======
+    // Fetch live line metadata from TfL Unified API (client-side)
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchLines() {
+            try {
+                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube");
+                if (!res.ok) throw new Error(`TfL API ${res.status}`);
+                const data = await res.json();
+                const mapped = data
+                    .map((line) => {
+                        const color = LINE_COLOURS[line.id];
+                        if (!color) return null;
+                        return {
+                            id: line.id,
+                            label: line.name || line.id,
+                            color,
+                        };
+                    })
+                    .filter(Boolean);
+                if (!cancelled && mapped.length) {
+                    setLineOptions(mapped);
+                    setLinesSource("live");
+                    setLinesUpdatedAt(new Date());
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setLineOptions(FALLBACK_LINES);
+                    setLinesSource("fallback");
+                    setLinesUpdatedAt(null);
+                }
+            }
+        }
+        fetchLines();
+        return () => { cancelled = true; };
+    }, []);
+
+
+
+
+    useEffect(() => {
+    let cancelled = false;
+
+    async function fetchLiveStationClosures() {
+        try {
+            // TfL StopPoint disruption data by mode
+            const res = await fetch(
+                "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
+            );
+
+            if (!res.ok) {
+                console.error("Failed to fetch live station disruptions", res.status);
+                return;
+            }
+
+            const disruptions = await res.json();
+
+            const closed = new Set();
+
+            // Each disruption normally lists affectedStops with StopPoint ids
+            disruptions.forEach((disruption) => {
+                if (!disruption.affectedStops) return;
+
+                disruption.affectedStops.forEach((stop) => {
+                    if (stop.id) {
+                        closed.add(String(stop.id));
+                    }
+                });
+            });
+
+            if (!cancelled) {
+                setLiveClosedStations(closed);
+            }
+        } catch (err) {
+            console.error("Error fetching live station disruptions", err);
+        }
+
+
+        const disruptions = await res.json();
+
+console.log("Disruptions from TfL:", disruptions);
+
+const closed = new Set();
+
+disruptions.forEach((disruption) => {
+    if (!disruption.affectedStops) return;
+
+    disruption.affectedStops.forEach((stop) => {
+        if (stop.id) {
+            closed.add(String(stop.id));
+        }
+    });
+});
+
+console.log("Closed station IDs from disruptions:", Array.from(closed));
+
+
+    }
+
+    // Initial fetch
+    fetchLiveStationClosures();
+
+    // Refresh every 60 seconds
+    const intervalId = setInterval(fetchLiveStationClosures, 60_000);
+
+    return () => {
+        cancelled = true;
+        clearInterval(intervalId);
+    };
+}, []);
+
+>>>>>>> Stashed changes
     /**
      * Reset the map view to its original center and zoom level.
      * Also resets any filters / what-if state to the original defaults.
@@ -239,6 +355,7 @@ export function MapCanvas() {
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
                 onRoutingError={setRoutingError}
+                liveClosedStations={liveClosedStations}
             />
 
             <MapTitleOverlay
