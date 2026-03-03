@@ -72,6 +72,9 @@ export function MapCanvas() {
         center: DEFAULT_CENTER,
     });
 
+
+
+    const [liveMode, setLiveMode] = useState(false);
     // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
