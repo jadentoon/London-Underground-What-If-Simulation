@@ -20,8 +20,16 @@ export function MapSidebar({
     lineStatusBg,
     isLiveLines,
     linesUpdatedAt,
+    trainFeedSource,
+    trainFeedUpdatedAt,
+    trainFeedReason,
+    trainFeedCount,
 }) {
     const partlyClosedLines = partialLines || new Set();
+    const isLiveTrainFeed = trainFeedSource === "live";
+    const trainFeedColor = isLiveTrainFeed ? "#22c55e" : "#f59e0b";
+    const trainFeedBg = isLiveTrainFeed ? "rgba(34, 197, 94, 0.12)" : "rgba(245, 158, 11, 0.12)";
+    const trainFeedLabel = isLiveTrainFeed ? "Live TfL arrivals" : "Schedule fallback";
 
     return (
         <div
@@ -142,6 +150,51 @@ export function MapSidebar({
                         {isLiveLines && linesUpdatedAt ? ` · ${linesUpdatedAt.toLocaleTimeString()}` : ""}
                     </span>
                 </div>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 8px",
+                        marginBottom: 8,
+                        borderRadius: 8,
+                        background: trainFeedBg,
+                        color: trainFeedColor,
+                        fontSize: 12,
+                    }}
+                >
+                    <span
+                        style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 999,
+                            background: trainFeedColor,
+                            boxShadow: `0 0 8px ${trainFeedColor}80`,
+                        }}
+                    />
+                    <span>
+                        {`Train feed: ${trainFeedLabel}`}
+                        {trainFeedCount > 0 ? ` · ${trainFeedCount} trains visible right now` : ""}
+                        {trainFeedUpdatedAt ? ` · ${new Date(trainFeedUpdatedAt).toLocaleTimeString()}` : ""}
+                    </span>
+                </div>
+                {!isLiveTrainFeed && trainFeedReason && (
+                    <div
+                        style={{
+                            marginTop: -2,
+                            marginBottom: 8,
+                            padding: "6px 8px",
+                            borderRadius: 8,
+                            border: `1px solid ${COLORS.border}`,
+                            color: COLORS.textMuted,
+                            fontSize: 11,
+                            lineHeight: 1.35,
+                            background: "rgba(0, 0, 0, 0.2)",
+                        }}
+                    >
+                        {trainFeedReason}
+                    </div>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {effectiveLines.map((line) => {
                         const isClosed = closedLines.has(line.id);

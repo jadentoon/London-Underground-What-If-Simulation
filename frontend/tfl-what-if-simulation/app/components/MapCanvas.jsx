@@ -101,6 +101,12 @@ export function MapCanvas() {
 
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
+    const [trainFeedStatus, setTrainFeedStatus] = useState({
+        source: "fallback",
+        updatedAt: null,
+        reason: "Waiting for live feed",
+        trainCount: 0,
+    });
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -306,81 +312,6 @@ export function MapCanvas() {
 
         return () => clearInterval(id);
     }, []);
-
-
-        /**
-     * Fetch live station disruptions from the TfL Unified API.
-     * Populates liveClosedStations with StopPoint ids that are affected.
-     * 
-     * NOTE:
-     * - This assumes your station node ids (s.id) line up with TfL StopPoint ids
-     *   (e.g. "940GZZLULNB"). If they don't, you'll need a mapping layer.
-     */
-    useEffect(() => {
-        let cancelled = false;
-
-        async function fetchLiveStationClosures() {
-            try {
-                // TfL Unified API: all StopPoint disruptions for tube / related modes
-                const res = await fetch(
-                    "https://api.tfl.gov.uk/StopPoint/Mode/tube,dlr,overground,elizabeth-line/Disruption"
-                );
-
-                if (!res.ok) {
-                    console.error("Failed to fetch live station disruptions", res.status);
-                    return;
-                }
-
-                const disruptions = await res.json();
-
-                const closedIds = new Set();
-
-                disruptions.forEach((d) => {
-                    // Different disruption types expose affected stops slightly differently,
-                    // so we defensively check a few likely properties.
-                    const stopArray =
-                        d.stopPoints ||
-                        d.affectedStops ||
-                        d.stopPointIds ||
-                        [];
-
-                    stopArray.forEach((sp) => {
-                        if (!sp) return;
-
-                        if (typeof sp === "string") {
-                            closedIds.add(sp);
-                        } else if (sp.id) {
-                            closedIds.add(sp.id);
-                        } else if (sp.stationId) {
-                            closedIds.add(sp.stationId);
-                        }
-                    });
-                });
-
-                if (!cancelled) {
-                    // FORCE-CLOSED TEST STATION (Harrow & Wealdstone)
-                    closed.add("940GZZLUHAW");
-                    setLiveClosedStations(closedIds);
-                }
-            } catch (err) {
-                console.error("Error fetching live station disruptions", err);
-            }
-        }
-
-        // Initial fetch
-        fetchLiveStationClosures();
-
-        // Optional: refresh every 60s while this component is mounted.
-        const interval = setInterval(fetchLiveStationClosures, 60000);
-
-        return () => {
-            cancelled = true;
-            clearInterval(interval);
-        };
-    }, []);
-
-
-
     const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
     const isLiveLines = !hypotheticalSettingsEnabled && linesSource === "live";
     const lineStatusLabel = hypotheticalSettingsEnabled
@@ -425,6 +356,7 @@ export function MapCanvas() {
                 onStationsLoaded={handleStationsLoaded}
                 onRoutingError={setRoutingError}
                 liveClosedStations={liveClosedStations}
+                onTrainFeedStatusChange={setTrainFeedStatus}
             />
 
             <MapTitleOverlay
@@ -474,6 +406,10 @@ export function MapCanvas() {
                 lineStatusBg={lineStatusBg}
                 isLiveLines={isLiveLines}
                 linesUpdatedAt={linesUpdatedAt}
+                trainFeedSource={trainFeedStatus.source}
+                trainFeedUpdatedAt={trainFeedStatus.updatedAt}
+                trainFeedReason={trainFeedStatus.reason}
+                trainFeedCount={trainFeedStatus.trainCount}
             />
 
             <SidebarToggleButton

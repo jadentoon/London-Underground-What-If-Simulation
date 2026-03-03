@@ -14,10 +14,12 @@ import { buildGraph } from "../lib/graph.js";
 import { LONDON_CENTER } from "./mapComponents/constants.js";
 import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, buildUndirectedLineEdgeKey } from "./mapComponents/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "./mapComponents/icons.js";
+import { useTrainMovements } from "./mapComponents/useTrainMovements.js";
 
 import RouteLayer from "./mapComponents/RouteLayer.jsx";
 import EdgeLayer from "./mapComponents/EdgeLayer.jsx";
 import StationLayer from "./mapComponents/StationLayer.jsx";
+import TrainLayer from "./mapComponents/TrainLayer.jsx";
 
 setupLeafletDefaultIcons();
 
@@ -122,6 +124,7 @@ const LeafletMap = ({
     onStationsLoaded,
     onRoutingError,
     liveClosedStations = new Set(),
+    onTrainFeedStatusChange,
 }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
@@ -161,6 +164,7 @@ const LeafletMap = ({
         if (!nodes.length || !edges.length) return null;
         return buildGraph(nodes, edges);
     }, [nodes, edges]);
+    const { trains, feedStatus } = useTrainMovements({ nodes, edges });
 
     const groupedEdges = useMemo(() => {
         const unique = dedupeEdges(edges);
@@ -245,6 +249,11 @@ const LeafletMap = ({
 
     const hasPath = pathPositions.length > 1;
 
+    useEffect(() => {
+        if (!onTrainFeedStatusChange) return;
+        onTrainFeedStatusChange(feedStatus);
+    }, [feedStatus, onTrainFeedStatusChange]);
+
     return (
         <MapContainer
             center={LONDON_CENTER}
@@ -283,6 +292,7 @@ const LeafletMap = ({
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
+            <TrainLayer trains={trains} />
 
             <StationLayer
                 nodes={nodes}
