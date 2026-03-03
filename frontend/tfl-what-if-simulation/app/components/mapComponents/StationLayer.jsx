@@ -13,7 +13,6 @@ export default function StationLayer({
     redXIcon,
     onSingleClickStation,
     onDoubleClickStation,
-    liveClosedSet = new Set(),
 }) {
     const safeLiveClosedSet = liveClosedSet ?? new Set();
 
@@ -23,37 +22,7 @@ export default function StationLayer({
                 const id = String(s.id);
                 const isStart = id === String(startId);
                 const isOnPath = pathSet.has(id);
-
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                // Closed in live TfL data
-const isLiveClosed =
-    liveClosedSet.has(id) ||
-    id === "940GZZLUHAW";  // Harrow & Wealdstone test closure
-
-// Closed in hypothetical what-if mode
-const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);
-
-// A station is visually closed if either:
-// - it is closed in live data (any mode), OR
-// - it is closed in what-if mode while hypothetical settings are enabled
-const isClosed = isLiveClosed || isHypotheticalClosed;
-=======
-=======
->>>>>>> Stashed changes
-                // ✅ Distinguish what-if vs live closures
-                const isClosedWhatIf =
-                    hypotheticalSettingsEnabled && closedSet.has(id);
-                const isClosedLive =
-                    !hypotheticalSettingsEnabled && safeLiveClosedSet.has(id);
-
-                // Station is considered closed if either live OR what-if says so
-                const isClosed = isClosedWhatIf || isClosedLive;
-
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+                const isClosed = hypotheticalSettingsEnabled && closedSet.has(id);
                 const dim = hasPath && !isOnPath && !isStart;
 
                 return (
@@ -97,17 +66,7 @@ const isClosed = isLiveClosed || isHypotheticalClosed;
                             {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
                         </CircleMarker>
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                        {redXIcon && (isLiveClosed || (hypotheticalSettingsEnabled && isHypotheticalClosed)) &&  (
-=======
-                        {/* ✅ Now shows X for live closures too */}
-                        {redXIcon && isClosed && (
->>>>>>> Stashed changes
-=======
-                        {/* ✅ Now shows X for live closures too */}
-                        {redXIcon && isClosed && (
->>>>>>> Stashed changes
+                        {hypotheticalSettingsEnabled && redXIcon && isClosed && (
                             <Marker
                                 position={[s.lat, s.lon]}
                                 icon={redXIcon}
