@@ -12,6 +12,7 @@ export default function StationLayer({
     redXIcon,
     onSingleClickStation,
     onDoubleClickStation,
+    liveClosedSet = new Set(),
 }) {
     return (
         <>
@@ -20,7 +21,19 @@ export default function StationLayer({
 
                 const isStart = id === String(startId);
                 const isOnPath = pathSet.has(id);
-                const isClosed = hypotheticalSettingsEnabled && closedSet.has(id);
+
+                // Closed in live TfL data
+const isLiveClosed =
+    liveClosedSet.has(id) ||
+    id === "940GZZLUHAW";  // Harrow & Wealdstone test closure
+
+// Closed in hypothetical what-if mode
+const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);
+
+// A station is visually closed if either:
+// - it is closed in live data (any mode), OR
+// - it is closed in what-if mode while hypothetical settings are enabled
+const isClosed = isLiveClosed || isHypotheticalClosed;
                 const dim = hasPath && !isOnPath && !isStart;
 
                 return (
@@ -63,7 +76,7 @@ export default function StationLayer({
                             {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
                         </CircleMarker>
 
-                        {hypotheticalSettingsEnabled && redXIcon && isClosed && (
+                        {redXIcon && (isLiveClosed || (hypotheticalSettingsEnabled && isHypotheticalClosed)) &&  (
                             <Marker
                                 position={[s.lat, s.lon]}
                                 icon={redXIcon}
