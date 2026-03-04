@@ -9,6 +9,11 @@ function formatDuration(seconds) {
     return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+function getLineLabel(line, lineLabels) {
+    if (!line || line === "unknown") return "Unknown line";
+    return lineLabels?.[line] ?? line;
+}
+
 export function RouteInfoPanel({
     isOpen,
     onToggle,
@@ -23,7 +28,6 @@ export function RouteInfoPanel({
     const stops = routeInfo?.stops ?? [];
 
     const groupedLegs = routeInfo?.groupedLegs ?? [];
-    const totalLabel = formatDuration(routeInfo?.totalTravelSeconds);
     const changes = routeInfo?.changeCount ?? 0;
 
     const rightOffset = hypotheticalSettingsEnabled ? 70 : 16;
