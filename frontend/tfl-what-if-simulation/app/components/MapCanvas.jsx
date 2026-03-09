@@ -94,6 +94,9 @@ export function MapCanvas() {
     const [linesSource, setLinesSource] = useState("fallback");
     const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
 
+    //line delay/status data from TfL API
+    const [lineDelays, setLineDelays] = useState(new Map());
+
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
 
@@ -188,6 +191,48 @@ export function MapCanvas() {
         }
         fetchLines();
         return () => { cancelled = true; };
+    }, []);
+
+    //fetch line status/delays from TfL API (client-side)
+    useEffect(() => {
+        let cancelled = false;
+        async function fetchDelays() {
+            try {
+                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube/Status");
+                if (!res.ok) throw new Error(`TfL Status API ${res.status}`);
+                const data = await res.json();
+                
+                const delayMap = new Map();
+                data.forEach(line => {
+                    const status = line.lineStatuses?.[0];
+                    if (status) {
+                        delayMap.set(line.id, {
+                            severity: status.statusSeverity || 10,
+                            description: status.statusSeverityDescription || "Good Service",
+                            reason: status.reason || null,
+                            fullDescription: status.disruption?.description || null,
+                            additionalInfo: status.disruption?.additionalInfo || null,
+                        });
+                    }
+                });
+                
+                if (!cancelled) {
+                    setLineDelays(delayMap);
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    console.error("Failed to fetch line delays:", err);
+                    //keep existing delays on error
+                }
+            }
+        }
+        
+        fetchDelays();
+        const interval = setInterval(fetchDelays, 60000); // every minute
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
     }, []);
 
     /**
@@ -327,6 +372,7 @@ export function MapCanvas() {
                 lineStatusBg={lineStatusBg}
                 isLiveLines={isLiveLines}
                 linesUpdatedAt={linesUpdatedAt}
+                lineDelays={lineDelays}
             />
 
             <SidebarToggleButton
