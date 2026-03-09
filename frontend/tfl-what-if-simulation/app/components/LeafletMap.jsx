@@ -164,7 +164,12 @@ const LeafletMap = ({
         if (!nodes.length || !edges.length) return null;
         return buildGraph(nodes, edges);
     }, [nodes, edges]);
-    const { trains, feedStatus } = useTrainMovements({ nodes, edges });
+    const trainVisualsEnabled = !hypotheticalSettingsEnabled;
+    const { trains, feedStatus } = useTrainMovements({
+        nodes,
+        edges,
+        enabled: trainVisualsEnabled,
+    });
 
     const groupedEdges = useMemo(() => {
         const unique = dedupeEdges(edges);
@@ -292,7 +297,7 @@ const LeafletMap = ({
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
-            <TrainLayer trains={trains} />
+            {trainVisualsEnabled && <TrainLayer trains={trains} />}
 
             <StationLayer
                 nodes={nodes}

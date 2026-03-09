@@ -458,7 +458,7 @@ function buildFallbackTrainPositions(templates, nowMs, nodeById) {
     return trains;
 }
 
-export function useTrainMovements({ nodes, edges }) {
+export function useTrainMovements({ nodes, edges, enabled = true }) {
     const [clockMs, setClockMs] = useState(Date.now());
     const [feedSource, setFeedSource] = useState("fallback");
     const [feedUpdatedAt, setFeedUpdatedAt] = useState(null);
@@ -486,11 +486,20 @@ export function useTrainMovements({ nodes, edges }) {
     );
 
     useEffect(() => {
+        if (!enabled) return;
         const id = setInterval(() => setClockMs(Date.now()), ANIMATION_TICK_MS);
         return () => clearInterval(id);
-    }, []);
+    }, [enabled]);
 
     useEffect(() => {
+        if (!enabled) {
+            setLiveSnapshots([]);
+            setFeedSource("fallback");
+            setFeedReason("Disabled in What-If mode");
+            setFeedUpdatedAt(null);
+            return;
+        }
+
         if (!nodes?.length || !edges?.length) {
             setFeedSource("fallback");
             setFeedReason("Network graph not loaded yet; using schedule fallback");
@@ -551,6 +560,7 @@ export function useTrainMovements({ nodes, edges }) {
     }, [
         nodes,
         edges,
+        enabled,
         nodeById,
         stationNameToId,
         directedTravelTimeByLine,
@@ -558,12 +568,13 @@ export function useTrainMovements({ nodes, edges }) {
     ]);
 
     const trains = useMemo(() => {
+        if (!enabled) return [];
         if (feedSource === "live" && liveSnapshots.length > 0) {
             const liveTrains = buildLiveTrainPositions(liveSnapshots, clockMs, nodeById);
             if (liveTrains.length > 0) return liveTrains;
         }
         return buildFallbackTrainPositions(fallbackTemplates, clockMs, nodeById);
-    }, [feedSource, liveSnapshots, clockMs, nodeById, fallbackTemplates]);
+    }, [feedSource, liveSnapshots, clockMs, nodeById, fallbackTemplates, enabled]);
 
     const feedStatus = useMemo(() => ({
         source: feedSource,

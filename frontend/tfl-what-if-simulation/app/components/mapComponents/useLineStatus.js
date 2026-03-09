@@ -5,7 +5,7 @@ import { LINE_COLOURS, LINE_LABELS } from "./constants";
 
 const EMPTY_LINE_SET = new Set();
 const EMPTY_LINE_MAP = new Map();
-const LIVE_STATUS_POLL_MS = 60_000;
+const LIVE_STATUS_POLL_MS = 15_000;
 const PARTIAL_CLOSURE_KEYWORDS = [
     "part closure",
     "partly closed",
@@ -127,10 +127,12 @@ function getLiveLineDisruptions(lines) {
 export function useLineStatus({
     hypotheticalSettingsEnabled,
     simulatedClosedLines = EMPTY_LINE_SET,
+    pollMs = LIVE_STATUS_POLL_MS,
 }) {
     const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
     const [linesSource, setLinesSource] = useState("fallback");
     const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
+    const [linesReason, setLinesReason] = useState("Waiting for live line status");
     const [liveClosedLines, setLiveClosedLines] = useState(new Set());
     const [livePartialLines, setLivePartialLines] = useState(new Set());
     const [livePartialStationIdsByLine, setLivePartialStationIdsByLine] = useState(new Map());
@@ -166,6 +168,7 @@ export function useLineStatus({
                     setLivePartialStationIdsByLine(partialStationIdsByLine);
                     setLinesSource(mapped.length ? "live" : "fallback");
                     setLinesUpdatedAt(mapped.length ? new Date() : null);
+                    setLinesReason(mapped.length ? "" : "TfL line status returned no usable lines");
                 }
             } catch (err) {
                 if (!cancelled) {
@@ -175,18 +178,19 @@ export function useLineStatus({
                     setLivePartialStationIdsByLine(new Map());
                     setLinesSource("fallback");
                     setLinesUpdatedAt(null);
+                    setLinesReason("Live TfL line status unavailable");
                 }
             }
         }
 
         fetchLinesAndStatus();
-        pollId = setInterval(fetchLinesAndStatus, LIVE_STATUS_POLL_MS);
+        pollId = setInterval(fetchLinesAndStatus, pollMs);
 
         return () => {
             cancelled = true;
             if (pollId) clearInterval(pollId);
         };
-    }, []);
+    }, [pollMs]);
 
     const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
     const effectiveClosedLines = hypotheticalSettingsEnabled ? simulatedClosedLines : liveClosedLines;
@@ -199,22 +203,12 @@ export function useLineStatus({
     const livePartialCount = livePartialLines.size;
 
     const lineStatusLabel = useMemo(() => {
-        if (hypotheticalSettingsEnabled) return "What-If mode";
+        if (hypotheticalSettingsEnabled) return "Fallback (What-If mode)";
         if (!isLiveLines) return "Fallback (TfL API unavailable)";
-
-        const liveStatusSummaryParts = [];
-        if (liveClosedCount) liveStatusSummaryParts.push(`${liveClosedCount} closed`);
-        if (livePartialCount) liveStatusSummaryParts.push(`${livePartialCount} partly closed`);
-        const liveStatusSummary = liveStatusSummaryParts.length
-            ? ` · ${liveStatusSummaryParts.join(" · ")}`
-            : "";
-
-        return `Live TfL status${liveStatusSummary}`;
+        return "Live TfL status";
     }, [
         hypotheticalSettingsEnabled,
         isLiveLines,
-        liveClosedCount,
-        livePartialCount,
     ]);
 
     const lineStatusColor = hypotheticalSettingsEnabled
@@ -240,6 +234,10 @@ export function useLineStatus({
         effectivePartialStationIdsByLine,
         isLiveLines,
         linesUpdatedAt,
+        linesSource,
+        linesReason,
+        liveClosedCount,
+        livePartialCount,
         lineStatusLabel,
         lineStatusColor,
         lineStatusBg,

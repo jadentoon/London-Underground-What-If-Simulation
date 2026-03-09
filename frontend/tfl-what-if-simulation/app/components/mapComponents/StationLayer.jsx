@@ -12,7 +12,7 @@ export default function StationLayer({
     redXIcon,
     onSingleClickStation,
     onDoubleClickStation,
-    liveClosedSet={liveClosedSet}
+    liveClosedSet = new Set(),
 }) {
     return (
         <>
@@ -22,9 +22,7 @@ export default function StationLayer({
                 const isStart = id === String(startId);
                 const isOnPath = pathSet.has(id);
                 // Closed in live TfL data
-                const isLiveClosed = 
-                    liveClosedSet.has(id) ||
-                    id === "940GZZLUHAW";  // Harrow & Wealdstone test closure
+                const isLiveClosed = liveClosedSet.has(id);
 
 // Closed in hypothetical what-if mode
 const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);

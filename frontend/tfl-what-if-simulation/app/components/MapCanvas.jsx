@@ -13,7 +13,8 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "./mapComponents/constants";
+import { LONDON_CENTER } from "./mapComponents/constants";
+import { useLineStatus } from "./mapComponents/useLineStatus";
 import { MapLeafletChrome } from "./MapLeafletChrome";
 import { MapTitleOverlay } from "./MapTitleOverlay";
 import { MapSearchBox } from "./MapSearchBox";
@@ -37,12 +38,7 @@ const COLORS = {
 };
 
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
-
-const FALLBACK_LINES = Object.keys(LINE_COLOURS).map((id) => ({
-    id,
-    label: LINE_LABELS[id] || id,
-    color: LINE_COLOURS[id],
-}));
+const LIVE_CLOSURE_POLL_MS = 15_000;
 
 /**
  * MapCanvas
@@ -72,8 +68,6 @@ export function MapCanvas() {
         center: DEFAULT_CENTER,
     });
 
-    const [liveMode, setLiveMode] = useState(false);
-
     // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
@@ -92,12 +86,8 @@ export function MapCanvas() {
     //Search input value
     const [stationQuery, setStationQuery] = useState("");
 
-    // State to track closed lines (set of line ids)
+    // State to track closed lines in What-If mode (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
-    // Live line metadata (default to fallback)
-    const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
-    const [linesSource, setLinesSource] = useState("fallback");
-    const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
 
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
@@ -106,6 +96,21 @@ export function MapCanvas() {
         updatedAt: null,
         reason: "Waiting for live feed",
         trainCount: 0,
+    });
+    const {
+        effectiveLines,
+        effectiveClosedLines,
+        effectivePartialLines,
+        effectivePartialStationIdsByLine,
+        isLiveLines,
+        linesUpdatedAt,
+        lineStatusLabel,
+        lineStatusColor,
+        lineStatusBg,
+    } = useLineStatus({
+        hypotheticalSettingsEnabled,
+        simulatedClosedLines: closedLines,
+        pollMs: LIVE_CLOSURE_POLL_MS,
     });
 
     // Dynamic accent color based on hypothetical mode
@@ -165,106 +170,68 @@ export function MapCanvas() {
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
-    // Fetch live line metadata from TfL Unified API (client-side)
     useEffect(() => {
+        if (hypotheticalSettingsEnabled) {
+            setLiveClosedStations(new Set());
+            return;
+        }
+
         let cancelled = false;
-        async function fetchLines() {
+        let pollId = null;
+
+        async function fetchLiveStationClosures() {
             try {
-                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube");
-                if (!res.ok) throw new Error(`TfL API ${res.status}`);
-                const data = await res.json();
-                const mapped = data
-                    .map((line) => {
-                        const color = LINE_COLOURS[line.id];
-                        if (!color) return null;
-                        return {
-                            id: line.id,
-                            label: line.name || line.id,
-                            color,
-                        };
-                    })
-                    .filter(Boolean);
-                if (!cancelled && mapped.length) {
-                    setLineOptions(mapped);
-                    setLinesSource("live");
-                    setLinesUpdatedAt(new Date());
+                const res = await fetch(
+                    "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
+                );
+
+                if (!res.ok) {
+                    throw new Error(`TfL API ${res.status}`);
+                }
+
+                const disruptions = await res.json();
+                const disruptionList = Array.isArray(disruptions) ? disruptions : [];
+                const closed = new Set();
+
+                disruptionList.forEach((disruption) => {
+                    const stops = disruption.affectedStops || disruption.affectedStopPoints || [];
+                    const stopPointIds = Array.isArray(disruption.stopPointIds) ? disruption.stopPointIds : [];
+
+                    stops.forEach((stop) => {
+                        if (!stop) return;
+                        if (typeof stop === "string") {
+                            closed.add(stop);
+                        } else if (stop.id) {
+                            closed.add(String(stop.id));
+                        } else if (stop.stationId) {
+                            closed.add(String(stop.stationId));
+                        }
+                    });
+
+                    stopPointIds.forEach((id) => {
+                        if (id) closed.add(String(id));
+                    });
+                });
+
+                if (!cancelled) {
+                    setLiveClosedStations(closed);
                 }
             } catch (err) {
+                console.error("Error fetching live station disruptions", err);
                 if (!cancelled) {
-                    setLineOptions(FALLBACK_LINES);
-                    setLinesSource("fallback");
-                    setLinesUpdatedAt(null);
-                }
-            }
-        }
-        fetchLines();
-        return () => { cancelled = true; };
-    }, []);
-
-
-
-    useEffect(() => {
-    // Only bother hitting TfL when live mode is ON
-    if (!liveMode) return;
-
-    let cancelled = false;
-
-    async function fetchLiveStationClosures() {
-        try {
-            const res = await fetch(
-                "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
-            );
-
-            if (!res.ok) {
-                console.error("Failed to fetch live station disruptions", res.status);
-                if (!cancelled) {
-                    // In live mode, if station fetch fails, don't crash – just clear live closures
                     setLiveClosedStations(new Set());
                 }
-                return;
-            }
-
-            const disruptions = await res.json();
-
-            const closed = new Set();
-
-            disruptions.forEach((disruption) => {
-                // TfL disruptions usually list affected stops; depending on the exact payload
-                // this may be `affectedStops` or `affectedStopPoints`. We defensively check both.
-                const stops =
-                    disruption.affectedStops ||
-                    disruption.affectedStopPoints ||
-                    [];
-
-                stops.forEach((stop) => {
-                    if (stop.id) {
-                        closed.add(String(stop.id));
-                    }
-                });
-            });
-
-            if (!cancelled) {
-                setLiveClosedStations(closed);
-            }
-        } catch (err) {
-            console.error("Error fetching live station disruptions", err);
-            if (!cancelled) {
-                setLiveClosedStations(new Set());
             }
         }
-    }
 
-    // Initial fetch
-    fetchLiveStationClosures();
+        fetchLiveStationClosures();
+        pollId = setInterval(fetchLiveStationClosures, LIVE_CLOSURE_POLL_MS);
 
-    // Refresh every 60 seconds while live mode is on
-    const intervalId = setInterval(fetchLiveStationClosures, 60_000);
-
-    return () => {
-        cancelled = true;
-        clearInterval(intervalId);
-    };
-}, [liveMode]);
+        return () => {
+            cancelled = true;
+            if (pollId) clearInterval(pollId);
+        };
+    }, [hypotheticalSettingsEnabled]);
 
 
 
@@ -312,15 +279,6 @@ export function MapCanvas() {
 
         return () => clearInterval(id);
     }, []);
-    const effectiveLines = hypotheticalSettingsEnabled ? FALLBACK_LINES : lineOptions;
-    const isLiveLines = !hypotheticalSettingsEnabled && linesSource === "live";
-    const lineStatusLabel = hypotheticalSettingsEnabled
-        ? "Fallback (What-If mode)"
-        : isLiveLines
-            ? "Live TfL data"
-            : "Fallback (TfL API unavailable)";
-    const lineStatusColor = isLiveLines ? "#22c55e" : "#f97316";
-    const lineStatusBg = isLiveLines ? "rgba(34, 197, 94, 0.12)" : "rgba(249, 115, 22, 0.12)";
 
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
@@ -350,7 +308,8 @@ export function MapCanvas() {
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onToggleStationClosed={toggleClosedStation}
-                closedLines={closedLines}
+                closedLines={effectiveClosedLines}
+                partialStationIdsByLine={effectivePartialStationIdsByLine}
                 onLineToggle={handleLineToggle}
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
@@ -399,7 +358,8 @@ export function MapCanvas() {
                 onToggleWhatIfMode={handleToggleWhatIfMode}
                 onResetClosures={handleResetClosures}
                 effectiveLines={effectiveLines}
-                closedLines={closedLines}
+                closedLines={effectiveClosedLines}
+                partialLines={effectivePartialLines}
                 onLineToggle={handleLineToggle}
                 lineStatusLabel={lineStatusLabel}
                 lineStatusColor={lineStatusColor}
