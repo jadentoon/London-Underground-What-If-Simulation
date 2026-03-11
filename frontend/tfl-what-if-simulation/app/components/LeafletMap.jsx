@@ -126,7 +126,7 @@ const LeafletMap = ({
 
     const [zoomLevel, setZoomLevel] = useState(14);
 
-    const redXIcon = useMemo(() => createRedXIcon(), []);
+    const redXIcon = useMemo(() => createRedXIcon(zoomLevel), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
 
     const clearRoute = useCallback(() => {
