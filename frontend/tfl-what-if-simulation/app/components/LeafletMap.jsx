@@ -1,18 +1,13 @@
 'use client';
 
-import { useEffect, useState, useMemo } from "react";
-import {
-    MapContainer,
-    TileLayer,
-    useMapEvents,
-    useMap,
-} from "react-leaflet";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
+import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
 
 import { dijkstra } from "../lib/pathfinding.js";
 import { buildGraph } from "../lib/graph.js";
 
 import { LONDON_CENTER } from "./mapComponents/constants.js";
-import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet } from "./mapComponents/utils.js";
+import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey } from "./mapComponents/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "./mapComponents/icons.js";
 
 import RouteLayer from "./mapComponents/RouteLayer.jsx";
@@ -39,7 +34,7 @@ function MapEvents({ onChange }) {
         },
         // Trigger when zoom level changes.
         zoomend() {
-            onChange({ center: map.getCenter(), zoom: map.getZoom(),});
+            onChange({ center: map.getCenter(), zoom: map.getZoom(), });
         },
     });
 
@@ -111,23 +106,36 @@ const LeafletMap = ({
     onLineToggle,
     onMapReady,
     onStationsLoaded,
-    onRoutingError
+    onRoutingError,
+    onRouteChange,
 }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
 
     const [start, setStart] = useState(null);
+    const [end, setEnd] = useState(null);
+
+
     const [path, setPath] = useState([]);
+
+    const [routeMeta, setRouteMeta] = useState({
+        totalSeconds: 0,
+        changeCount: 0,
+        statePath: [],
+    });
 
     const [zoomLevel, setZoomLevel] = useState(14);
 
     const redXIcon = useMemo(() => createRedXIcon(), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
 
-    const clearRoute = () => {
+    const clearRoute = useCallback(() => {
         setPath([]);
+        setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
         setStart(null);
-    }
+        setEnd(null);
+        onRoutingError?.(null);
+    }, [onRoutingError]);
 
     useEffect(() => {
         let alive = true;
@@ -135,6 +143,7 @@ const LeafletMap = ({
             const res = await fetch("/api/stations");
             const data = await res.json();
             if (!alive) return;
+
             setNodes(data.nodes || []);
             setEdges(data.edges || []);
             onStationsLoaded?.(data.nodes || []);
@@ -162,7 +171,10 @@ const LeafletMap = ({
 
         if (!start) {
             setStart(id);
+            setEnd(null);
             setPath([]);
+            setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
+            onRoutingError?.(null);
             return;
         }
 
@@ -170,29 +182,38 @@ const LeafletMap = ({
 
         // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
-        const newPath = dijkstra(graph, String(start), id, stationsToAvoid);
         
+        const result = dijkstra(graph, String(start), id, stationsToAvoid);
+
+        const newPath = Array.isArray(result) ? result : (result?.path ?? []);
+        const totalSeconds = Array.isArray(result) ? null : result?.totalSeconds;
+        const changeCount = Array.isArray(result) ? null : result?.changeCount;
+        const statePath = Array.isArray(result) ? [] : (result?.statePath ?? []);
+
         //check if path is found 
-        if (newPath.length === 0 && start !== id) {
-            // if not possible then show the routing error box 
-            if (onRoutingError) {
-                const startStation = nodeById.get(String(start));
-                const endStation = nodeById.get(id);
-                onRoutingError({
-                    from: startStation?.name || start,
-                    to: endStation?.name || id,
-                    reason: hypotheticalSettingsEnabled ? 'closed-stations' : 'no-connection'
-                });
-            }
+        if (newPath.length === 0 && String(start) !== id) {
+            const startStation = nodeById.get(String(start));
+            const endStation = nodeById.get(id);
+
+             onRoutingError?.({
+                from: startStation?.name || start,
+                to: endStation?.name || id,
+                reason: hypotheticalSettingsEnabled ? 'closed-stations' : 'no-connection'
+            });
+
             setPath([]);
+            setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
         } else {
-            if (onRoutingError) {
-                onRoutingError(null);
-            }
+            onRoutingError?.(null);
+
             setPath(newPath);
+            setRouteMeta({
+                totalSeconds: Number.isFinite(totalSeconds) ? Number(totalSeconds) : 0,
+                changeCount: Number.isFinite(changeCount) ? Number(changeCount) : 0,
+                statePath,
+            });
         }
-        
-        setStart(id);
+        setEnd(id);
     }
 
     const pathSet = useMemo(() => new Set(path.map(String)), [path]);
@@ -206,6 +227,133 @@ const LeafletMap = ({
     }, [path, nodeById]);
 
     const hasPath = pathPositions.length > 1;
+
+    const edgeByPair = useMemo(() => {
+        const m = new Map();
+        for (const e of edges) {
+            const a = String(e.from);
+            const b = String(e.to);
+            const line = String(e.line ?? "unknown");
+            m.set(`${a}|${b}|${line}`, e);
+            m.set(`${b}|${a}|${line}`, e);
+        }
+        return m;
+    }, [edges]);
+
+    const pathStops = useMemo(() => {
+        return path
+            .map((id, idx) => {
+                const n = nodeById.get(String(id));
+                if (!n) return null;
+                return {
+                    id: String(id),
+                    index: idx,
+                    name: n.name,
+                    lat: n.lat,
+                    lon: n.lon,
+                }
+            })
+            .filter(Boolean);
+    }, [path, nodeById]);
+
+    const pathLegs = useMemo(() => {
+        const sp = routeMeta.statePath ?? [];
+        if (sp.length < 2) return [];
+
+        const legs = [];
+
+        for (let i = 1; i < sp.length; i++) {
+            const prev = splitStateKey(sp[i - 1]);
+            const curr = splitStateKey(sp[i]);
+
+            if (prev.stationId === curr.stationId) continue;
+
+            const fromNode = nodeById.get(String(prev.stationId));
+            const toNode = nodeById.get(String(curr.stationId));
+
+            const edge = edgeByPair.get(`${prev.stationId}|${curr.stationId}|${curr.line ?? "unknown"}`);
+
+            legs.push({
+                fromId: prev.stationId,
+                toId: curr.stationId,
+                fromName: fromNode?.name ?? prev.stationId,
+                toName: toNode?.name ?? curr.stationId,
+                line: curr?.line ?? "unknown",
+                travelTimeSeconds: Number.isFinite(edge?.travel_time)
+                    ? Number(edge.travel_time)
+                    : 0,
+            });
+        }
+
+        return legs;
+    }, [routeMeta.statePath, nodeById, edgeByPair]);
+
+    const groupedLegs = useMemo(() => {
+        if (!pathLegs.length) return [];
+
+        const groups = [];
+        let current = null;
+
+        for (const leg of pathLegs) {
+            const line = leg.line ?? "unknown";
+
+            if (!current || current.line !== line) {
+                current = {
+                    line,
+                    fromName: leg.fromName,
+                    toName: leg.toName,
+                    stops: 1,
+                    travelTimeSeconds: leg.travelTimeSeconds ?? 0,
+                };
+                groups.push(current);
+            } else {
+                current.toName = leg.toName;
+                current.stops += 1;
+                current.travelTimeSeconds += leg.travelTimeSeconds ?? 0;
+            }
+        }
+
+        return groups;
+    }, [pathLegs]);
+
+    const totalTravelSeconds = useMemo(() => {
+        return routeMeta.totalSeconds ?? 0;
+    }, [routeMeta.totalSeconds]);
+
+    const changeCount = useMemo(() => {
+        return routeMeta.changeCount ?? Math.max(0, groupedLegs.length - 1);
+    }, [routeMeta.changeCount, groupedLegs.length]);
+
+    const lastRouteKeyRef = useRef("");
+
+    useEffect(() => {
+        if (!onRouteChange) return;
+
+        const hasPathNow = pathStops.length > 1;
+
+        const payload = {
+            hasPath: hasPathNow,
+            startName: pathStops[0]?.name ?? null,
+            endName: pathStops[pathStops.length - 1]?.name ?? null,
+            stops: pathStops,
+            groupedLegs,
+            totalTravelSeconds,
+            changeCount,
+        };
+
+        const key = JSON.stringify({
+            hasPath: payload.hasPath,
+            stopIds: payload.stops.map(s => s.id),
+            grouped: payload.groupedLegs.map(g => `${g.line}|${g.fromName}|${g.toName}|${g.stops}|${g.travelTimeSeconds}`),
+            total: payload.totalTravelSeconds,
+            changes: payload.changeCount,
+        });
+
+        if (key === lastRouteKeyRef.current) return;
+        lastRouteKeyRef.current = key;
+
+        onRouteChange(payload);
+    }, [onRouteChange, pathStops, groupedLegs, totalTravelSeconds, changeCount]);
 
     const handleMapChange = (state) => {
         setZoomLevel(state.zoom);
@@ -241,11 +389,11 @@ const LeafletMap = ({
 
             <RouteLayer pathPositions={pathPositions} />
 
-            <EdgeLayer 
-                groupedEdges={groupedEdges} 
-                nodeById={nodeById} 
-                dimmed={hasPath} 
-                closedLines={closedLines} 
+            <EdgeLayer
+                groupedEdges={groupedEdges}
+                nodeById={nodeById}
+                dimmed={hasPath}
+                closedLines={closedLines}
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />

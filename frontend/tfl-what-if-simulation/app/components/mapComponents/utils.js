@@ -1,3 +1,5 @@
+import { SEP } from "./constants";
+
 /**
  * Group edges by station pair
  * Groups all edges connecting the same two stations together
@@ -73,4 +75,11 @@ export function normaliseIdSet(inputSet) {
     const out = new Set();
     for (const v of inputSet) out.add(String(v));
     return out;
+}
+
+export function splitStateKey(k) {
+    const i = k.indexOf(SEP);
+    const stationId = k.slice(0, i);
+    const line = k.slice(i + SEP.length);
+    return { stationId, line : line === "START" ? null : line };
 }

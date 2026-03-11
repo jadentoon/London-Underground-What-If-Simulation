@@ -22,6 +22,7 @@ import { MapSidebar } from "./MapSidebar";
 import { SidebarToggleButton } from "./SidebarToggleButton";
 import { MapWhatIfOverlay } from "./MapWhatIfOverlay";
 import { RoutingErrorBox } from "./RoutingErrorBox";
+import { RouteInfoPanel } from "./RouteInfoPanel";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -96,6 +97,9 @@ export function MapCanvas() {
 
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
+
+    const [routeInfo, setRouteInfo] = useState(null);
+    const [isRoutePanelOpen, setIsRoutePanelOpen] = useState(false);
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -253,6 +257,15 @@ export function MapCanvas() {
         }, 1500);
     }, []);
 
+    const handleRouteChange = useCallback((info) => {
+        setRouteInfo(info);
+
+        setIsRoutePanelOpen((prevOpen) => {
+            const nextOpen = !!info?.hasPath;
+            return prevOpen === nextOpen ? prevOpen : nextOpen;
+        });
+    }, []);
+
     return (
         <div
             style={{
@@ -278,6 +291,7 @@ export function MapCanvas() {
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
                 onRoutingError={setRoutingError}
+                onRouteChange={handleRouteChange}
             />
 
             <MapTitleOverlay
@@ -343,6 +357,17 @@ export function MapCanvas() {
                     accentColor={accentColor}
                 />
             )}
+
+            <RouteInfoPanel 
+                isOpen={isRoutePanelOpen}
+                onToggle={() => setIsRoutePanelOpen((v) => !v)}
+                routeInfo={routeInfo}
+                COLORS={COLORS}
+                accentColor={accentColor}
+                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                lineColours={LINE_COLOURS}
+                lineLabels={LINE_LABELS}
+            />
 
             <RoutingErrorBox
                 error={routingError}
