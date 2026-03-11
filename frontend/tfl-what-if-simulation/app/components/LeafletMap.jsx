@@ -1,31 +1,18 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import {
-    MapContainer,
-    TileLayer,
-    useMapEvents,
-    useMap,
-} from "react-leaflet";
+import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
 
 import { dijkstra } from "../lib/pathfinding.js";
 import { buildGraph } from "../lib/graph.js";
 
 import { LONDON_CENTER } from "./mapComponents/constants.js";
-import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet } from "./mapComponents/utils.js";
+import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey } from "./mapComponents/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "./mapComponents/icons.js";
 
 import RouteLayer from "./mapComponents/RouteLayer.jsx";
 import EdgeLayer from "./mapComponents/EdgeLayer.jsx";
 import StationLayer from "./mapComponents/StationLayer.jsx";
-
-const SEP = "__";
-function splitStateKey(k) {
-    const i = k.indexOf(SEP);
-    const stationId = k.slice(0, i);
-    const line = k.slice(i + SEP.length);
-    return { stationId, line : line === "START" ? null : line };
-}
 
 setupLeafletDefaultIcons();
 

@@ -30,14 +30,14 @@ export function RouteInfoPanel({
     const groupedLegs = routeInfo?.groupedLegs ?? [];
     const changes = routeInfo?.changeCount ?? 0;
 
-    const rightOffset = hypotheticalSettingsEnabled ? 70 : 16;
+    //const rightOffset = hypotheticalSettingsEnabled ? 70 : 25;
     const bottomOffset = hypotheticalSettingsEnabled ? 70 : 16;
 
     return (
         <div
             style={{
                 position: "absolute",
-                right: rightOffset,
+                right: 70,
                 bottom: bottomOffset,
                 zIndex: 1200,
                 width: 340,

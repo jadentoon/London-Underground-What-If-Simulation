@@ -1,5 +1,7 @@
 export const LONDON_CENTER = [51.5074, -0.1278]; // default center (London coordinates)
 
+export const SEP = "__";
+
 // Line styling constants
 export const LINE_STYLE = {
     OUTLINE_COLOR: "#ffffff",
