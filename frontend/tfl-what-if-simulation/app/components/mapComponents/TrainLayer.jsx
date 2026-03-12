@@ -9,7 +9,6 @@ function formatArrivalTime(isoTimestamp) {
     return timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-
 function DetailRow({ label, value }) {
     if (!value) return null;
     return (
@@ -39,17 +38,34 @@ function StatusRow({ state, label }) {
     );
 }
 
+function getTrainVisuals(train) {
+    const lineId = String(train?.lineId || "");
+    const isLive = Boolean(train?.isLive);
+    const isNorthern = lineId === "northern";
+
+    const baseColour = TRAIN_COLOURS[lineId] || "#38bdf8";
+    const coreColour = isNorthern ? "#111827" : baseColour;
+    const glowColour = isNorthern ? "#f8fafc" : baseColour;
+
+    return {
+        glowOuterRadius: isLive ? 11.5 : 9.2,
+        glowInnerRadius: isLive ? 8 : 6.5,
+        coreRadius: isLive ? 4.8 : 4,
+        glowOuterOpacity: isNorthern ? (isLive ? 0.26 : 0.2) : (isLive ? 0.2 : 0.14),
+        glowInnerOpacity: isNorthern ? (isLive ? 0.38 : 0.3) : (isLive ? 0.32 : 0.24),
+        coreOpacity: isLive ? 0.98 : 0.9,
+        glowColour,
+        coreColour,
+        coreBorderColour: isNorthern ? "#f8fafc" : "#020617",
+        coreBorderWeight: isNorthern ? 1.8 : 1.6,
+    };
+}
+
 export default function TrainLayer({ trains = [] }) {
     return (
         <>
             {trains.map((train) => {
-                const color = TRAIN_COLOURS[train.lineId] || "#38bdf8";
-                const glowOuterRadius = train.isLive ? 9 : 7.2;
-                const glowInnerRadius = train.isLive ? 6 : 5;
-                const coreRadius = train.isLive ? 3.4 : 3;
-                const glowOuterOpacity = train.isLive ? 0.2 : 0.14;
-                const glowInnerOpacity = train.isLive ? 0.32 : 0.24;
-                const coreOpacity = train.isLive ? 0.98 : 0.88;
+                const visuals = getTrainVisuals(train);
                 const arrivalLabel = formatArrivalTime(train.nextArrivalTime);
                 const routeLabel = train.routeLabel || `${train.fromName || "?"} → ${train.toName || "?"}`;
 
@@ -57,34 +73,34 @@ export default function TrainLayer({ trains = [] }) {
                     <Fragment key={train.id}>
                         <CircleMarker
                             center={[train.lat, train.lon]}
-                            radius={glowOuterRadius}
+                            radius={visuals.glowOuterRadius}
                             pathOptions={{
-                                color,
-                                fillColor: color,
-                                fillOpacity: glowOuterOpacity,
+                                color: visuals.glowColour,
+                                fillColor: visuals.glowColour,
+                                fillOpacity: visuals.glowOuterOpacity,
                                 weight: 0,
                             }}
                             interactive={false}
                         />
                         <CircleMarker
                             center={[train.lat, train.lon]}
-                            radius={glowInnerRadius}
+                            radius={visuals.glowInnerRadius}
                             pathOptions={{
-                                color,
-                                fillColor: color,
-                                fillOpacity: glowInnerOpacity,
+                                color: visuals.glowColour,
+                                fillColor: visuals.glowColour,
+                                fillOpacity: visuals.glowInnerOpacity,
                                 weight: 0,
                             }}
                             interactive={false}
                         />
                         <CircleMarker
                             center={[train.lat, train.lon]}
-                            radius={coreRadius}
+                            radius={visuals.coreRadius}
                             pathOptions={{
-                                color: "#020617",
-                                fillColor: color,
-                                fillOpacity: coreOpacity,
-                                weight: 1.6,
+                                color: visuals.coreBorderColour,
+                                fillColor: visuals.coreColour,
+                                fillOpacity: visuals.coreOpacity,
+                                weight: visuals.coreBorderWeight,
                             }}
                         >
                             <Popup>
