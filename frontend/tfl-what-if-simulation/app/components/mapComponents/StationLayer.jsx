@@ -64,9 +64,16 @@ export default function StationLayer({
                             radius={radius}
                             eventHandlers={{
                                 click: (e) => {
-                                    if (isStart || isClosed) return;
                                     e?.originalEvent?.stopPropagation?.();
-                                    onSingleClickStation(id);
+
+                                    if (isClosed) return;
+
+                                    if (isStart) {
+                                        setStartId(null);
+                                        return;
+                                    }
+
+                                    onSingleClickStation?.(id);
                                 },
                                 dblclick: (e) => {
                                     e?.originalEvent?.preventDefault?.();

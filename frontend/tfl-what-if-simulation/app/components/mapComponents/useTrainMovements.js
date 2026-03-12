@@ -5,7 +5,7 @@ import { LINE_COLOURS, LINE_LABELS } from "./constants";
 import { dedupeEdges } from "./utils";
 
 const LIVE_REFRESH_MS = 15_000;
-const ANIMATION_TICK_MS = 1_000;
+const ANIMATION_TICK_MS = 2_000;
 const MAX_LIVE_ETA_SECONDS = 480;
 const MAX_LIVE_TRAINS = 140;
 const FALLBACK_TRAINS_PER_LINE = 5;
