@@ -9,11 +9,6 @@ function formatDuration(seconds) {
     return m ? `${h}h ${m}m` : `${h}h`;
 }
 
-function getLineLabel(line, lineLabels) {
-    if (!line || line === "unknown") return "Unknown line";
-    return lineLabels?.[line] ?? line;
-}
-
 export function RouteInfoPanel({
     isOpen,
     onToggle,
