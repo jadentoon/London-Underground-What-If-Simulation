@@ -4,15 +4,32 @@ function makeKey(stationId, line) {
     return `${stationId}__${line ?? "START"}`;
 }
 
-function splitKey(k) {
-    const [stationId, line] = k.split("__");
-    return { stationId, line: line === "START" ? null : line};
+function buildUndirectedLineEdgeKey(from, to, line) {
+    const a = String(from);
+    const b = String(to);
+    const l = String(line);
+    return a < b ? `${a}-${b}-${l}` : `${b}-${a}-${l}`;
 }
 
-export function dijkstra(graph, start, end, closedStations = new Set()) {
+function splitKey(k) {
+    const [stationId, line] = k.split("__");
+    return { stationId, line: line === "START" ? null : line };
+}
+
+export function dijkstra(
+    graph,
+    start,
+    end,
+    closedStations = new Set(),
+    closedLines = new Set(),
+    blockedEdges = new Set(),
+) {
     const startId = String(start);
     const endId = String(end);
+
     const closedSet = new Set([...closedStations].map(String));
+    const closedLineSet = new Set([...closedLines].map(String));
+    const blockedEdgeSet = new Set([...blockedEdges].map(String));
 
     const linesByStation = new Map();
     for (const [u, edges] of Object.entries(graph)) {
@@ -45,9 +62,7 @@ export function dijkstra(graph, start, end, closedStations = new Set()) {
 
     while (unvisited.size > 0) {
         let currentKey = null;
-        for (const k of unvisited) {
-            if (currentKey === null || distances[k] < distances[currentKey]) currentKey = k;
-        }
+        for (const k of unvisited) if (currentKey === null || distances[k] < distances[currentKey]) currentKey = k;
 
         if (currentKey === null || distances[currentKey] === Infinity) break;
 
@@ -59,15 +74,22 @@ export function dijkstra(graph, start, end, closedStations = new Set()) {
 
         for (const edge of graph[u] ?? []) {
             const neighbour = String(edge.to);
-            
-            // skip all the closed stations 
-            if (closedSet.has(neighbour) && neighbour !== endId) continue;
-            
             const edgeLine = String(edge.line ?? "unknown");
             const rideTime = Number(edge.weight ?? 0);
 
-            const penalty = 
-                currentLine && currentLine !== edgeLine ? CHANGE_PENALTY_SECONDS : 0;
+            // skip all the closed stations 
+            if (closedSet.has(neighbour) && neighbour !== endId) continue;
+
+            // Skip closed lines
+            if (closedLineSet.has(edgeLine)) continue;
+
+            const edgeKey = buildUndirectedLineEdgeKey(u, neighbour, edgeLine);
+            if (blockedEdgeSet.has(edgeKey)) continue;
+
+            const penalty =
+                currentLine && currentLine !== edgeLine 
+                    ? CHANGE_PENALTY_SECONDS 
+                    : 0;
 
             const nextKey = makeKey(neighbour, edgeLine);
             if (!unvisited.has(nextKey)) continue;
@@ -88,13 +110,9 @@ export function dijkstra(graph, start, end, closedStations = new Set()) {
     ].filter((k) => k in distances);
 
     let bestEndKey = null;
-    for (const k of candidatEndKeys) {
-        if (bestEndKey === null || distances[k] < distances[bestEndKey]) bestEndKey = k;
-    }
+    for (const k of candidatEndKeys) if (bestEndKey === null || distances[k] < distances[bestEndKey]) bestEndKey = k;
 
-    if(!bestEndKey || distances[bestEndKey] === Infinity) {
-        return { path: [], totalSeconds: Infinity, changeCount: 0 };
-    }
+    if (!bestEndKey || distances[bestEndKey] === Infinity) return { path: [], totalSeconds: Infinity, changeCount: 0 };
 
     const statePath = [];
     let k = bestEndKey;

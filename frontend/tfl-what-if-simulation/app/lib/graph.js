@@ -19,13 +19,13 @@ export function buildGraph(nodes, edges) {
         graph[from].push({
             to,
             weight: edge.travel_time,
-            line
+            line: line,
         });
 
         graph[to].push({
             to: from,
             weight: edge.travel_time,
-            line
+            line: line,
         });
     });
     return graph;

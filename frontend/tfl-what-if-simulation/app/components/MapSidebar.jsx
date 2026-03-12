@@ -13,13 +13,25 @@ export function MapSidebar({
     onResetClosures,
     effectiveLines,
     closedLines,
+    partialLines,
     onLineToggle,
     lineStatusLabel,
     lineStatusColor,
     lineStatusBg,
     isLiveLines,
     linesUpdatedAt,
+    trainFeedSource,
+    trainFeedUpdatedAt,
+    trainFeedReason,
+    trainFeedCount,
 }) {
+    const partlyClosedLines = partialLines || new Set();
+    const isLiveTrainFeed = trainFeedSource === "live";
+    const trainFeedColor = isLiveTrainFeed ? "#22c55e" : "#f59e0b";
+    const trainFeedBg = isLiveTrainFeed ? "rgba(34, 197, 94, 0.12)" : "rgba(245, 158, 11, 0.12)";
+    const trainFeedLabel = isLiveTrainFeed ? "Live TfL arrivals" : "Schedule fallback";
+    const showFeedStatusBlocks = !hypotheticalSettingsEnabled;
+
     return (
         <div
             style={{
@@ -139,10 +151,69 @@ export function MapSidebar({
                         {isLiveLines && linesUpdatedAt ? ` · ${linesUpdatedAt.toLocaleTimeString()}` : ""}
                     </span>
                 </div>
+                {showFeedStatusBlocks && (
+                    <>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                padding: "6px 8px",
+                                marginBottom: 8,
+                                borderRadius: 8,
+                                background: trainFeedBg,
+                                color: trainFeedColor,
+                                fontSize: 12,
+                            }}
+                        >
+                            <span
+                                style={{
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: 999,
+                                    background: trainFeedColor,
+                                    boxShadow: `0 0 8px ${trainFeedColor}80`,
+                                }}
+                            />
+                            <span>
+                                {`Train feed: ${trainFeedLabel}`}
+                                {trainFeedCount > 0 ? ` · ${trainFeedCount} trains visible right now` : ""}
+                                {trainFeedUpdatedAt ? ` · ${new Date(trainFeedUpdatedAt).toLocaleTimeString()}` : ""}
+                            </span>
+                        </div>
+                        {!isLiveTrainFeed && trainFeedReason && (
+                            <div
+                                style={{
+                                    marginTop: -2,
+                                    marginBottom: 8,
+                                    padding: "6px 8px",
+                                    borderRadius: 8,
+                                    border: `1px solid ${COLORS.border}`,
+                                    color: COLORS.textMuted,
+                                    fontSize: 11,
+                                    lineHeight: 1.35,
+                                    background: "rgba(0, 0, 0, 0.2)",
+                                }}
+                            >
+                                {trainFeedReason}
+                            </div>
+                        )}
+                    </>
+                )}
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {effectiveLines.map((line) => {
                         const isClosed = closedLines.has(line.id);
+                        const isPartlyClosed = !isClosed && partlyClosedLines.has(line.id);
                         const disabled = !hypotheticalSettingsEnabled;
+                        const statusLabel = isClosed ? "Closed" : (isPartlyClosed ? "Partly Closed" : "Open");
+                        const statusColor = isClosed ? "#f87171" : (isPartlyClosed ? "#f59e0b" : "#22c55e");
+                        const buttonBackground = disabled
+                            ? (
+                                isClosed
+                                    ? "rgba(239, 68, 68, 0.18)"
+                                    : (isPartlyClosed ? "rgba(245, 158, 11, 0.18)" : "rgba(100, 116, 139, 0.2)")
+                            )
+                            : "rgba(0,0,0,0.3)";
                         return (
                             <button
                                 key={line.id}
@@ -154,12 +225,12 @@ export function MapSidebar({
                                     justifyContent: "space-between",
                                     width: "100%",
                                     padding: "10px 12px",
-                                    background: disabled ? "rgba(100, 116, 139, 0.2)" : "rgba(0,0,0,0.3)",
+                                    background: buttonBackground,
                                     border: `1px solid ${COLORS.border}`,
                                     borderRadius: 8,
                                     color: COLORS.text,
                                     cursor: disabled ? "not-allowed" : "pointer",
-                                    opacity: isClosed ? 0.6 : 1,
+                                    opacity: isClosed ? 0.6 : (isPartlyClosed ? 0.9 : 1),
                                     transition: "background-color 0.2s ease, opacity 0.2s ease",
                                 }}
                             >
@@ -171,13 +242,13 @@ export function MapSidebar({
                                             borderRadius: 999,
                                             backgroundColor: line.color,
                                             border: "1px solid #fff",
-                                            boxShadow: isClosed ? "none" : `0 0 8px ${line.color}80`,
+                                            boxShadow: isClosed ? "none" : (isPartlyClosed ? "0 0 8px #f59e0b80" : `0 0 8px ${line.color}80`),
                                         }}
                                     />
                                     {line.label}
                                 </span>
-                                <span style={{ fontSize: 12, color: isClosed ? "#f87171" : "#22c55e" }}>
-                                    {isClosed ? "Closed" : "Open"}
+                                <span style={{ fontSize: 12, color: statusColor }}>
+                                    {statusLabel}
                                 </span>
                             </button>
                         );

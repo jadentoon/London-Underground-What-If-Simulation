@@ -19,6 +19,13 @@ export function groupEdges(edges) {
     return groups;
 }
 
+export function buildUndirectedLineEdgeKey(from, to, line) {
+    const a = String(from);
+    const b = String(to);
+    const l = String(line);
+    return a < b ? `${a}-${b}-${l}` : `${b}-${a}-${l}`;
+}
+
 /**
  * Deduplicate bidirectional edges
  * Removes duplicate edges where from-to and to-from connections exist
@@ -30,9 +37,7 @@ export function dedupeEdges(edges) {
     const seen = new Set();
     const result = [];
     for (const edge of edges) {
-        const a = String(edge.from);
-        const b = String(edge.to);
-        const key = a < b ? `${a}-${b}-${edge.line}` : `${b}-${a}-${edge.line}`;
+        const key = buildUndirectedLineEdgeKey(edge.from, edge.to, edge.line);
         if (seen.has(key)) continue;
         seen.add(key);
         result.push(edge);

@@ -57,6 +57,11 @@ export function RoutingErrorBox({ error, COLORS, onClose }) {
                                 Closed stations may be blocking all available paths.
                             </div>
                         )}
+                        {error.reason === 'closed-lines' && (
+                            <div style={{ marginTop: 6 }}>
+                                Line closures or partial closures may be blocking all available paths.
+                            </div>
+                        )}
                     </div>
                 </div>
                 <button

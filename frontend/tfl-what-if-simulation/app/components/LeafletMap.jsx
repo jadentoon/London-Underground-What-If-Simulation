@@ -7,12 +7,14 @@ import { dijkstra } from "../lib/pathfinding.js";
 import { buildGraph } from "../lib/graph.js";
 
 import { LONDON_CENTER } from "./mapComponents/constants.js";
-import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey } from "./mapComponents/utils.js";
+import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey, buildUndirectedLineEdgeKey } from "./mapComponents/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "./mapComponents/icons.js";
+import { useTrainMovements } from "./mapComponents/useTrainMovements.js";
 
 import RouteLayer from "./mapComponents/RouteLayer.jsx";
 import EdgeLayer from "./mapComponents/EdgeLayer.jsx";
 import StationLayer from "./mapComponents/StationLayer.jsx";
+import TrainLayer from "./mapComponents/TrainLayer.jsx";
 
 setupLeafletDefaultIcons();
 
@@ -94,6 +96,7 @@ function ClearOnMapClick({ enabled, onClear }) {
  * @param {function} onStationClick - callback when a station is double-clicked (close/open)
  * @param {function} onStationSelect - callback when a station is single-clicked (route planning)
  * @param {Set} closedLines - set of line ids that are marked as closed
+ * @param {Map<string, Set<string>>} partialStationIdsByLine - live partial disruption station ids by line
  * @param {function} onLineToggle - callback when a line is toggled on map
  * @returns {JSX.Element} Leaflet Map container.
  */
@@ -102,12 +105,15 @@ const LeafletMap = ({
     hypotheticalSettingsEnabled = false,
     closedStations = new Set(),
     closedLines = new Set(),
+    partialStationIdsByLine = new Map(),
     onToggleStationClosed,
     onLineToggle,
     onMapReady,
     onStationsLoaded,
     onRoutingError,
     onRouteChange,
+    liveClosedStations = new Set(),
+    onTrainFeedStatusChange,
 }) => {
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
@@ -128,6 +134,8 @@ const LeafletMap = ({
 
     const redXIcon = useMemo(() => createRedXIcon(zoomLevel), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
+    const liveClosedSet = useMemo(() => normaliseIdSet(liveClosedStations),[liveClosedStations]);
+    const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
 
     const clearRoute = useCallback(() => {
         setPath([]);
@@ -160,11 +168,39 @@ const LeafletMap = ({
         if (!nodes.length || !edges.length) return null;
         return buildGraph(nodes, edges);
     }, [nodes, edges]);
+    const trainVisualsEnabled = !hypotheticalSettingsEnabled;
+    const { trains, feedStatus } = useTrainMovements({
+        nodes,
+        edges,
+        enabled: trainVisualsEnabled,
+    });
 
     const groupedEdges = useMemo(() => {
         const unique = dedupeEdges(edges);
         return groupEdges(unique);
     }, [edges]);
+
+    const partialEdgeKeys = useMemo(() => {
+        if (hypotheticalSettingsEnabled) return new Set();
+        if (!partialStationIdsByLine || partialStationIdsByLine.size === 0) return new Set();
+
+        const out = new Set();
+        const uniqueEdges = dedupeEdges(edges);
+
+        for (const edge of uniqueEdges) {
+            const line = String(edge.line);
+            const affectedStops = partialStationIdsByLine.get(line);
+            if (!affectedStops || affectedStops.size < 2) continue;
+
+            const from = String(edge.from);
+            const to = String(edge.to);
+            if (affectedStops.has(from) && affectedStops.has(to)) {
+                out.add(buildUndirectedLineEdgeKey(from, to, line));
+            }
+        }
+
+        return out;
+    }, [edges, hypotheticalSettingsEnabled, partialStationIdsByLine]);
 
     function handleSingleClickStation(stationId) {
         const id = String(stationId);
@@ -182,8 +218,10 @@ const LeafletMap = ({
 
         // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
-        
-        const result = dijkstra(graph, String(start), id, stationsToAvoid);
+        const linesToAvoid = closedLineSet;
+        const blockedEdges = partialEdgeKeys;
+
+        const result = dijkstra(graph, String(start), id, stationsToAvoid, linesToAvoid, blockedEdges);
 
         const newPath = Array.isArray(result) ? result : (result?.path ?? []);
         const totalSeconds = Array.isArray(result) ? null : result?.totalSeconds;
@@ -194,13 +232,16 @@ const LeafletMap = ({
         if (newPath.length === 0 && String(start) !== id) {
             const startStation = nodeById.get(String(start));
             const endStation = nodeById.get(id);
+            const hasClosedStations = hypotheticalSettingsEnabled && closedSet.size > 0;
+            const hasLineDisruptions = closedLineSet.size > 0 || partialEdgeKeys.size > 0;
 
              onRoutingError?.({
                 from: startStation?.name || start,
                 to: endStation?.name || id,
-                reason: hypotheticalSettingsEnabled ? 'closed-stations' : 'no-connection'
+                reason: hasClosedStations
+                        ? "closed-stations"
+                        : (hasLineDisruptions ? "closed-lines" : "no-connection")
             });
-
             setPath([]);
             setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
         } else {
@@ -360,6 +401,11 @@ const LeafletMap = ({
         onMapChange?.(state);
     }
 
+    useEffect(() => {
+        if (!onTrainFeedStatusChange) return;
+        onTrainFeedStatusChange(feedStatus);
+    }, [feedStatus, onTrainFeedStatusChange]);
+
     return (
         <MapContainer
             center={LONDON_CENTER}
@@ -389,14 +435,16 @@ const LeafletMap = ({
 
             <RouteLayer pathPositions={pathPositions} />
 
-            <EdgeLayer
-                groupedEdges={groupedEdges}
-                nodeById={nodeById}
-                dimmed={hasPath}
-                closedLines={closedLines}
+            <EdgeLayer 
+                groupedEdges={groupedEdges} 
+                nodeById={nodeById} 
+                dimmed={hasPath} 
+                closedLines={closedLines} 
+                partialEdgeKeys={partialEdgeKeys}
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
+            {trainVisualsEnabled && <TrainLayer trains={trains} />}
 
             <StationLayer
                 nodes={nodes}
@@ -410,6 +458,7 @@ const LeafletMap = ({
                 onSingleClickStation={handleSingleClickStation}
                 onDoubleClickStation={(id) => onToggleStationClosed?.(id)}
                 zoomLevel={zoomLevel}
+                liveClosedSet={liveClosedSet}
             />
         </MapContainer>
     )

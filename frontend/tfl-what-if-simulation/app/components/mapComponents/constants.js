@@ -29,6 +29,21 @@ export const LINE_COLOURS = {
     "waterloo-city": "#95CDBA",
 };
 
+// Precomputed train marker colours (slightly darker/more saturated than line colours)
+export const TRAIN_COLOURS = {
+    "bakerloo": "#ac5a00",
+    "central": "#dd150c",
+    "circle": "#f2c500",
+    "district": "#007424",
+    "hammersmith-city": "#e094a7",
+    "jubilee": "#8f9599",
+    "metropolitan": "#95004e",
+    "northern": "#000000",
+    "piccadilly": "#002f84",
+    "victoria": "#008dca",
+    "waterloo-city": "#82bca8",
+};
+
 // Line display labels
 export const LINE_LABELS = {
     "bakerloo": "Bakerloo",
