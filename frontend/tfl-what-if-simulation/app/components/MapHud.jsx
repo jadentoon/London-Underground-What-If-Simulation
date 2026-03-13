@@ -1,4 +1,3 @@
-
 /**
  * Info box with the current zoom level and center coordinates, as well as a reset view button
  */
@@ -37,7 +36,6 @@ export function MapHud({
                 {hudState.center.lat.toFixed(4)},{" "}
                 {hudState.center.lng.toFixed(4)}
             </div>
-
             <button
                 onClick={onResetView}
                 style={{

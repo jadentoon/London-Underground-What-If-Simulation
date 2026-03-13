@@ -9,6 +9,7 @@ export function buildGraph(nodes, edges) {
     edges.forEach(edge => {
         const from = String(edge.from);
         const to = String(edge.to);
+        const line = String(edge.line)
         
         if (!graph[from] || !graph[to]){
             console.warn("Invalid edge: ", edge);
@@ -18,13 +19,13 @@ export function buildGraph(nodes, edges) {
         graph[from].push({
             to,
             weight: edge.travel_time,
-            line: String(edge.line),
+            line: line,
         });
 
         graph[to].push({
             to: from,
             weight: edge.travel_time,
-            line: String(edge.line),
+            line: line,
         });
     });
     return graph;

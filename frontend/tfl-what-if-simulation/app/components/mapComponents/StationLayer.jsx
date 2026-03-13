@@ -37,15 +37,14 @@ export default function StationLayer({
 
                 const isStart = id === String(startId);
                 const isOnPath = pathSet.has(id);
-                // Closed in live TfL data (StopPoint disruptions)
+                // Closed in live TfL data
                 const isLiveClosed = liveClosedSet.has(id);
 
                 // Closed in hypothetical what-if mode
-                const isHypotheticalClosed =
-                    hypotheticalSettingsEnabled && closedSet.has(id);
+                const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);
 
                 // A station is visually closed if either:
-                // - it is closed in live data, OR
+                // - it is closed in live data (any mode), OR
                 // - it is closed in what-if mode while hypothetical settings are enabled
                 const isClosed = isLiveClosed || isHypotheticalClosed;
 
@@ -65,9 +64,16 @@ export default function StationLayer({
                             radius={radius}
                             eventHandlers={{
                                 click: (e) => {
-                                    if (isStart || isClosed) return;
                                     e?.originalEvent?.stopPropagation?.();
-                                    onSingleClickStation(id);
+
+                                    if (isClosed) return;
+
+                                    if (isStart) {
+                                        setStartId(null);
+                                        return;
+                                    }
+
+                                    onSingleClickStation?.(id);
                                 },
                                 dblclick: (e) => {
                                     e?.originalEvent?.preventDefault?.();
@@ -98,7 +104,7 @@ export default function StationLayer({
                             {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
                         </CircleMarker>
 
-                        {redXIcon && isClosed && (
+                        {redXIcon && (isLiveClosed || (hypotheticalSettingsEnabled && isHypotheticalClosed)) && (
                             <Marker
                                 position={[s.lat, s.lon]}
                                 icon={redXIcon}

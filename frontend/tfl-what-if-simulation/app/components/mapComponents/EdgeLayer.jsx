@@ -3,7 +3,9 @@ import { Polyline, Tooltip } from "react-leaflet";
 import { offsetSegment, buildUndirectedLineEdgeKey } from "./utils.js";
 import { LINE_COLOURS, LINE_LABELS, LINE_STYLE } from "./constants.js";
 
-const PARTIAL_LINE_COLOUR = "#f59e0b";
+const DISRUPTED_LINE_OUTLINE_COLOUR = "#f59e0b";
+const DISRUPTED_LINE_CORE_COLOUR = "#000000";
+const DISRUPTED_LINE_DASH_ARRAY = "8 8";
 
 export default function EdgeLayer({
     groupedEdges,
@@ -39,9 +41,10 @@ export default function EdgeLayer({
                     const edgeKey = buildUndirectedLineEdgeKey(edge.from, edge.to, line);
                     const isClosedLine = closedLines.has(line);
                     const isPartlyClosedLine = !isClosedLine && partialEdgeKeys.has(edgeKey);
+                    const useDisruptedStyle = isClosedLine || isPartlyClosedLine;
 
-                    const color = isClosedLine 
-                        ? LINE_STYLE.CLOSED_LINE_COLOUR 
+                    const color = useDisruptedStyle
+                        ? DISRUPTED_LINE_CORE_COLOUR
                         : (LINE_COLOURS[line] || "#3b82f6");
 
                     const label = LINE_LABELS[line] || line;
@@ -55,12 +58,10 @@ export default function EdgeLayer({
                             <Polyline
                                 positions={positions}
                                 pathOptions={{
-                                    color: isClosedLine 
-                                        ? LINE_STYLE.CLOSED_LINE_OUTLINE 
-                                        : (isPartlyClosedLine ? PARTIAL_LINE_COLOUR : LINE_STYLE.OUTLINE_COLOR),
-                                    weight: isClosedLine 
-                                        ? LINE_STYLE.OUTLINE_WEIGHT + 2 
-                                        : (isPartlyClosedLine ? LINE_STYLE.OUTLINE_WEIGHT + 1 : LINE_STYLE.OUTLINE_WEIGHT),
+                                    color: useDisruptedStyle
+                                        ? DISRUPTED_LINE_OUTLINE_COLOUR
+                                        : LINE_STYLE.OUTLINE_COLOR,
+                                    weight: useDisruptedStyle ? LINE_STYLE.OUTLINE_WEIGHT + 1 : LINE_STYLE.OUTLINE_WEIGHT,
                                     opacity: edgeOutlineOpacity,
                                     lineCap: "round",
                                     lineJoin: "round",
@@ -79,9 +80,9 @@ export default function EdgeLayer({
                                     lineCap: "round",
                                     lineJoin: "round",
                                     smoothFactor: LINE_STYLE.SMOOTH_FACTOR,
-                                    dashArray: isPartlyClosedLine ? "8 8" : undefined,
+                                    dashArray: useDisruptedStyle ? DISRUPTED_LINE_DASH_ARRAY : undefined,
                                     interactive: true,
-                                    className: isClosedLine ? "closed-line" : (isPartlyClosedLine ? "partial-line" : ""),
+                                    className: "",
                                 }}
                                 eventHandlers={{
                                     dblclick: (e) => {

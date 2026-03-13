@@ -13,7 +13,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { LONDON_CENTER } from "./mapComponents/constants";
+import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "./mapComponents/constants";
 import { useLineStatus } from "./mapComponents/useLineStatus";
 import { MapLeafletChrome } from "./MapLeafletChrome";
 import { MapTitleOverlay } from "./MapTitleOverlay";
@@ -23,6 +23,7 @@ import { MapSidebar } from "./MapSidebar";
 import { SidebarToggleButton } from "./SidebarToggleButton";
 import { MapWhatIfOverlay } from "./MapWhatIfOverlay";
 import { RoutingErrorBox } from "./RoutingErrorBox";
+import { RouteInfoPanel } from "./RouteInfoPanel";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -38,6 +39,7 @@ const COLORS = {
 };
 
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
+const LIVE_CLOSURE_POLL_MS = 15_000;
 
 /**
  * MapCanvas
@@ -76,7 +78,7 @@ export function MapCanvas() {
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
 
-    // State to track live-closed stations (from TfL API)
+    // Live real-world closed stations (from TfL Unified API)
     const [liveClosedStations, setLiveClosedStations] = useState(new Set());
 
     // Stations list for search (filled by LeafletMap once loaded)
@@ -85,11 +87,35 @@ export function MapCanvas() {
     //Search input value
     const [stationQuery, setStationQuery] = useState("");
 
-    // State to track user-simulated closed lines in What-If mode.
+    // State to track closed lines in What-If mode (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
 
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
+
+    const [routeInfo, setRouteInfo] = useState(null);
+    const [isRoutePanelOpen, setIsRoutePanelOpen] = useState(false);
+    const [trainFeedStatus, setTrainFeedStatus] = useState({
+        source: "fallback",
+        updatedAt: null,
+        reason: "Waiting for live feed",
+        trainCount: 0,
+    });
+    const {
+        effectiveLines,
+        effectiveClosedLines,
+        effectivePartialLines,
+        effectivePartialStationIdsByLine,
+        isLiveLines,
+        linesUpdatedAt,
+        lineStatusLabel,
+        lineStatusColor,
+        lineStatusBg,
+    } = useLineStatus({
+        hypotheticalSettingsEnabled,
+        simulatedClosedLines: closedLines,
+        pollMs: LIVE_CLOSURE_POLL_MS,
+    });
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -147,6 +173,71 @@ export function MapCanvas() {
         setClosedStations(new Set());
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
+
+    useEffect(() => {
+        if (hypotheticalSettingsEnabled) {
+            setLiveClosedStations(new Set());
+            return;
+        }
+
+        let cancelled = false;
+        let pollId = null;
+
+        async function fetchLiveStationClosures() {
+            try {
+                const res = await fetch(
+                    "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
+                );
+
+                if (!res.ok) {
+                    throw new Error(`TfL API ${res.status}`);
+                }
+
+                const disruptions = await res.json();
+                const disruptionList = Array.isArray(disruptions) ? disruptions : [];
+                const closed = new Set();
+
+                disruptionList.forEach((disruption) => {
+                    const stops = disruption.affectedStops || disruption.affectedStopPoints || [];
+                    const stopPointIds = Array.isArray(disruption.stopPointIds) ? disruption.stopPointIds : [];
+
+                    stops.forEach((stop) => {
+                        if (!stop) return;
+                        if (typeof stop === "string") {
+                            closed.add(stop);
+                        } else if (stop.id) {
+                            closed.add(String(stop.id));
+                        } else if (stop.stationId) {
+                            closed.add(String(stop.stationId));
+                        }
+                    });
+
+                    stopPointIds.forEach((id) => {
+                        if (id) closed.add(String(id));
+                    });
+                });
+
+                if (!cancelled) {
+                    setLiveClosedStations(closed);
+                }
+            } catch (err) {
+                console.error("Error fetching live station disruptions", err);
+                if (!cancelled) {
+                    setLiveClosedStations(new Set());
+                }
+            }
+        }
+
+        fetchLiveStationClosures();
+        pollId = setInterval(fetchLiveStationClosures, LIVE_CLOSURE_POLL_MS);
+
+        return () => {
+            cancelled = true;
+            if (pollId) clearInterval(pollId);
+        };
+    }, [hypotheticalSettingsEnabled]);
+
+
 
     /**
      * Reset the map view to its original center and zoom level.
@@ -267,6 +358,15 @@ export function MapCanvas() {
         }, 1500);
     }, []);
 
+    const handleRouteChange = useCallback((info) => {
+        setRouteInfo(info);
+
+        setIsRoutePanelOpen((prevOpen) => {
+            const nextOpen = !!info?.hasPath;
+            return prevOpen === nextOpen ? prevOpen : nextOpen;
+        });
+    }, []);
+
     return (
         <div
             style={{
@@ -293,7 +393,9 @@ export function MapCanvas() {
                 onMapReady={(map) => { leafletMapRef.current = map; }}
                 onStationsLoaded={handleStationsLoaded}
                 onRoutingError={setRoutingError}
-                liveClosedStations={isLiveLines ? liveClosedStations : new Set()}
+                onRouteChange={handleRouteChange}
+                liveClosedStations={liveClosedStations}
+                onTrainFeedStatusChange={setTrainFeedStatus}
             />
 
             <MapTitleOverlay
@@ -344,6 +446,10 @@ export function MapCanvas() {
                 lineStatusBg={lineStatusBg}
                 isLiveLines={isLiveLines}
                 linesUpdatedAt={linesUpdatedAt}
+                trainFeedSource={trainFeedStatus.source}
+                trainFeedUpdatedAt={trainFeedStatus.updatedAt}
+                trainFeedReason={trainFeedStatus.reason}
+                trainFeedCount={trainFeedStatus.trainCount}
             />
 
             <SidebarToggleButton
@@ -360,6 +466,17 @@ export function MapCanvas() {
                     accentColor={accentColor}
                 />
             )}
+
+            <RouteInfoPanel 
+                isOpen={isRoutePanelOpen}
+                onToggle={() => setIsRoutePanelOpen((v) => !v)}
+                routeInfo={routeInfo}
+                COLORS={COLORS}
+                accentColor={accentColor}
+                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                lineColours={LINE_COLOURS}
+                lineLabels={LINE_LABELS}
+            />
 
             <RoutingErrorBox
                 error={routingError}

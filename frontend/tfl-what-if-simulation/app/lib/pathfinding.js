@@ -1,8 +1,19 @@
+const CHANGE_PENALTY_SECONDS = 300; // 5 min
+
+function makeKey(stationId, line) {
+    return `${stationId}__${line ?? "START"}`;
+}
+
 function buildUndirectedLineEdgeKey(from, to, line) {
     const a = String(from);
     const b = String(to);
     const l = String(line);
     return a < b ? `${a}-${b}-${l}` : `${b}-${a}-${l}`;
+}
+
+function splitKey(k) {
+    const [stationId, line] = k.split("__");
+    return { stationId, line: line === "START" ? null : line };
 }
 
 export function dijkstra(
@@ -11,70 +22,125 @@ export function dijkstra(
     end,
     closedStations = new Set(),
     closedLines = new Set(),
-    blockedEdges = new Set()
+    blockedEdges = new Set(),
 ) {
-    const distances = {};
-    const previous = {};
-    const unvisited = new Set(Object.keys(graph));
+    const startId = String(start);
+    const endId = String(end);
 
     const closedSet = new Set([...closedStations].map(String));
     const closedLineSet = new Set([...closedLines].map(String));
     const blockedEdgeSet = new Set([...blockedEdges].map(String));
 
-    for (const node of unvisited){
-        distances[node] = Infinity;
+    const linesByStation = new Map();
+    for (const [u, edges] of Object.entries(graph)) {
+        const set = new Set();
+        for (const e of edges ?? []) set.add(String(e.line ?? "unknown"));
+        linesByStation.set(String(u), [...set]);
     }
 
-    distances[start] = 0;
+    const distances = {};
+    const previous = {};
+    const unvisited = new Set();
+
+    for (const stationId of Object.keys(graph)) {
+        const s = String(stationId);
+
+        const startKey = makeKey(s, "START");
+        distances[startKey] = Infinity;
+        unvisited.add(startKey);
+
+        const linesHere = linesByStation.get(s) ?? [];
+        for (const line of linesHere) {
+            const k = makeKey(s, line);
+            distances[k] = Infinity;
+            unvisited.add(k);
+        }
+    }
+
+    const s0 = makeKey(startId, "START");
+    distances[s0] = 0;
 
     while (unvisited.size > 0) {
-        const current = [...unvisited].reduce((a, b) => 
-            distances[a] < distances[b] ? a : b
-        );
+        let currentKey = null;
+        for (const k of unvisited) if (currentKey === null || distances[k] < distances[currentKey]) currentKey = k;
 
-        if (distances[current] === Infinity) break;
-        if (current === end) break;
+        if (currentKey === null || distances[currentKey] === Infinity) break;
 
-        unvisited.delete(current);
+        unvisited.delete(currentKey);
 
-        for (const edge of graph[current]) {
+        const { stationId: u, line: currentLine } = splitKey(currentKey);
+
+        if (u === endId) break;
+
+        for (const edge of graph[u] ?? []) {
             const neighbour = String(edge.to);
-            const line = String(edge.line ?? "");
-            const edgeKey = buildUndirectedLineEdgeKey(current, neighbour, line);
-            
-            // akip all the closed stations 
-            if (closedSet.has(neighbour) && neighbour !== end) {
-                continue;
-            }
+            const edgeLine = String(edge.line ?? "unknown");
+            const rideTime = Number(edge.weight ?? 0);
 
-            // Skip connections that belong to a closed line.
-            if (line && closedLineSet.has(line)) {
-                continue;
-            }
+            // skip all the closed stations 
+            if (closedSet.has(neighbour) && neighbour !== endId) continue;
 
-            // Skip blocked segments (used for partial-closure station ranges).
-            if (blockedEdgeSet.has(edgeKey)) {
-                continue;
-            }
-            
-            const alt = distances[current] + edge.weight;
+            // Skip closed lines
+            if (closedLineSet.has(edgeLine)) continue;
 
-            if(alt < distances[neighbour]) {
-                distances[neighbour] = alt;
-                previous[neighbour] = current;
+            const edgeKey = buildUndirectedLineEdgeKey(u, neighbour, edgeLine);
+            if (blockedEdgeSet.has(edgeKey)) continue;
+
+            const penalty =
+                currentLine && currentLine !== edgeLine 
+                    ? CHANGE_PENALTY_SECONDS 
+                    : 0;
+
+            const nextKey = makeKey(neighbour, edgeLine);
+            if (!unvisited.has(nextKey)) continue;
+
+            const alt = distances[currentKey] + rideTime + penalty;
+
+            if (alt < distances[nextKey]) {
+                distances[nextKey] = alt;
+                previous[nextKey] = currentKey;
             }
         }
     }
 
-    if (distances[end] === Infinity) return [];
+    const endLines = linesByStation.get(endId) ?? [];
+    const candidatEndKeys = [
+        makeKey(endId, "START"),
+        ...endLines.map((l) => makeKey(endId, l)),
+    ].filter((k) => k in distances);
 
-    const path = [];
-    let curr = end;
+    let bestEndKey = null;
+    for (const k of candidatEndKeys) if (bestEndKey === null || distances[k] < distances[bestEndKey]) bestEndKey = k;
 
-    while (curr) {
-        path.unshift(curr);
-        curr = previous[curr];
+    if (!bestEndKey || distances[bestEndKey] === Infinity) return { path: [], totalSeconds: Infinity, changeCount: 0 };
+
+    const statePath = [];
+    let k = bestEndKey;
+    while (k) {
+        statePath.unshift(k);
+        k = previous[k];
     }
 
-    return path;
+    const path = [];
+    let lastStation = null;
+    let lastLine = null;
+    let changeCount = 0;
+
+    for (const sk of statePath) {
+        const { stationId, line } = splitKey(sk);
+
+        if (stationId !== lastStation) path.push(stationId);
+
+        if (line && lastLine && line !== lastLine) changeCount++;
+        if (line) lastLine = line;
+
+        lastStation = stationId;
+    }
+
+    return {
+        path,
+        totalSeconds: distances[bestEndKey],
+        changeCount,
+        statePath
+    };
 }

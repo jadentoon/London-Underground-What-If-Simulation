@@ -1,5 +1,7 @@
 export const LONDON_CENTER = [51.5074, -0.1278]; // default center (London coordinates)
 
+export const SEP = "__";
+
 // Line styling constants
 export const LINE_STYLE = {
     OUTLINE_COLOR: "#ffffff",
@@ -25,6 +27,21 @@ export const LINE_COLOURS = {
     "piccadilly": "#003688",
     "victoria": "#0098D4",
     "waterloo-city": "#95CDBA",
+};
+
+// Precomputed train marker colours (slightly darker/more saturated than line colours)
+export const TRAIN_COLOURS = {
+    "bakerloo": "#ac5a00",
+    "central": "#dd150c",
+    "circle": "#f2c500",
+    "district": "#007424",
+    "hammersmith-city": "#e094a7",
+    "jubilee": "#8f9599",
+    "metropolitan": "#95004e",
+    "northern": "#000000",
+    "piccadilly": "#002f84",
+    "victoria": "#008dca",
+    "waterloo-city": "#82bca8",
 };
 
 // Line display labels
