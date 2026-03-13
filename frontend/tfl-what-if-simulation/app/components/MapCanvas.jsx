@@ -334,22 +334,6 @@ export function MapCanvas() {
             clearInterval(intervalId);
         };
     }, []);
-
-    const {
-        effectiveLines,
-        effectiveClosedLines,
-        effectivePartialLines,
-        effectivePartialStationIdsByLine,
-        isLiveLines,
-        linesUpdatedAt,
-        lineStatusLabel,
-        lineStatusColor,
-        lineStatusBg,
-    } = useLineStatus({
-        hypotheticalSettingsEnabled,
-        simulatedClosedLines: closedLines,
-    });
-
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
         setClosedLines(new Set());

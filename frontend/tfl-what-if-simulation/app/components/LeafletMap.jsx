@@ -134,7 +134,6 @@ const LeafletMap = ({
 
     const redXIcon = useMemo(() => createRedXIcon(zoomLevel), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
-    const liveClosedSet = useMemo(() => normaliseIdSet(liveClosedStations),[liveClosedStations]);
     const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
     const liveClosedSet = new Set(Array.from(liveClosedStations ?? []).map((id) => String(id)));
 
