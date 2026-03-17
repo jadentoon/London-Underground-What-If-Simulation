@@ -237,8 +237,19 @@ export function MapSidebar({
                         const isClosed = closedLines.has(line.id);
                         const isPartlyClosed = !isClosed && partlyClosedLines.has(line.id);
                         const disabled = !hypotheticalSettingsEnabled;
-                        const statusLabel = isClosed ? "Closed" : (isPartlyClosed ? "Partly Closed" : "Open");
-                        const statusColor = isClosed ? "#f87171" : (isPartlyClosed ? "#f59e0b" : "#22c55e");
+                        const delay = lineDelays.get(line.id);
+                        const showDelay = !hypotheticalSettingsEnabled && isLiveLines && delay;
+                        
+                        // In live mode with delay data, show API status description; otherwise show hypothetical/default status
+                        const statusLabel = showDelay 
+                            ? (delay.description === "Good Service" ? "Open" : delay.description)
+                            : (isClosed ? "Closed" : (isPartlyClosed ? "Partly Closed" : "Open"));
+                        
+                        // Status color: use delay severity color in live mode, otherwise use hypothetical colors
+                        const statusColor = showDelay 
+                            ? getDelaySeverityColor(delay.severity)
+                            : (isClosed ? "#f87171" : (isPartlyClosed ? "#f59e0b" : "#22c55e"));
+                        
                         const buttonBackground = disabled
                             ? (
                                 isClosed
@@ -246,8 +257,6 @@ export function MapSidebar({
                                     : (isPartlyClosed ? "rgba(245, 158, 11, 0.18)" : "rgba(100, 116, 139, 0.2)")
                             )
                             : "rgba(0,0,0,0.3)";
-                        const delay = lineDelays.get(line.id);
-                        const showDelay = !hypotheticalSettingsEnabled && isLiveLines && delay;
                         const isExpanded = expandedLineId === line.id;
                         
                         return (

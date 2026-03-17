@@ -89,10 +89,6 @@ export function MapCanvas() {
 
     // State to track closed lines in What-If mode (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
-    // Live line metadata (default to fallback)
-    const [lineOptions, setLineOptions] = useState(FALLBACK_LINES);
-    const [linesSource, setLinesSource] = useState("fallback");
-    const [linesUpdatedAt, setLinesUpdatedAt] = useState(null);
 
     //line delay/status data from TfL API
     const [lineDelays, setLineDelays] = useState(new Map());
