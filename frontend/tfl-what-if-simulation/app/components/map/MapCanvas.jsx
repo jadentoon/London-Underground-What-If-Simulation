@@ -13,17 +13,17 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "./mapComponents/constants";
-import { useLineStatus } from "./mapComponents/useLineStatus";
-import { MapLeafletChrome } from "./MapLeafletChrome";
-import { MapTitleOverlay } from "./MapTitleOverlay";
-import { MapSearchBox } from "./MapSearchBox";
-import { MapHud } from "./MapHud";
-import { MapSidebar } from "./MapSidebar";
-import { SidebarToggleButton } from "./SidebarToggleButton";
-import { MapWhatIfOverlay } from "./MapWhatIfOverlay";
-import { RoutingErrorBox } from "./RoutingErrorBox";
-import { RouteInfoPanel } from "./RouteInfoPanel";
+import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "../mapComponents/constants";
+import { useLineStatus } from "../../hooks/useLineStatus";
+import { MapLeafletChrome } from "../layout/MapLeafletChrome";
+import { MapTitleOverlay } from "../layout/MapTitleOverlay";
+import { MapSearchBox } from "../layout/MapSearchBox";
+import { MapHud } from "../layout/MapHud";
+import { MapSidebar } from "../layout/MapSidebar";
+import { SidebarToggleButton } from "../layout/SidebarToggleButton";
+import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
+import { RoutingErrorBox } from "../layout/RoutingErrorBox";
+import { RouteInfoPanel } from "../layout/RouteInfoPanel";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });

@@ -4,7 +4,7 @@
  */
 
 import { useState, useRef } from "react";
-import { getDelaySeverityColor } from "./mapComponents/delayUtils";
+import { getDelaySeverityColor } from "../mapComponents/delayUtils";
 
 export function MapSidebar({
     isSidebarOpen,

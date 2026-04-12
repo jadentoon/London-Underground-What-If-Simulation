@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { CircleMarker, Popup } from "react-leaflet";
-import { TRAIN_COLOURS } from "./constants";
+import { TRAIN_COLOURS } from "../mapComponents/constants.js";
 
 function formatArrivalTime(isoTimestamp) {
     if (!isoTimestamp) return "";

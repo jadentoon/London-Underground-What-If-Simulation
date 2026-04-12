@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
-import { LINE_COLOURS, LINE_LABELS } from "./constants";
-import { dedupeEdges } from "./utils";
+import { LINE_COLOURS, LINE_LABELS } from "../components/mapComponents/constants";
+import { dedupeEdges } from "../components/mapComponents/utils";
 
 const LIVE_REFRESH_MS = 15_000;
 const ANIMATION_TICK_MS = 2_000;
@@ -10,7 +10,7 @@ const MAX_LIVE_ETA_SECONDS = 480;
 const MAX_LIVE_TRAINS = 140;
 const FALLBACK_TRAINS_PER_LINE = 5;
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
-const SNAPSHOT_CARRYOVER_MS = 90_000;
+const SNAPSHOT_CARRYOVER_MS = 180_000;
 const PUNCTUALITY_THRESHOLD_SECONDS = 20;
 
 function normaliseTflStopId(rawId) {

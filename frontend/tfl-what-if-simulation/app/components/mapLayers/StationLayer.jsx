@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import { CircleMarker, Tooltip, Marker } from "react-leaflet";
-import { ZOOM_LEVELS } from "./constants";
+import { ZOOM_LEVELS } from "../mapComponents/constants.js";
 
 /**
  * zoom level 12 - radius 5
