@@ -27,6 +27,12 @@ export function MapSidebar({
     trainFeedUpdatedAt,
     trainFeedReason,
     trainFeedCount,
+    showTrains,
+    trainFilterMode,
+    visibleTrainLines,
+    onToggleShowTrains,
+    onTrainFilterModeChange,
+    onToggleVisibleTrainLine,
 }) {
     const partlyClosedLines = partialLines || new Set();
     const isLiveTrainFeed = trainFeedSource === "live";
@@ -41,12 +47,12 @@ export function MapSidebar({
 
     const handleMouseEnter = (lineId, hasDelay) => {
         if (!hasDelay) return;
-        
+
         //clear any existing timeout
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
         }
-        
+
         //set timeout to expand after 1 second of hover
         hoverTimeoutRef.current = setTimeout(() => {
             setExpandedLineId(lineId);
@@ -59,7 +65,7 @@ export function MapSidebar({
             clearTimeout(hoverTimeoutRef.current);
             hoverTimeoutRef.current = null;
         }
-        
+
         //collapse the expanded line
         setExpandedLineId(null);
     };
@@ -232,6 +238,117 @@ export function MapSidebar({
                         )}
                     </>
                 )}
+                {!hypotheticalSettingsEnabled &&
+                    <div style={{ marginTop: 4, marginBottom: 12 }}>
+                        <h3 style={{ margin: "0 0 8px", color: COLORS.text }}>Train Display</h3>
+                        <div
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 8,
+                                padding: "10px 12px",
+                                background: "rgba(0, 0, 0, 0.3)",
+                                border: `1px solid ${COLORS.border}`,
+                                borderRadius: 8,
+                            }}
+                        >
+                            <button
+                                onClick={onToggleShowTrains}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    width: "100%",
+                                    padding: "8px 10px",
+                                    background: "rgba(15, 23, 42, 0.65)",
+                                    border: `1px solid ${COLORS.border}`,
+                                    borderRadius: 8,
+                                    color: COLORS.text,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                <span>Show trains</span>
+                                <span style={{ color: showTrains ? "#22c55e" : COLORS.textMuted }}>
+                                    {showTrains ? "On" : "Off"}
+                                </span>
+                            </button>
+
+                            {showTrains && (
+                                <>
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                        {[
+                                            { id: "all", label: "All lines" },
+                                            { id: "selected", label: "Selected lines" },
+                                        ].map((option) => {
+                                            const active = trainFilterMode === option.id;
+                                            return (
+                                                <button
+                                                    key={option.id}
+                                                    onClick={() => onTrainFilterModeChange(option.id)}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: "8px 10px",
+                                                        background: active ? accentColor : "rgba(15, 23, 42, 0.65)",
+                                                        border: `1px solid ${active ? accentColor : COLORS.border}`,
+                                                        borderRadius: 8,
+                                                        color: active ? "#0f172a" : COLORS.text,
+                                                        cursor: "pointer",
+                                                        fontWeight: active ? 700 : 500,
+                                                    }}
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {trainFilterMode === "selected" && (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                            {effectiveLines.map((line) => {
+                                                const selected = visibleTrainLines.has(line.id);
+                                                return (
+                                                    <button
+                                                        key={`train-line-${line.id}`}
+                                                        onClick={() => onToggleVisibleTrainLine(line.id)}
+                                                        style={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "space-between",
+                                                            width: "100%",
+                                                            padding: "8px 10px",
+                                                            background: selected ? "rgba(34, 197, 94, 0.14)" : "rgba(15, 23, 42, 0.65)",
+                                                            border: `1px solid ${selected ? "#22c55e" : COLORS.border}`,
+                                                            borderRadius: 8,
+                                                            color: COLORS.text,
+                                                            cursor: "pointer",
+                                                        }}
+                                                    >
+                                                        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                            <span
+                                                                style={{
+                                                                    width: 12,
+                                                                    height: 12,
+                                                                    borderRadius: 999,
+                                                                    backgroundColor: line.color,
+                                                                    border: "1px solid #fff",
+                                                                }}
+                                                            />
+                                                            {line.label}
+                                                        </span>
+                                                        <span style={{ color: selected ? "#22c55e" : COLORS.textMuted }}>
+                                                            {selected ? "Shown" : "Hidden"}
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                }
+                <h3 style={{ margin: "0 0 8px", color: COLORS.text }}>Line Status</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {effectiveLines.map((line) => {
                         const isClosed = closedLines.has(line.id);
@@ -239,17 +356,17 @@ export function MapSidebar({
                         const disabled = !hypotheticalSettingsEnabled;
                         const delay = lineDelays.get(line.id);
                         const showDelay = !hypotheticalSettingsEnabled && isLiveLines && delay;
-                        
+
                         // In live mode with delay data, show API status description; otherwise show hypothetical/default status
-                        const statusLabel = showDelay 
+                        const statusLabel = showDelay
                             ? (delay.description === "Good Service" ? "Open" : delay.description)
                             : (isClosed ? "Closed" : (isPartlyClosed ? "Partly Closed" : "Open"));
-                        
+
                         // Status color: use delay severity color in live mode, otherwise use hypothetical colors
-                        const statusColor = showDelay 
+                        const statusColor = showDelay
                             ? getDelaySeverityColor(delay.severity)
                             : (isClosed ? "#f87171" : (isPartlyClosed ? "#f59e0b" : "#22c55e"));
-                        
+
                         const buttonBackground = disabled
                             ? (
                                 isClosed
@@ -258,7 +375,7 @@ export function MapSidebar({
                             )
                             : "rgba(0,0,0,0.3)";
                         const isExpanded = expandedLineId === line.id;
-                        
+
                         return (
                             <div
                                 key={line.id}
@@ -289,7 +406,7 @@ export function MapSidebar({
                                         background: "transparent",
                                         border: "none",
                                         color: COLORS.text,
-                                        cursor: disabled ? "not-allowed" : "pointer",
+                                        cursor: "help",
                                         transition: "background-color 0.2s ease",
                                     }}
                                 >
@@ -358,21 +475,21 @@ export function MapSidebar({
                                                 {delay.description}
                                             </span>
                                         </div>
-                                        
+
                                         {delay.reason && (
                                             <div style={{ marginBottom: 8 }}>
                                                 <strong style={{ color: "#94a3b8" }}>Reason:</strong>
                                                 <div style={{ marginTop: 4, color: "#cbd5e1" }}>{delay.reason}</div>
                                             </div>
                                         )}
-                                        
+
                                         {/* {delay.fullDescription && (
                                             <div style={{ marginBottom: 8 }}>
                                                 <strong style={{ color: "#94a3b8" }}>Details:</strong>
                                                 <div style={{ marginTop: 4, color: "#cbd5e1" }}>{delay.fullDescription}</div>
                                             </div>
                                         )} */}
-                                        
+
                                         {delay.additionalInfo && (
                                             <div>
                                                 <strong style={{ color: "#94a3b8" }}>Additional Info:</strong>
