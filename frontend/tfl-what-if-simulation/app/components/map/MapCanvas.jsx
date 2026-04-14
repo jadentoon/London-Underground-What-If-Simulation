@@ -320,9 +320,24 @@ export function MapCanvas() {
         const id = setInterval(() => {
             if(!mapStateRef.current.center) return;
 
-            setHudState({
-                zoom: mapStateRef.current.zoom,
-                center: mapStateRef.current.center,
+            const nextZoom = mapStateRef.current.zoom;
+            const nextCenter = mapStateRef.current.center;
+
+            setHudState((prev) => {
+                // Keep the HUD polling lightweight by skipping identical camera
+                // updates, which also avoids unnecessary rerenders in dev.
+                const sameZoom = prev.zoom === nextZoom;
+                const sameLat = prev.center?.lat === nextCenter?.lat;
+                const sameLng = prev.center?.lng === nextCenter?.lng;
+
+                if (sameZoom && sameLat && sameLng) {
+                    return prev;
+                }
+
+                return {
+                    zoom: nextZoom,
+                    center: nextCenter,
+                };
             });
         }, 100);
 

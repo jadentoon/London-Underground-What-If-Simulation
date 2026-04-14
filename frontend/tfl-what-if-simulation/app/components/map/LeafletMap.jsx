@@ -366,6 +366,7 @@ const LeafletMap = ({
     }, [routeMeta.changeCount, groupedLegs.length]);
 
     const lastRouteKeyRef = useRef("");
+    const lastFeedStatusKeyRef = useRef("");
 
     useEffect(() => {
         if (!onRouteChange) return;
@@ -403,6 +404,21 @@ const LeafletMap = ({
 
     useEffect(() => {
         if (!onTrainFeedStatusChange) return;
+
+        // Prevent a child -> parent -> child update loop when the feed values
+        // are semantically unchanged but the object identity is new.
+        const key = JSON.stringify({
+            source: feedStatus?.source ?? "",
+            updatedAt: feedStatus?.updatedAt
+                ? new Date(feedStatus.updatedAt).toISOString()
+                : "",
+            reason: feedStatus?.reason ?? "",
+            trainCount: feedStatus?.trainCount ?? 0,
+        });
+
+        if (key === lastFeedStatusKeyRef.current) return;
+        lastFeedStatusKeyRef.current = key;
+
         onTrainFeedStatusChange(feedStatus);
     }, [feedStatus, onTrainFeedStatusChange]);
 
