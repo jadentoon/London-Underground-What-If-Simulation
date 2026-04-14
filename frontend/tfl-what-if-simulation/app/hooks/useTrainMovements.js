@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LINE_COLOURS, LINE_LABELS } from "../components/mapComponents/constants";
 import { dedupeEdges } from "../components/mapComponents/utils";
+import { normaliseTflStopId, normaliseStationName, parseTimestampMs} from "../lib/trains/trainIdUtils.js";
 
 const LIVE_REFRESH_MS = 15_000;
 const ANIMATION_TICK_MS = 2_000;
@@ -12,29 +13,6 @@ const FALLBACK_TRAINS_PER_LINE = 5;
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
 const SNAPSHOT_CARRYOVER_MS = 180_000;
 const PUNCTUALITY_THRESHOLD_SECONDS = 20;
-
-function normaliseTflStopId(rawId) {
-    const id = String(rawId || "");
-    if (!id) return "";
-
-    if (id.startsWith("9400ZZ")) {
-        let body = id.slice(4);
-        if (body.startsWith("ZZLU") && /\d$/.test(body)) {
-            body = body.slice(0, -1);
-        }
-        return `940G${body}`;
-    }
-
-    return id;
-}
-
-function normaliseStationName(name) {
-    return String(name || "")
-        .toLowerCase()
-        .replace(/\b(underground|station|rail|dlr|tram|overground)\b/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim();
-}
 
 function buildStationNameIndex(nodes) {
     const nameToId = new Map();
@@ -156,12 +134,6 @@ function formatEtaShort(seconds) {
     const m = Math.floor(s / 60);
     const rem = s % 60;
     return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
-}
-
-function parseTimestampMs(value) {
-    if (!value) return null;
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : null;
 }
 
 function estimateRemainingSeconds(snapshot, nowMs) {
