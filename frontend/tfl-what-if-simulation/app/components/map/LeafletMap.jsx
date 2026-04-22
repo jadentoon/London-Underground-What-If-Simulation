@@ -468,10 +468,27 @@ const LeafletMap = ({
                 zIndex: 0,
             }}
         >
-            
+            {/*fast fallback layer so pan gaps show a coarse map instead of black. */}
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                bounds={LONDON_MAX_BOUNDS}
                 noWrap
+                maxNativeZoom={13}
+                keepBuffer={14}
+                updateWhenIdle={false}
+                updateWhenZooming={true}
+                updateInterval={100}
+            />
+
+            {/*primary high detailed layer that fades in over the fallback layer. */}
+            <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                bounds={LONDON_MAX_BOUNDS}
+                noWrap
+                keepBuffer={14}
+                updateWhenIdle={false}
+                updateWhenZooming={true}
+                updateInterval={100}
             />
 
             {/* Camera Change Listener */}
