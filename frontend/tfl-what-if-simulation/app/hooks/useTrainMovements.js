@@ -8,7 +8,7 @@ import { buildStationNameIndex, buildEdgeIndexes, chooseFromStop } from "../lib/
 const LIVE_REFRESH_MS = 15_000;
 const ANIMATION_TICK_MS = 250;
 const MAX_LIVE_ETA_SECONDS = 480;
-const MAX_LIVE_TRAINS = 260;
+const MAX_LIVE_TRAINS = 200;
 const FALLBACK_TRAINS_PER_LINE = 5;
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
 const SNAPSHOT_CARRYOVER_MS = 180_000;
@@ -389,12 +389,15 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
         async function fetchLiveArrivals() {
             const nowMs = Date.now();
             try {
-                const res = await fetch("https://api.tfl.gov.uk/Mode/tube/Arrivals");
-                if (!res.ok) throw new Error(`TfL API ${res.status}`);
+                const res = await fetch("/api/trains/live", { cache: "no-store" });
+                if (!res.ok) throw new Error(`Live train API ${res.status}`);
 
-                const arrivals = await res.json();
+                const payload = await res.json();
+                const arrivals = Array.isArray(payload?.trackableArrivals)
+                    ? payload.trackableArrivals
+                    : [];
                 const snapshots = buildLiveSnapshots({
-                    arrivals: Array.isArray(arrivals) ? arrivals : [],
+                    arrivals,
                     nowMs,
                     nodeById,
                     stationNameToId,
@@ -416,7 +419,11 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
                     setFeedUpdatedAt(new Date());
                 } else {
                     setFeedSource("fallback");
-                    setFeedReason("Live arrivals returned no usable train positions");
+                    setFeedReason(
+                        Number(payload?.meta?.untrackableArrivalCount) > 0
+                            ? "Live arrivals only contained untrackable services"
+                            : "Live arrivals returned no usable train positions"
+                    );
                     setFeedUpdatedAt(new Date());
                 }
             } catch (err) {
