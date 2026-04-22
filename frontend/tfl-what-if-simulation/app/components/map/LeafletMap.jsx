@@ -2,6 +2,19 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
+import L from "leaflet";
+
+// Debounce utility for map events
+function useDebounce(callback, delay) {
+    const timeoutRef = useRef(null);
+    
+    return useCallback((...args) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+            callback(...args);
+        }, delay);
+    }, [callback, delay]);
+}
 
 import { dijkstra } from "../../lib/pathfinding.js";
 import { buildGraph } from "../../lib/graph.js";
@@ -29,20 +42,24 @@ setupLeafletDefaultIcons();
  * @returns {null} This component does not render any UI.
  */
 function MapEvents({ onChange }) {
+    //debonce map events to reduce re-render frequency 
+    const debouncedOnChange = useDebounce(onChange, 300);
+    
     const map = useMapEvents({
-        // Trigger when map stops moving after pan.0
+        //tigger when map stops moving after pan
         moveend() {
-            onChange({ center: map.getCenter(), zoom: map.getZoom() });
+            debouncedOnChange({ center: map.getCenter(), zoom: map.getZoom() });
         },
-        // Trigger when zoom level changes.
+        //trigger when zoom level changes
         zoomend() {
-            onChange({ center: map.getCenter(), zoom: map.getZoom(), });
+            debouncedOnChange({ center: map.getCenter(), zoom: map.getZoom() });
         },
     });
 
-    // Hard disable double-click zoom (guards against Leaflet defaults)
+    //hard disable double-click zoom (guards against Leaflet defaults)
     useEffect(() => {
         map.doubleClickZoom.disable();
+        //initial call not debounced
         onChange({ center: map.getCenter(), zoom: map.getZoom() });
     }, [map, onChange]);
 
@@ -131,6 +148,9 @@ const LeafletMap = ({
     });
 
     const [zoomLevel, setZoomLevel] = useState(14);
+
+    //expand vector render bounds so paths stay visible while dragging at viewport edges.
+    const vectorRenderer = useMemo(() => L.svg({ padding: 0.8 }), []);
 
     const redXIcon = useMemo(() => createRedXIcon(zoomLevel), []);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
@@ -428,6 +448,7 @@ const LeafletMap = ({
             zoom={zoomLevel}
             minZoom={12}
             maxZoom={16}
+            renderer={vectorRenderer}
             scrollWheelZoom
             dragging
             doubleClickZoom={false}

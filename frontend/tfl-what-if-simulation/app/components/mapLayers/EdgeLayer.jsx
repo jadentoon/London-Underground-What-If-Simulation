@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import React from "react";
 import { Polyline, Tooltip } from "react-leaflet";
 import { offsetSegment, buildUndirectedLineEdgeKey } from "../mapComponents/utils.js";
 import { LINE_COLOURS, LINE_LABELS, LINE_STYLE } from "../mapComponents/constants.js";
@@ -7,7 +8,7 @@ const DISRUPTED_LINE_OUTLINE_COLOUR = "#f59e0b";
 const DISRUPTED_LINE_CORE_COLOUR = "#000000";
 const DISRUPTED_LINE_DASH_ARRAY = "8 8";
 
-export default function EdgeLayer({
+function EdgeLayerComponent({
     groupedEdges,
     nodeById,
     dimmed,
@@ -54,7 +55,7 @@ export default function EdgeLayer({
 
                     return (
                         <Fragment key={`${pairKey}-${line}-${index}`}>
-                            {/* Outline for visibility */}
+                            {/* Outline for visibility - not interactive for better performance */}
                             <Polyline
                                 positions={positions}
                                 pathOptions={{
@@ -65,8 +66,9 @@ export default function EdgeLayer({
                                     opacity: edgeOutlineOpacity,
                                     lineCap: "round",
                                     lineJoin: "round",
-                                    smoothFactor: LINE_STYLE.SMOOTH_FACTOR,
+                                    smoothFactor: Math.max(LINE_STYLE.SMOOTH_FACTOR, 10),
                                     interactive: false,
+                                    className: "edge-outline",
                                 }}
                             />
 
@@ -79,10 +81,10 @@ export default function EdgeLayer({
                                     opacity: edgeCoreOpacity,
                                     lineCap: "round",
                                     lineJoin: "round",
-                                    smoothFactor: LINE_STYLE.SMOOTH_FACTOR,
+                                    smoothFactor: Math.max(LINE_STYLE.SMOOTH_FACTOR, 10),
                                     dashArray: useDisruptedStyle ? DISRUPTED_LINE_DASH_ARRAY : undefined,
                                     interactive: true,
-                                    className: "",
+                                    className: "edge-core",
                                 }}
                                 eventHandlers={{
                                     dblclick: (e) => {
@@ -103,3 +105,20 @@ export default function EdgeLayer({
         </>
     );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+const EdgeLayer = React.memo(EdgeLayerComponent, (prev, next) => {
+    // Return true if props are equal (don't re-render)
+    // Return false if props differ (do re-render)
+    return (
+        prev.groupedEdges === next.groupedEdges &&
+        prev.nodeById === next.nodeById &&
+        prev.dimmed === next.dimmed &&
+        prev.closedLines === next.closedLines &&
+        prev.partialEdgeKeys === next.partialEdgeKeys &&
+        prev.onLineToggle === next.onLineToggle &&
+        prev.hypotheticalSettingsEnabled === next.hypotheticalSettingsEnabled
+    );
+});
+
+export default EdgeLayer;

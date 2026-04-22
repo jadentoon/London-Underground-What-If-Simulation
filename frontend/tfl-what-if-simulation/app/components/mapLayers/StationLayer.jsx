@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import React from "react";
 import { CircleMarker, Tooltip, Marker } from "react-leaflet";
 import { ZOOM_LEVELS } from "../mapComponents/constants.js";
 
@@ -15,7 +16,7 @@ function getRadiusForZoom(zoom) {
     return ZOOM_LEVELS[z] ?? 9;
 }
 
-export default function StationLayer({
+function StationLayerComponent({
     nodes,
     startId,
     setStartId,
@@ -117,3 +118,24 @@ export default function StationLayer({
         </>
     );
 }
+
+// Memoize to prevent unnecessary re-renders when parent updates
+const StationLayer = React.memo(StationLayerComponent, (prev, next) => {
+    // Return true if props are equal (don't re-render)
+    return (
+        prev.nodes === next.nodes &&
+        prev.startId === next.startId &&
+        prev.setStartId === next.setStartId &&
+        prev.pathSet === next.pathSet &&
+        prev.closedSet === next.closedSet &&
+        prev.hasPath === next.hasPath &&
+        prev.hypotheticalSettingsEnabled === next.hypotheticalSettingsEnabled &&
+        prev.redXIcon === next.redXIcon &&
+        prev.onSingleClickStation === next.onSingleClickStation &&
+        prev.onDoubleClickStation === next.onDoubleClickStation &&
+        prev.zoomLevel === next.zoomLevel &&
+        prev.liveClosedSet === next.liveClosedSet
+    );
+});
+
+export default StationLayer;
