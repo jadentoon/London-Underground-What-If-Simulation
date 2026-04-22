@@ -132,6 +132,12 @@ const LeafletMap = ({
     liveClosedStations = new Set(),
     onTrainFeedStatusChange,
 }) => {
+    //keep panning constrained to the Greater London area.
+    const LONDON_MAX_BOUNDS = useMemo(() => ([
+        [51.28, -0.75],
+        [51.72, 0.35],
+    ]), []);
+
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
 
@@ -448,6 +454,8 @@ const LeafletMap = ({
             zoom={zoomLevel}
             minZoom={12}
             maxZoom={16}
+            maxBounds={LONDON_MAX_BOUNDS}
+            maxBoundsViscosity={1.0}
             renderer={vectorRenderer}
             scrollWheelZoom
             dragging
@@ -460,9 +468,10 @@ const LeafletMap = ({
                 zIndex: 0,
             }}
         >
-            {/* Dark CartoDB basemap for reduced visual noise */}
+            
             <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                noWrap
             />
 
             {/* Camera Change Listener */}
