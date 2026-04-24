@@ -5,10 +5,10 @@ import { LINE_COLOURS, LINE_LABELS } from "../components/mapComponents/constants
 import { normaliseTflStopId, parseTimestampMs} from "../lib/trains/trainIdUtils.js";
 import { buildStationNameIndex, buildEdgeIndexes, chooseFromStop } from "../lib/trains/trainGraphUtils.js"
 
-const LIVE_REFRESH_MS = 15_000;
+const LIVE_REFRESH_MS = 30_000;
 const ANIMATION_TICK_MS = 250;
 const MAX_LIVE_ETA_SECONDS = 480;
-const MAX_LIVE_TRAINS = 200;
+const MAX_LIVE_TRAINS = 500;
 const FALLBACK_TRAINS_PER_LINE = 5;
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
 const SNAPSHOT_CARRYOVER_MS = 180_000;

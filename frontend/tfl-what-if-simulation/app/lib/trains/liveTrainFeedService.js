@@ -1,4 +1,28 @@
-const TFL_TUBE_ARRIVALS_URL = "https://api.tfl.gov.uk/Mode/tube/Arrivals";
+const DEFAULT_LINE_IDS = [
+    "northern",
+    "circle",
+    "bakerloo",
+    "district",
+    "central",
+    "piccadilly",
+    "victoria",
+    "hammersmith-city",
+    "waterloo-city",
+];
+
+function normaliseRequestedLineIds(lineIds) {
+    const requested = Array.isArray(lineIds) ? lineIds : DEFAULT_LINE_IDS;
+    const cleaned = requested
+        .map((lineId) => String(lineId || "").trim().toLowerCase())
+        .filter(Boolean);
+
+    return cleaned.length > 0 ? Array.from(new Set(cleaned)) : DEFAULT_LINE_IDS;
+}
+
+function buildTflArrivalsUrl(lineIds) {
+    const lines = normaliseRequestedLineIds(lineIds);
+    return `https://api.tfl.gov.uk/Line/${lines.join(",")}/Arrivals`;
+}
 
 function normaliseVehicleId(vehicleId) {
     return String(vehicleId || "").trim();
@@ -9,8 +33,15 @@ function isTrackablePrediction(prediction) {
     return vehicleId !== "" && vehicleId !== "000";
 }
 
-export async function getLiveTrainFeed() {
-    const response = await fetch(TFL_TUBE_ARRIVALS_URL, {
+function buildTrackableTrainKey(prediction) {
+    const lineId = String(prediction?.lineId || "").trim().toLowerCase();
+    const vehicleId = normaliseVehicleId(prediction?.vehicleId);
+    return lineId && vehicleId ? `${lineId}|${vehicleId}` : "";
+}
+
+export async function getLiveTrainFeed({ lineIds } = {}) {
+    const requestedLineIds = normaliseRequestedLineIds(lineIds);
+    const response = await fetch(buildTflArrivalsUrl(requestedLineIds), {
         next: { revalidate: 0 },
         cache: "no-store",
     });
@@ -23,10 +54,13 @@ export async function getLiveTrainFeed() {
     const arrivals = Array.isArray(rawArrivals) ? rawArrivals : [];
     const trackableArrivals = [];
     const untrackableArrivals = [];
+    const trackableTrainKeys = new Set();
 
     for (const prediction of arrivals) {
         if (isTrackablePrediction(prediction)) {
             trackableArrivals.push(prediction);
+            const trainKey = buildTrackableTrainKey(prediction);
+            if (trainKey) trackableTrainKeys.add(trainKey);
         } else {
             untrackableArrivals.push(prediction);
         }
@@ -38,8 +72,10 @@ export async function getLiveTrainFeed() {
         untrackableArrivals,
         meta: {
             fetchedAt: new Date().toISOString(),
+            requestedLineIds,
             rawArrivalCount: arrivals.length,
             trackableArrivalCount: trackableArrivals.length,
+            trackableTrainCount: trackableTrainKeys.size,
             untrackableArrivalCount: untrackableArrivals.length,
         },
     };
