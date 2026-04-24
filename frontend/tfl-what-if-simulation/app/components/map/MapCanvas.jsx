@@ -396,7 +396,6 @@ export function MapCanvas() {
                 });
 
                 if (!cancelled) {
-                    closed.add("940GZZLUHAW"); // Harrow & Wealdstone, as you mentioned
                     setLiveClosedStations(closed);
                 }
             } catch (err) {
