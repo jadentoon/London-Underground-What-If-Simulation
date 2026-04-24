@@ -131,6 +131,9 @@ const LeafletMap = ({
     onRouteChange,
     liveClosedStations = new Set(),
     onTrainFeedStatusChange,
+    showTrains = true,
+    trainFilterMode = "all",
+    visibleTrainLines = new Set(),
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -200,6 +203,11 @@ const LeafletMap = ({
         edges,
         enabled: trainVisualsEnabled,
     });
+    const filteredTrains = useMemo(() => {
+        if (!showTrains) return [];
+        if (trainFilterMode === "all") return trains;
+        return trains.filter((train) => visibleTrainLines.has(String(train.lineId)));
+    }, [trains, showTrains, trainFilterMode, visibleTrainLines]);
 
     const groupedEdges = useMemo(() => {
         const unique = dedupeEdges(edges);
@@ -507,7 +515,7 @@ const LeafletMap = ({
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
-            {trainVisualsEnabled && <TrainLayer trains={trains} />}
+            {trainVisualsEnabled && showTrains && <TrainLayer trains={filteredTrains} />}
 
             <StationLayer
                 nodes={nodes}

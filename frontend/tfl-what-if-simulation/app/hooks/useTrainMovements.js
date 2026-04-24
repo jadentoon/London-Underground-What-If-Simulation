@@ -2,135 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { LINE_COLOURS, LINE_LABELS } from "../components/mapComponents/constants";
-import { dedupeEdges } from "../components/mapComponents/utils";
+import { normaliseTflStopId, parseTimestampMs} from "../lib/trains/trainIdUtils.js";
+import { buildStationNameIndex, buildEdgeIndexes, chooseFromStop } from "../lib/trains/trainGraphUtils.js"
 
-const LIVE_REFRESH_MS = 15_000;
-const ANIMATION_TICK_MS = 2_000;
+const LIVE_REFRESH_MS = 30_000;
+const ANIMATION_TICK_MS = 250;
 const MAX_LIVE_ETA_SECONDS = 480;
-const MAX_LIVE_TRAINS = 140;
+const MAX_LIVE_TRAINS = 500;
 const FALLBACK_TRAINS_PER_LINE = 5;
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
 const SNAPSHOT_CARRYOVER_MS = 180_000;
 const PUNCTUALITY_THRESHOLD_SECONDS = 20;
 
-function normaliseTflStopId(rawId) {
-    const id = String(rawId || "");
-    if (!id) return "";
-
-    if (id.startsWith("9400ZZ")) {
-        let body = id.slice(4);
-        if (body.startsWith("ZZLU") && /\d$/.test(body)) {
-            body = body.slice(0, -1);
-        }
-        return `940G${body}`;
-    }
-
-    return id;
-}
-
-function normaliseStationName(name) {
-    return String(name || "")
-        .toLowerCase()
-        .replace(/\b(underground|station|rail|dlr|tram|overground)\b/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim();
-}
-
-function buildStationNameIndex(nodes) {
-    const nameToId = new Map();
-    for (const node of nodes) {
-        const key = normaliseStationName(node.name);
-        if (key && !nameToId.has(key)) {
-            nameToId.set(key, String(node.id));
-        }
-    }
-    return nameToId;
-}
-
-function parseBetweenStations(currentLocation, stationNameToId) {
-    const text = String(currentLocation || "");
-    if (!text) return [];
-
-    const betweenMatch = text.match(/between\s+(.+?)\s+and\s+(.+?)(?:$|\.|,)/i);
-    if (!betweenMatch) return [];
-
-    const first = stationNameToId.get(normaliseStationName(betweenMatch[1])) || "";
-    const second = stationNameToId.get(normaliseStationName(betweenMatch[2])) || "";
-    return [first, second].filter(Boolean);
-}
-
-function buildEdgeIndexes(edges) {
-    const directedTravelTimeByLine = new Map();
-    const inboundByLineTo = new Map();
-    const edgesByLine = new Map();
-
-    const uniqueEdges = dedupeEdges(edges || []);
-    for (const edge of uniqueEdges) {
-        const lineId = String(edge.line || "");
-        if (!lineId) continue;
-
-        const from = String(edge.from);
-        const to = String(edge.to);
-        const rawTravelTime = Number(edge.travel_time);
-        const travelTime = Number.isFinite(rawTravelTime) && rawTravelTime > 0
-            ? rawTravelTime
-            : MIN_EDGE_TRAVEL_TIME_SECONDS;
-
-        directedTravelTimeByLine.set(`${lineId}|${from}|${to}`, travelTime);
-        directedTravelTimeByLine.set(`${lineId}|${to}|${from}`, travelTime);
-
-        const inboundForwardKey = `${lineId}|${to}`;
-        if (!inboundByLineTo.has(inboundForwardKey)) inboundByLineTo.set(inboundForwardKey, []);
-        inboundByLineTo.get(inboundForwardKey).push({ from, travelTime });
-
-        const inboundReverseKey = `${lineId}|${from}`;
-        if (!inboundByLineTo.has(inboundReverseKey)) inboundByLineTo.set(inboundReverseKey, []);
-        inboundByLineTo.get(inboundReverseKey).push({ from: to, travelTime });
-
-        if (!edgesByLine.has(lineId)) edgesByLine.set(lineId, []);
-        edgesByLine.get(lineId).push({ from, to, travelTime, lineId });
-    }
-
-    return { directedTravelTimeByLine, inboundByLineTo, edgesByLine };
-}
-
-function chooseFromStop({
-    prediction,
-    etaSeconds,
-    lineId,
-    toId,
-    directedTravelTimeByLine,
-    inboundByLineTo,
-    stationNameToId,
-}) {
-    const betweenIds = parseBetweenStations(prediction.currentLocation, stationNameToId);
-    for (const candidate of betweenIds) {
-        if (candidate === toId) continue;
-        if (directedTravelTimeByLine.has(`${lineId}|${candidate}|${toId}`)) {
-            return candidate;
-        }
-    }
-
-    const inbound = inboundByLineTo.get(`${lineId}|${toId}`) || [];
-    if (inbound.length === 0) return "";
-
-    const eta = Number.isFinite(etaSeconds)
-        ? etaSeconds
-        : Number(prediction.timeToStation);
-    if (!Number.isFinite(eta)) return inbound[0].from;
-
-    let best = inbound[0];
-    let bestDiff = Math.abs(best.travelTime - eta);
-    for (let i = 1; i < inbound.length; i++) {
-        const diff = Math.abs(inbound[i].travelTime - eta);
-        if (diff < bestDiff) {
-            best = inbound[i];
-            bestDiff = diff;
-        }
-    }
-
-    return best.from;
-}
 
 function hashString(input) {
     let hash = 0;
@@ -156,12 +39,6 @@ function formatEtaShort(seconds) {
     const m = Math.floor(s / 60);
     const rem = s % 60;
     return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
-}
-
-function parseTimestampMs(value) {
-    if (!value) return null;
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : null;
 }
 
 function estimateRemainingSeconds(snapshot, nowMs) {
@@ -512,12 +389,15 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
         async function fetchLiveArrivals() {
             const nowMs = Date.now();
             try {
-                const res = await fetch("https://api.tfl.gov.uk/Mode/tube/Arrivals");
-                if (!res.ok) throw new Error(`TfL API ${res.status}`);
+                const res = await fetch("/api/trains/live", { cache: "no-store" });
+                if (!res.ok) throw new Error(`Live train API ${res.status}`);
 
-                const arrivals = await res.json();
+                const payload = await res.json();
+                const arrivals = Array.isArray(payload?.trackableArrivals)
+                    ? payload.trackableArrivals
+                    : [];
                 const snapshots = buildLiveSnapshots({
-                    arrivals: Array.isArray(arrivals) ? arrivals : [],
+                    arrivals,
                     nowMs,
                     nodeById,
                     stationNameToId,
@@ -539,7 +419,11 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
                     setFeedUpdatedAt(new Date());
                 } else {
                     setFeedSource("fallback");
-                    setFeedReason("Live arrivals returned no usable train positions");
+                    setFeedReason(
+                        Number(payload?.meta?.untrackableArrivalCount) > 0
+                            ? "Live arrivals only contained untrackable services"
+                            : "Live arrivals returned no usable train positions"
+                    );
                     setFeedUpdatedAt(new Date());
                 }
             } catch (err) {

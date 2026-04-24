@@ -104,6 +104,9 @@ export function MapCanvas() {
         reason: "Waiting for live feed",
         trainCount: 0,
     });
+    const [showTrains, setShowTrains] = useState(true);
+    const [trainFilterMode, setTrainFilterMode] = useState("all");
+    const [visibleTrainLines, setVisibleTrainLines] = useState(new Set());
     const {
         effectiveLines,
         effectiveClosedLines,
@@ -149,6 +152,24 @@ export function MapCanvas() {
 
     const handleStationsLoaded = useCallback((nodes) => {
         setStationsForSearch(nodes || []);
+    }, []);
+
+    const handleToggleShowTrains = useCallback(() => {
+        setShowTrains((prev) => !prev);
+    }, []);
+
+    const handleTrainFilterModeChange = useCallback((mode) => {
+        setTrainFilterMode(mode);
+    }, []);
+
+    const handleToggleVisibleTrainLine = useCallback((lineId) => {
+        setVisibleTrainLines((prev) => {
+            const next = new Set(prev);
+            const id = String(lineId);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     }, []);
 
     /**
@@ -345,7 +366,7 @@ export function MapCanvas() {
     }, []);
 
 
-        // Fetch live station closures from TfL StopPoint Disruption API
+    // Fetch live station closures from TfL StopPoint Disruption API
     useEffect(() => {
         let cancelled = false;
 
@@ -440,6 +461,9 @@ export function MapCanvas() {
                 onRouteChange={handleRouteChange}
                 liveClosedStations={liveClosedStations}
                 onTrainFeedStatusChange={setTrainFeedStatus}
+                showTrains={showTrains}
+                trainFilterMode={trainFilterMode}
+                visibleTrainLines={visibleTrainLines}
             />
 
             <MapTitleOverlay
@@ -495,6 +519,12 @@ export function MapCanvas() {
                 trainFeedReason={trainFeedStatus.reason}
                 trainFeedCount={trainFeedStatus.trainCount}
                 lineDelays={lineDelays}
+                showTrains={showTrains}
+                trainFilterMode={trainFilterMode}
+                visibleTrainLines={visibleTrainLines}
+                onToggleShowTrains={handleToggleShowTrains}
+                onTrainFilterModeChange={handleTrainFilterModeChange}
+                onToggleVisibleTrainLine={handleToggleVisibleTrainLine}
             />
 
             <SidebarToggleButton
