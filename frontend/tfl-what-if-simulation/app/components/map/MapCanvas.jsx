@@ -24,6 +24,7 @@ import { SidebarToggleButton } from "../layout/SidebarToggleButton";
 import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
 import { RoutingErrorBox } from "../layout/RoutingErrorBox";
 import { RouteInfoPanel } from "../layout/RouteInfoPanel";
+import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -77,9 +78,6 @@ export function MapCanvas() {
     
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
-
-    // Live real-world closed stations (from TfL Unified API)
-    const [liveClosedStations, setLiveClosedStations] = useState(new Set());
 
     // Stations list for search (filled by LeafletMap once loaded)
     const [stationsForSearch, setStationsForSearch] = useState([]);
@@ -198,68 +196,10 @@ export function MapCanvas() {
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
-    useEffect(() => {
-        if (hypotheticalSettingsEnabled) {
-            setLiveClosedStations(new Set());
-            return;
-        }
-
-        let cancelled = false;
-        let pollId = null;
-
-        async function fetchLiveStationClosures() {
-            try {
-                const res = await fetch(
-                    "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
-                );
-
-                if (!res.ok) {
-                    throw new Error(`TfL API ${res.status}`);
-                }
-
-                const disruptions = await res.json();
-                const disruptionList = Array.isArray(disruptions) ? disruptions : [];
-                const closed = new Set();
-
-                disruptionList.forEach((disruption) => {
-                    const stops = disruption.affectedStops || disruption.affectedStopPoints || [];
-                    const stopPointIds = Array.isArray(disruption.stopPointIds) ? disruption.stopPointIds : [];
-
-                    stops.forEach((stop) => {
-                        if (!stop) return;
-                        if (typeof stop === "string") {
-                            closed.add(stop);
-                        } else if (stop.id) {
-                            closed.add(String(stop.id));
-                        } else if (stop.stationId) {
-                            closed.add(String(stop.stationId));
-                        }
-                    });
-
-                    stopPointIds.forEach((id) => {
-                        if (id) closed.add(String(id));
-                    });
-                });
-
-                if (!cancelled) {
-                    setLiveClosedStations(closed);
-                }
-            } catch (err) {
-                console.error("Error fetching live station disruptions", err);
-                if (!cancelled) {
-                    setLiveClosedStations(new Set());
-                }
-            }
-        }
-
-        fetchLiveStationClosures();
-        pollId = setInterval(fetchLiveStationClosures, LIVE_CLOSURE_POLL_MS);
-
-        return () => {
-            cancelled = true;
-            if (pollId) clearInterval(pollId);
-        };
-    }, [hypotheticalSettingsEnabled]);
+    const liveClosedStations = useLiveStationClosures({
+        enabled: !hypotheticalSettingsEnabled,
+        poll_Ms: LIVE_CLOSURE_POLL_MS,
+    });
 
     //fetch line status/delays from TfL API (client-side)
     useEffect(() => {
@@ -302,8 +242,6 @@ export function MapCanvas() {
             clearInterval(interval);
         };
     }, []);
-
-
 
     /**
      * Reset the map view to its original center and zoom level.
@@ -363,57 +301,8 @@ export function MapCanvas() {
         }, 100);
 
         return () => clearInterval(id);
-    }, []);
-
-
-    // Fetch live station closures from TfL StopPoint Disruption API
-    useEffect(() => {
-        let cancelled = false;
-
-        async function fetchLiveStationClosures() {
-            try {
-                const res = await fetch(
-                    "https://api.tfl.gov.uk/StopPoint/Mode/tube,overground,dlr,elizabeth-line/Disruption"
-                );
-
-                if (!res.ok) {
-                    console.error("Failed to fetch live station disruptions", res.status);
-                    return;
-                }
-
-                const disruptions = await res.json();
-                const closed = new Set();
-
-                disruptions.forEach((disruption) => {
-                    if (!disruption.affectedStops) return;
-
-                    disruption.affectedStops.forEach((stop) => {
-                        if (stop.id) {
-                            // IDs as strings so they match your station node ids
-                            closed.add(String(stop.id));
-                        }
-                    });
-                });
-
-                if (!cancelled) {
-                    setLiveClosedStations(closed);
-                }
-            } catch (err) {
-                console.error("Error fetching live station disruptions", err);
-            }
-        }
-
-        // Initial fetch
-        fetchLiveStationClosures();
-
-        // Refresh every 60 seconds
-        const intervalId = setInterval(fetchLiveStationClosures, 60_000);
-
-        return () => {
-            cancelled = true;
-            clearInterval(intervalId);
-        };
-    }, []);
+    }, []);    
+    
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
         setClosedLines(new Set());
