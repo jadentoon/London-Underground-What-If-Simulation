@@ -29,6 +29,7 @@ import { useLineDelays } from "../../hooks/map/useLineDelays";
 import { useHudState } from "../../hooks/map/useHudState";
 import { useTrainFilters } from "../../hooks/map/useTrainFilters";
 import { useStationSearch } from "../../hooks/map/useStationSearch";
+import { useWhatIfClosures } from "../../hooks/map/useWhatIfClosures";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -68,12 +69,6 @@ export function MapCanvas() {
     
     // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
-    
-    // State to track closed stations (set of station IDs)
-    const [closedStations, setClosedStations] = useState(new Set());
-
-    // State to track closed lines in What-If mode (set of line ids)
-    const [closedLines, setClosedLines] = useState(new Set());
 
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
@@ -86,67 +81,10 @@ export function MapCanvas() {
         reason: "Waiting for live feed",
         trainCount: 0,
     });
-    
-    const {
-        effectiveLines,
-        effectiveClosedLines,
-        effectivePartialLines,
-        effectivePartialStationIdsByLine,
-        isLiveLines,
-        linesUpdatedAt,
-        lineStatusLabel,
-        lineStatusColor,
-        lineStatusBg,
-    } = useLineStatus({
-        hypotheticalSettingsEnabled,
-        simulatedClosedLines: closedLines,
-        pollMs: LIVE_CLOSURE_POLL_MS,
-    });
 
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
     const titleShadow = "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000";
-    
-    /**
-     * Toggle a station's closed state (only in what-if mode)
-     */
-    const toggleClosedStation = useCallback((stationId) => {
-        if (!hypotheticalSettingsEnabled) return;
-        
-        setClosedStations(prev => {
-            const newSet = new Set(prev);
-            const id = String(stationId);
-            if (newSet.has(id)) newSet.delete(id);
-            else newSet.add(id);
-            return newSet;
-        });
-    }, [hypotheticalSettingsEnabled]);
-
-    /**
-     * Toggle a line's closed state (only in what-if mode)
-     */
-    const handleLineToggle = useCallback((lineId) => {
-        if (!hypotheticalSettingsEnabled) return;
-
-        setClosedLines(prev => {
-            const next = new Set(prev);
-            if (next.has(lineId)) {
-                next.delete(lineId);
-            } else {
-                next.add(lineId);
-            }
-            return next;
-        });
-    }, [hypotheticalSettingsEnabled]);
-
-    /**
-     * Reset all closures (stations and lines) in what-if mode
-     */
-    const handleResetClosures = useCallback(() => {
-        if (!hypotheticalSettingsEnabled) return;
-        setClosedStations(new Set());
-        setClosedLines(new Set());
-    }, [hypotheticalSettingsEnabled]);
 
     const {
         hudState,
@@ -178,6 +116,32 @@ export function MapCanvas() {
         selectFirstStationMatch,
     } = useStationSearch(leafletMapRef);
 
+    const {
+        closedStations,
+        closedLines,
+        toggleClosedStation,
+        handleLineToggle,
+        handleResetClosures,
+        clearClosedStations,
+        clearClosedLines,
+    } = useWhatIfClosures(hypotheticalSettingsEnabled);
+
+    const {
+        effectiveLines,
+        effectiveClosedLines,
+        effectivePartialLines,
+        effectivePartialStationIdsByLine,
+        isLiveLines,
+        linesUpdatedAt,
+        lineStatusLabel,
+        lineStatusColor,
+        lineStatusBg,
+    } = useLineStatus({
+        hypotheticalSettingsEnabled,
+        simulatedClosedLines: closedLines,
+        pollMs: LIVE_CLOSURE_POLL_MS,
+    });
+
     /**
      * Reset the map view to its original center and zoom level.
      * Also resets any filters / what-if state to the original defaults.
@@ -189,14 +153,14 @@ export function MapCanvas() {
         }
 
         // reset filters / UI state
-        setClosedStations(new Set());
+        clearClosedStations();
         setIsSidebarOpen(false);
         setStationQuery("");
     }, []);
     
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
-        setClosedLines(new Set());
+        clearClosedLines();
         setTimeout(() => {
             setIsSidebarOpen(false);
         }, 1500);
