@@ -25,6 +25,7 @@ import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
 import { RoutingErrorBox } from "../layout/RoutingErrorBox";
 import { RouteInfoPanel } from "../layout/RouteInfoPanel";
 import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";
+import { useLineDelays } from "../../hooks/map/useLineDelays";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -87,9 +88,6 @@ export function MapCanvas() {
 
     // State to track closed lines in What-If mode (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
-
-    //line delay/status data from TfL API
-    const [lineDelays, setLineDelays] = useState(new Map());
 
     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
@@ -198,50 +196,10 @@ export function MapCanvas() {
 
     const liveClosedStations = useLiveStationClosures({
         enabled: !hypotheticalSettingsEnabled,
-        poll_Ms: LIVE_CLOSURE_POLL_MS,
+        pollMs: LIVE_CLOSURE_POLL_MS,
     });
 
-    //fetch line status/delays from TfL API (client-side)
-    useEffect(() => {
-        let cancelled = false;
-        async function fetchDelays() {
-            try {
-                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube/Status");
-                if (!res.ok) throw new Error(`TfL Status API ${res.status}`);
-                const data = await res.json();
-                
-                const delayMap = new Map();
-                data.forEach(line => {
-                    const status = line.lineStatuses?.[0];
-                    if (status) {
-                        delayMap.set(line.id, {
-                            severity: status.statusSeverity || 10,
-                            description: status.statusSeverityDescription || "Good Service",
-                            reason: status.reason || null,
-                            fullDescription: status.disruption?.description || null,
-                            additionalInfo: status.disruption?.additionalInfo || null,
-                        });
-                    }
-                });
-                
-                if (!cancelled) {
-                    setLineDelays(delayMap);
-                }
-            } catch (err) {
-                if (!cancelled) {
-                    console.error("Failed to fetch line delays:", err);
-                    //keep existing delays on error
-                }
-            }
-        }
-        
-        fetchDelays();
-        const interval = setInterval(fetchDelays, 60000); // every minute
-        return () => {
-            cancelled = true;
-            clearInterval(interval);
-        };
-    }, []);
+    const lineDelays = useLineDelays();
 
     /**
      * Reset the map view to its original center and zoom level.

@@ -6,7 +6,7 @@ const TFL_STATION_DISRUPTIONS_URL =
 // Fetch live station closures from TfL StopPoint Disruption API
 export function useLiveStationClosures({
     enabled,
-    poll_Ms = 15_000,
+    pollMs = 15_000,
 }) {
     // Live real-world closed stations (from TfL Unified API)
     const [liveClosedStations, setLiveClosedStations] = useState(new Set());
@@ -46,13 +46,13 @@ export function useLiveStationClosures({
         // Initial fetch
         fetchLiveStationClosures();
 
-        const intervalId = setInterval(fetchLiveStationClosures, poll_Ms);
+        const intervalId = setInterval(fetchLiveStationClosures, pollMs);
 
         return () => {
             cancelled = true;
             clearInterval(intervalId);
         };
-    }, [enabled, poll_Ms]);
+    }, [enabled, pollMs]);
 
     return liveClosedStations;
 }
