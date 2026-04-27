@@ -11,7 +11,7 @@
  * depends on browser APIs (window, DOM) used by Leaflet.
  */
 
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "../mapComponents/constants";
 import { useLineStatus } from "../../hooks/useLineStatus";
@@ -26,6 +26,7 @@ import { RoutingErrorBox } from "../layout/RoutingErrorBox";
 import { RouteInfoPanel } from "../layout/RouteInfoPanel";
 import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";
 import { useLineDelays } from "../../hooks/map/useLineDelays";
+import { useHudState } from "../../hooks/map/useHudState";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -56,20 +57,9 @@ const LIVE_CLOSURE_POLL_MS = 15_000;
  * @returns {JSX.Element} Full-screen interactive map with HUD.
  */
 export function MapCanvas() {
-    // reference to store the current map state (center & zoom) without triggering React renders.
-    const mapStateRef = useRef({
-        center: null,
-        zoom: null
-    });
 
     //Ref to store the Leaflet map instance for programmatic controls (reset view + search)
     const leafletMapRef = useRef(null);
-
-    // react state for HUD display - updated periodically from ref.
-    const [hudState, setHudState] = useState({
-        zoom: 14,
-        center: DEFAULT_CENTER,
-    });
 
     // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -122,14 +112,6 @@ export function MapCanvas() {
     // Dynamic accent color based on hypothetical mode
     const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
     const titleShadow = "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000";
-
-    /**
-     * callback passed to LeafletMap to receive camera changes.
-     * Updatting the mapStateRef with the latest center and zoom.
-     */
-    const handleMapChange = useCallback((state) => {
-        mapStateRef.current = state;
-    }, []);
     
     /**
      * Toggle a station's closed state (only in what-if mode)
@@ -194,6 +176,11 @@ export function MapCanvas() {
         setClosedLines(new Set());
     }, [hypotheticalSettingsEnabled]);
 
+    const {
+        hudState,
+        handleMapChange,
+    } = useHudState(DEFAULT_CENTER);
+
     const liveClosedStations = useLiveStationClosures({
         enabled: !hypotheticalSettingsEnabled,
         pollMs: LIVE_CLOSURE_POLL_MS,
@@ -232,34 +219,7 @@ export function MapCanvas() {
         : stationsForSearch
             .filter((s) => (s.name || "").toLowerCase().includes(stationQuery.trim().toLowerCase()))
             .slice(0, 8);
-
-    useEffect(() => {
-        const id = setInterval(() => {
-            if(!mapStateRef.current.center) return;
-
-            const nextZoom = mapStateRef.current.zoom;
-            const nextCenter = mapStateRef.current.center;
-
-            setHudState((prev) => {
-                // Keep the HUD polling lightweight by skipping identical camera
-                // updates, which also avoids unnecessary rerenders in dev.
-                const sameZoom = prev.zoom === nextZoom;
-                const sameLat = prev.center?.lat === nextCenter?.lat;
-                const sameLng = prev.center?.lng === nextCenter?.lng;
-
-                if (sameZoom && sameLat && sameLng) {
-                    return prev;
-                }
-
-                return {
-                    zoom: nextZoom,
-                    center: nextCenter,
-                };
-            });
-        }, 100);
-
-        return () => clearInterval(id);
-    }, []);    
+  
     
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
