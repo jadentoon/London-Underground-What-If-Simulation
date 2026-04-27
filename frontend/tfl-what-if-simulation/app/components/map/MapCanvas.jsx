@@ -28,6 +28,7 @@ import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";
 import { useLineDelays } from "../../hooks/map/useLineDelays";
 import { useHudState } from "../../hooks/map/useHudState";
 import { useTrainFilters } from "../../hooks/map/useTrainFilters";
+import { useStationSearch } from "../../hooks/map/useStationSearch";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -70,12 +71,6 @@ export function MapCanvas() {
     
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
-
-    // Stations list for search (filled by LeafletMap once loaded)
-    const [stationsForSearch, setStationsForSearch] = useState([]);
-
-    //Search input value
-    const [stationQuery, setStationQuery] = useState("");
 
     // State to track closed lines in What-If mode (set of line ids)
     const [closedLines, setClosedLines] = useState(new Set());
@@ -127,10 +122,6 @@ export function MapCanvas() {
         });
     }, [hypotheticalSettingsEnabled]);
 
-    const handleStationsLoaded = useCallback((nodes) => {
-        setStationsForSearch(nodes || []);
-    }, []);
-
     /**
      * Toggle a line's closed state (only in what-if mode)
      */
@@ -178,6 +169,15 @@ export function MapCanvas() {
         handleToggleVisibleTrainLine,
     } = useTrainFilters();
 
+    const {
+        stationQuery,
+        setStationQuery,
+        stationMatches,
+        handleStationsLoaded,
+        goToStation,
+        selectFirstStationMatch,
+    } = useStationSearch(leafletMapRef);
+
     /**
      * Reset the map view to its original center and zoom level.
      * Also resets any filters / what-if state to the original defaults.
@@ -193,23 +193,6 @@ export function MapCanvas() {
         setIsSidebarOpen(false);
         setStationQuery("");
     }, []);
-
-    /**
-     * Pan/zoom to a station.
-     */
-    const goToStation = useCallback((station) => {
-        if (!station || !leafletMapRef.current) return;
-
-        leafletMapRef.current.setView([station.lat, station.lon], 16);
-        setStationQuery(station.name);
-    }, []);
-
-    const stationMatches = stationQuery.trim().length === 0
-        ? []
-        : stationsForSearch
-            .filter((s) => (s.name || "").toLowerCase().includes(stationQuery.trim().toLowerCase()))
-            .slice(0, 8);
-  
     
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
@@ -278,11 +261,7 @@ export function MapCanvas() {
                 onStationQueryChange={setStationQuery}
                 stationMatches={stationMatches}
                 onSelectStation={goToStation}
-                onEnterFirstMatch={() => {
-                    if (stationMatches.length > 0) {
-                        goToStation(stationMatches[0]);
-                    }
-                }}
+                onEnterFirstMatch={selectFirstStationMatch}
             />
 
             <MapHud
