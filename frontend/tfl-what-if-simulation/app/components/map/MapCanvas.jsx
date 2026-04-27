@@ -27,6 +27,7 @@ import { RouteInfoPanel } from "../layout/RouteInfoPanel";
 import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";
 import { useLineDelays } from "../../hooks/map/useLineDelays";
 import { useHudState } from "../../hooks/map/useHudState";
+import { useTrainFilters } from "../../hooks/map/useTrainFilters";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -90,9 +91,7 @@ export function MapCanvas() {
         reason: "Waiting for live feed",
         trainCount: 0,
     });
-    const [showTrains, setShowTrains] = useState(true);
-    const [trainFilterMode, setTrainFilterMode] = useState("all");
-    const [visibleTrainLines, setVisibleTrainLines] = useState(new Set());
+    
     const {
         effectiveLines,
         effectiveClosedLines,
@@ -132,24 +131,6 @@ export function MapCanvas() {
         setStationsForSearch(nodes || []);
     }, []);
 
-    const handleToggleShowTrains = useCallback(() => {
-        setShowTrains((prev) => !prev);
-    }, []);
-
-    const handleTrainFilterModeChange = useCallback((mode) => {
-        setTrainFilterMode(mode);
-    }, []);
-
-    const handleToggleVisibleTrainLine = useCallback((lineId) => {
-        setVisibleTrainLines((prev) => {
-            const next = new Set(prev);
-            const id = String(lineId);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            return next;
-        });
-    }, []);
-
     /**
      * Toggle a line's closed state (only in what-if mode)
      */
@@ -187,6 +168,15 @@ export function MapCanvas() {
     });
 
     const lineDelays = useLineDelays();
+
+    const {
+        showTrains,
+        trainFilterMode,
+        visibleTrainLines,
+        handleToggleShowTrains,
+        handleTrainFilterModeChange,
+        handleToggleVisibleTrainLine,
+    } = useTrainFilters();
 
     /**
      * Reset the map view to its original center and zoom level.
