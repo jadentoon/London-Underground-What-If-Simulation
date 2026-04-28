@@ -30,6 +30,7 @@ import { useHudState } from "../../hooks/map/useHudState";
 import { useTrainFilters } from "../../hooks/map/useTrainFilters";
 import { useStationSearch } from "../../hooks/map/useStationSearch";
 import { useWhatIfClosures } from "../../hooks/map/useWhatIfClosures";
+import { useRoutePanel } from "../../hooks/map/useRoutePanel";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -70,11 +71,6 @@ export function MapCanvas() {
     // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
 
-    // State for routing errors
-    const [routingError, setRoutingError] = useState(null);
-
-    const [routeInfo, setRouteInfo] = useState(null);
-    const [isRoutePanelOpen, setIsRoutePanelOpen] = useState(false);
     const [trainFeedStatus, setTrainFeedStatus] = useState({
         source: "fallback",
         updatedAt: null,
@@ -127,6 +123,15 @@ export function MapCanvas() {
     } = useWhatIfClosures(hypotheticalSettingsEnabled);
 
     const {
+        routingError,
+        setRoutingError,
+        routeInfo,
+        isRoutePanelOpen,
+        handleRouteChange,
+        toggleRoutePanel,
+    } = useRoutePanel();
+
+    const {
         effectiveLines,
         effectiveClosedLines,
         effectivePartialLines,
@@ -164,15 +169,6 @@ export function MapCanvas() {
         setTimeout(() => {
             setIsSidebarOpen(false);
         }, 1500);
-    }, []);
-
-    const handleRouteChange = useCallback((info) => {
-        setRouteInfo(info);
-
-        setIsRoutePanelOpen((prevOpen) => {
-            const nextOpen = !!info?.hasPath;
-            return prevOpen === nextOpen ? prevOpen : nextOpen;
-        });
     }, []);
 
     return (
@@ -283,7 +279,7 @@ export function MapCanvas() {
 
             <RouteInfoPanel 
                 isOpen={isRoutePanelOpen}
-                onToggle={() => setIsRoutePanelOpen((v) => !v)}
+                onToggle={toggleRoutePanel}
                 routeInfo={routeInfo}
                 COLORS={COLORS}
                 accentColor={accentColor}
