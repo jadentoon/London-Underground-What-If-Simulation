@@ -14,11 +14,13 @@ export function RouteInfoPanel({
     onToggle,
     routeInfo,
     COLORS,
-    accentColour,
+    accentColor,
+    layout,
     hypotheticalSettingsEnabled = false,
     lineColours,
     lineLabels
 }) {
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const hasPath = !!routeInfo?.hasPath;
     const stops = routeInfo?.stops ?? [];
 
@@ -26,16 +28,18 @@ export function RouteInfoPanel({
     const changes = routeInfo?.changeCount ?? 0;
 
     //const rightOffset = hypotheticalSettingsEnabled ? 70 : 25;
-    const bottomOffset = hypotheticalSettingsEnabled ? 70 : 16;
+    const bottomOffset = isMobilePortrait ? 16 : (hypotheticalSettingsEnabled ? 70 : 16);
+    const actionColor = accentColor ?? "#3b82f6";
 
     return (
         <div
             style={{
                 position: "absolute",
-                right: 70,
+                left: isMobilePortrait ? 16 : "auto",
+                right: isMobilePortrait ? 16 : 70,
                 bottom: bottomOffset,
                 zIndex: 1200,
-                width: 340,
+                width: isMobilePortrait ? "auto" : 340,
                 maxWidth: "calc(100vw - 32px)",
                 pointerEvents: "auto",
             }}
@@ -74,7 +78,7 @@ export function RouteInfoPanel({
                             padding: "6px 10px",
                             borderRadius: 999,
                             border: `1px solid ${COLORS.border}`,
-                            color: accentColour,
+                            color: actionColor,
                             fontWeight: 700,
                             fontSize: 12,
                         }}

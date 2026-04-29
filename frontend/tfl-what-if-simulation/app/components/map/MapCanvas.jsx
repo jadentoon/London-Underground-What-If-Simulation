@@ -31,6 +31,7 @@ import { useTrainFilters } from "../../hooks/map/useTrainFilters";
 import { useStationSearch } from "../../hooks/map/useStationSearch";
 import { useWhatIfClosures } from "../../hooks/map/useWhatIfClosures";
 import { useRoutePanel } from "../../hooks/map/useRoutePanel";
+import { useViewport } from "../../hooks/useViewport";
 
 // Dynamically import LeafletMap to prevent SSR issues.
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
@@ -86,6 +87,11 @@ export function MapCanvas() {
         hudState,
         handleMapChange,
     } = useHudState(DEFAULT_CENTER);
+
+    const viewport = useViewport();
+    const isMobilePortrait = viewport.isMobile && viewport.isPortrait;
+    const sidebarWidth = isMobilePortrait ? Math.min(360, viewport.width || 360) : (viewport.isLargeDesktop ? 320 : 280);
+    const sidebarOffset = isSidebarOpen && !isMobilePortrait ? sidebarWidth + 85 : null;
 
     const liveClosedStations = useLiveStationClosures({
         enabled: !hypotheticalSettingsEnabled,
@@ -208,6 +214,7 @@ export function MapCanvas() {
             <MapTitleOverlay
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 isSidebarOpen={isSidebarOpen}
+                layout={{ isMobilePortrait, sidebarOffset }}
                 COLORS={COLORS}
                 accentColor={accentColor}
                 titleShadow={titleShadow}
@@ -215,6 +222,7 @@ export function MapCanvas() {
 
             <MapSearchBox
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                layout={{ isMobilePortrait }}
                 COLORS={COLORS}
                 accentColor={accentColor}
                 stationQuery={stationQuery}
@@ -227,6 +235,7 @@ export function MapCanvas() {
             <MapHud
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 isSidebarOpen={isSidebarOpen}
+                layout={{ isMobilePortrait, sidebarOffset }}
                 COLORS={COLORS}
                 accentColor={accentColor}
                 hudState={hudState}
@@ -235,6 +244,7 @@ export function MapCanvas() {
 
             <MapSidebar
                 isSidebarOpen={isSidebarOpen}
+                layout={{ isMobilePortrait, sidebarWidth }}
                 COLORS={COLORS}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 accentColor={accentColor}
@@ -264,13 +274,14 @@ export function MapCanvas() {
 
             <SidebarToggleButton
                 isSidebarOpen={isSidebarOpen}
+                layout={{ isMobilePortrait, sidebarWidth }}
                 COLORS={COLORS}
                 accentColor={accentColor}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
             />
 
-            {hypotheticalSettingsEnabled && (
+            {hypotheticalSettingsEnabled && !isMobilePortrait && (
                 <MapWhatIfOverlay
                     isSidebarOpen={isSidebarOpen}
                     accentColor={accentColor}
@@ -281,6 +292,7 @@ export function MapCanvas() {
                 isOpen={isRoutePanelOpen}
                 onToggle={toggleRoutePanel}
                 routeInfo={routeInfo}
+                layout={{ isMobilePortrait }}
                 COLORS={COLORS}
                 accentColor={accentColor}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}

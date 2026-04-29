@@ -8,6 +8,7 @@ import { getDelaySeverityColor } from "../mapComponents/delayUtils";
 
 export function MapSidebar({
     isSidebarOpen,
+    layout,
     COLORS,
     hypotheticalSettingsEnabled,
     accentColor,
@@ -34,6 +35,8 @@ export function MapSidebar({
     onTrainFilterModeChange,
     onToggleVisibleTrainLine,
 }) {
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const sidebarWidth = layout?.sidebarWidth ?? 280;
     const partlyClosedLines = partialLines || new Set();
     const isLiveTrainFeed = trainFeedSource === "live";
     const trainFeedColor = isLiveTrainFeed ? "#22c55e" : "#f59e0b";
@@ -75,8 +78,8 @@ export function MapSidebar({
             style={{
                 position: "fixed",
                 top: 0,
-                left: isSidebarOpen ? 0 : -280,
-                width: 280,
+                left: isSidebarOpen ? 0 : (isMobilePortrait ? "-100vw" : -sidebarWidth),
+                width: isMobilePortrait ? "100vw" : sidebarWidth,
                 height: "100vh",
                 background: COLORS.card,
                 backdropFilter: "blur(8px)",

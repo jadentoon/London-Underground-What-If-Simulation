@@ -1,12 +1,28 @@
-export function MapTitleOverlay({ hypotheticalSettingsEnabled, isSidebarOpen, COLORS, accentColor, titleShadow }) {
+export function MapTitleOverlay({ hypotheticalSettingsEnabled, isSidebarOpen, layout, COLORS, accentColor, titleShadow }) {
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const sidebarOffset = layout?.sidebarOffset ?? null;
+    const topOffset = hypotheticalSettingsEnabled ? 85 : 16;
+    const leftOffset = hypotheticalSettingsEnabled ? 85 : 16;
+    const titleStyle = isMobilePortrait
+        ? {
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: "calc(100% - 24px)",
+            textAlign: "center",
+        }
+        : {
+            left: sidebarOffset ?? (isSidebarOpen ? 365 : leftOffset),
+            transform: "none",
+        };
+
     return (
         <div
             style={{
                 position: "fixed",
-                top: hypotheticalSettingsEnabled ? 85 : 16,
-                left: isSidebarOpen ? 365 : (hypotheticalSettingsEnabled ? 85 : 16),
-                transition: "top 0.3s ease, left 0.3s ease",
+                top: isMobilePortrait ? 12 : topOffset,
+                transition: "top 0.3s ease, left 0.3s ease, transform 0.3s ease",
                 zIndex: 1000,
+                ...titleStyle,
             }}
         >
             <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: COLORS.text, textShadow: titleShadow }}>

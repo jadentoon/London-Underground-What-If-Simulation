@@ -4,17 +4,24 @@
 export function MapHud({
     hypotheticalSettingsEnabled,
     isSidebarOpen,
+    layout,
     COLORS,
     accentColor,
     hudState,
     onResetView,
 }) {
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const sidebarOffset = layout?.sidebarOffset ?? null;
+    const leftOffset = hypotheticalSettingsEnabled ? 85 : 16;
+
+    if (isMobilePortrait) return null;
+
     return (
         <div
             style={{
                 position: "fixed",
                 bottom: hypotheticalSettingsEnabled ? 85 : 16,
-                left: isSidebarOpen ? 365 : (hypotheticalSettingsEnabled ? 85 : 16),
+                left: sidebarOffset ?? (isSidebarOpen ? 365 : leftOffset),
                 background: COLORS.card,
                 backdropFilter: "blur(8px)",
                 border: `1px solid ${COLORS.border}`,

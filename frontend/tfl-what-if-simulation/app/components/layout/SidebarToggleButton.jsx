@@ -8,32 +8,39 @@
 
 export function SidebarToggleButton({
     isSidebarOpen,
+    layout,
     COLORS,
     accentColor,
     hypotheticalSettingsEnabled,
     onToggle,
 }) {
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const sidebarWidth = layout?.sidebarWidth ?? 280;
+    const leftOffset = isMobilePortrait
+        ? (isSidebarOpen ? "calc(100vw - 44px)" : 0)
+        : (isSidebarOpen ? sidebarWidth : 0);
+
     return (
         <button
             onClick={onToggle}
             style={{
                 position: "fixed",
-                top: "50%",
-                left: isSidebarOpen ? 280 : 0,
-                transform: "translateY(-50%)",
-                width: 32,
-                height: 64,
+                top: isMobilePortrait ? (hypotheticalSettingsEnabled ? 110 : 90) : "50%",
+                left: leftOffset,
+                transform: isMobilePortrait ? "translateY(0)" : "translateY(-50%)",
+                width: isMobilePortrait ? 44 : 32,
+                height: isMobilePortrait ? 44 : 64,
                 background: COLORS.card,
                 backdropFilter: "blur(8px)",
                 border: `1px solid ${COLORS.border}`,
                 borderLeft: isSidebarOpen ? `1px solid ${COLORS.border}` : "none",
-                borderRadius: "0 8px 8px 0",
+                borderRadius: isMobilePortrait ? 10 : "0 8px 8px 0",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 color: accentColor,
-                fontSize: 16,
+                fontSize: isMobilePortrait ? 18 : 16,
                 zIndex: 1001,
                 transition: "left 0.3s ease",
                 outline: "none",

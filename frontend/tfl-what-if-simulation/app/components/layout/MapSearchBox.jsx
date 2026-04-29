@@ -7,6 +7,7 @@ import { useState } from "react";
 
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
+    layout,
     COLORS,
     accentColor,
     stationQuery,
@@ -16,6 +17,11 @@ export function MapSearchBox({
     onEnterFirstMatch,
 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const anchorTop = hypotheticalSettingsEnabled ? 150 : 170;
+    const buttonTop = isMobilePortrait ? "auto" : anchorTop;
+    const buttonBottom = isMobilePortrait ? 90 : "auto";
+    const panelWidth = isMobilePortrait ? "min(320px, calc(100vw - 32px))" : 280;
 
     return (
         <>
@@ -24,7 +30,8 @@ export function MapSearchBox({
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
                     position: "fixed",
-                    top: hypotheticalSettingsEnabled ? 150 : 170,
+                    top: buttonTop,
+                    bottom: buttonBottom,
                     right: 16,
                     width: 40,
                     height: 40,
@@ -49,9 +56,10 @@ export function MapSearchBox({
             <div
                 style={{
                     position: "fixed",
-                    top: hypotheticalSettingsEnabled ? 150 : 170,
-                    right: isOpen ? 64 : -320,
-                    width: 280,
+                    top: isMobilePortrait ? "auto" : anchorTop,
+                    bottom: isMobilePortrait ? 140 : "auto",
+                    right: isMobilePortrait ? (isOpen ? 16 : "-400px") : (isOpen ? 64 : -320),
+                    width: panelWidth,
                     background: COLORS.card,
                     backdropFilter: "blur(8px)",
                     border: `1px solid ${COLORS.border}`,
