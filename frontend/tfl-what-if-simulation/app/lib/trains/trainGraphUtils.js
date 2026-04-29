@@ -1,6 +1,8 @@
 import { dedupeEdges } from "../../components/mapComponents/utils";
 import { normaliseStationName } from "./trainIdUtils";
 
+const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
+
 function buildDirectedEdgeKey(lineId, from, to) {
     return `${lineId}|${from}|${to}`;
 }

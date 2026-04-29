@@ -12,21 +12,16 @@ import { NextResponse } from "next/server";
 import driver from "../../lib/neo4j.js";
 import neo4j from "neo4j-driver";
 
-/**
- * GET /api/stations
- * 
- * @returns {JSON} {
- *  nodes: Array<{ id, name, lat, lon }>,
- *  edges: Array<{ from, to, line }>
- * }
- */
-export async function GET() {
-    // Create a new Neo4j session for this request.
-    // Sessions are lightweight but MUST be closed after use.
+const STATION_GRAPH_CACHE_MS = 60 * 60 * 1000;
+
+let stationGraphCache = null;
+let stationGraphCacheExpiresAt = 0;
+let stationGraphRequestInFlight = null;
+
+async function loadStationGraphFromNeo4j() {
     const session = driver.session();
 
     try {
-        // Fetch all directed station connections.
         const result = await session.run(`
             MATCH (s1:Station)-[r:CONNECTS_TO]->(s2:Station)
             RETURN
@@ -90,23 +85,10 @@ export async function GET() {
         // Convert node map into an array for JSON serialisation.
         const nodes = Array.from(nodesMap.values());
 
-        // Successful response.
-        return NextResponse.json({
-            nodes, 
-            edges
-        });
-    } catch (error) {
-        /**
-         * Catch-all error handling:
-         * - Logs internal error for debugging.
-         * - Returns generic message to avoid leaking implementation details.
-         */
-        console.error("Neo4j error: ", error);
-
-        return NextResponse.json(
-            { error: "Failed to fetch stations" },
-            { status: 500 }
-        );
+        return {
+            nodes,
+            edges,
+        };
     } finally {
         /**
          * Always close the Neo4j session.
@@ -114,5 +96,53 @@ export async function GET() {
          * connection leaks under load.
          */
         await session.close();
+    }
+}
+
+/**
+ * GET /api/stations
+ * 
+ * @returns {JSON} {
+ *  nodes: Array<{ id, name, lat, lon }>,
+ *  edges: Array<{ from, to, line }>
+ * }
+ */
+export async function GET() {
+    const now = Date.now();
+
+    if (stationGraphCache && now < stationGraphCacheExpiresAt) {
+        return NextResponse.json(stationGraphCache, {
+            headers: {
+                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revaildate=86400",
+                "X-Station-Graph-Cache": "HIT",
+            },
+        });
+    }
+
+    try {
+        if(!stationGraphRequestInFlight) {
+            stationGraphRequestInFlight = loadStationGraphFromNeo4j();
+        }
+
+        const graph = await stationGraphRequestInFlight;
+
+        stationGraphCache = graph;
+        stationGraphCacheExpiresAt = Date.now() + STATION_GRAPH_CACHE_MS;
+
+        return NextResponse.json(graph, {
+            headers: {
+                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revaildate=86400",
+                "X-Station-Graph-Cache": "MISS",
+            },
+        });
+    } catch (error) {
+        console.error("Neo4j error: ", error);
+
+        return NextResponse.json(
+            { error: "Failed to fetch stations" },
+            { status: 500 }
+        );
+    } finally {
+        stationGraphRequestInFlight = null;
     }
 }
