@@ -1,4 +1,4 @@
-import { SEP } from "./constants";
+import { SEP } from "./constants.js";
 
 /**
  * Group edges by station pair
