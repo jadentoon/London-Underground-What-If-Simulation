@@ -8,6 +8,8 @@ const DEFAULT_LINE_IDS = [
     "victoria",
     "hammersmith-city",
     "waterloo-city",
+    "jubilee",
+    "metropolitan"
 ];
 
 function normaliseRequestedLineIds(lineIds) {
