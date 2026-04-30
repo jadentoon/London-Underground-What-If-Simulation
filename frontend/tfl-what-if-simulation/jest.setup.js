@@ -27,8 +27,10 @@ jest.mock('next/navigation', () => ({
 jest.mock('react-leaflet', () => ({
   MapContainer: ({ children }) => <div data-testid="map-container">{children}</div>,
   TileLayer: () => <div data-testid="tile-layer" />,
-  CircleMarker: () => <div data-testid="circle-marker" />,
+  CircleMarker: ({ children }) => <div data-testid="circle-marker">{children}</div>,
   Popup: ({ children }) => <div data-testid="popup">{children}</div>,
+  Tooltip: ({ children }) => <div data-testid="tooltip">{children}</div>,
+  Marker: () => <div data-testid="marker" />,
   useMap: () => ({
     setView: jest.fn(),
     getZoom: jest.fn(() => 12),
