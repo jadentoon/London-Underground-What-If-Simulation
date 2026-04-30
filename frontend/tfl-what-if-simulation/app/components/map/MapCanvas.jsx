@@ -47,7 +47,7 @@ const COLORS = {
 };
 
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
-const LIVE_CLOSURE_POLL_MS = 15_000;
+const LIVE_CLOSURE_POLL_MS = 60_000;
 
 /**
  * MapCanvas

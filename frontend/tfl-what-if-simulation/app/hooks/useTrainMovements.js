@@ -6,7 +6,7 @@ import { normaliseTflStopId, parseTimestampMs} from "../lib/trains/trainIdUtils.
 import { buildStationNameIndex, buildEdgeIndexes, chooseFromStop } from "../lib/trains/trainGraphUtils.js"
 
 const LIVE_REFRESH_MS = 30_000;
-const ANIMATION_TICK_MS = 250;
+const ANIMATION_TICK_MS = 1000;
 const MAX_LIVE_ETA_SECONDS = 480;
 const MAX_LIVE_TRAINS = 500;
 const FALLBACK_TRAINS_PER_LINE = 5;

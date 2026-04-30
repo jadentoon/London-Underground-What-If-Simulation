@@ -161,10 +161,11 @@ const LeafletMap = ({
     //expand vector render bounds so paths stay visible while dragging at viewport edges.
     const vectorRenderer = useMemo(() => L.svg({ padding: 0.8 }), []);
 
-    const redXIcon = useMemo(() => createRedXIcon(zoomLevel), []);
+    const redXIcon = useMemo(() => createRedXIcon(zoomLevel), [zoomLevel]);
     const closedSet = useMemo(() => normaliseIdSet(closedStations), [closedStations]);
     const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
-    const liveClosedSet = new Set(Array.from(liveClosedStations ?? []).map((id) => String(id)));
+    const liveClosedSet = useMemo(
+        () => new Set(Array.from(liveClosedStations ?? []).map((id) => String(id))), [liveClosedStations]);
 
     const clearRoute = useCallback(() => {
         setPath([]);
@@ -431,10 +432,10 @@ const LeafletMap = ({
         onRouteChange(payload);
     }, [onRouteChange, pathStops, groupedLegs, totalTravelSeconds, changeCount]);
 
-    const handleMapChange = (state) => {
-        setZoomLevel(state.zoom);
-        onMapChange?.(state);
-    }
+    const handleMapChange = useCallback((state) => {
+        setZoomLevel((prevZoom) => (prevZoom === state.zoom ? prevZoom : state.zoom));
+        onMapChange?.(state);}
+        ,[onMapChange]);
 
     useEffect(() => {
         if (!onTrainFeedStatusChange) return;
