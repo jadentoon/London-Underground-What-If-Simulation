@@ -5,10 +5,11 @@ import { LINE_COLOURS, LINE_LABELS } from "../components/mapComponents/constants
 import { normaliseTflStopId, parseTimestampMs} from "../lib/trains/trainIdUtils.js";
 import { buildStationNameIndex, buildEdgeIndexes, chooseFromStop } from "../lib/trains/trainGraphUtils.js"
 
-const LIVE_REFRESH_MS = 30_000;
-const ANIMATION_TICK_MS = 1000;
+const LIVE_REFRESH_MS = 100_000;
+const ANIMATION_TICK_MS = 250;
 const MAX_LIVE_ETA_SECONDS = 480;
-const MAX_LIVE_TRAINS = 500;
+const MAX_ROUTE_ETA_SECONDS = 3600;
+const MAX_LIVE_TRAINS = 300;
 const FALLBACK_TRAINS_PER_LINE = 5;
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
 const SNAPSHOT_CARRYOVER_MS = 180_000;
@@ -50,6 +51,40 @@ function estimateRemainingSeconds(snapshot, nowMs) {
 
     const elapsedSeconds = Math.max(0, (nowMs - Number(snapshot.capturedAtMs || 0)) / 1000);
     return Math.max(0, Number(snapshot.eta || 0) - elapsedSeconds);
+}
+
+function estimateStopRemainingSeconds(stop, nowMs, capturedAtMs) {
+    if (!stop) return 0;
+
+    if (Number.isFinite(stop.expectedArrivalMs)) {
+        return Math.max(0, (stop.expectedArrivalMs - nowMs) / 1000);
+    }
+
+    const elapsedSeconds = Math.max(0, (nowMs - Number(capturedAtMs || 0)) / 1000);
+    return Math.max(0, Number(stop.eta || 0) - elapsedSeconds);
+}
+
+function estimateActiveStopRemainingSeconds(snapshot, nowMs) {
+    const stops = Array.isArray(snapshot?.stops) ? snapshot.stops : [];
+    for (const stop of stops) {
+        const remaining = estimateStopRemainingSeconds(stop, nowMs, snapshot.capturedAtMs);
+        if (remaining > 0) return remaining;
+    }
+    return estimateRemainingSeconds(snapshot, nowMs);
+}
+
+function getEdgeTravelTime({
+    lineId,
+    fromId,
+    toId,
+    fallbackSeconds,
+    directedTravelTimeByLine,
+}) {
+    const travelTime = directedTravelTimeByLine.get(`${lineId}|${fromId}|${toId}`);
+    return Math.max(
+        MIN_EDGE_TRAVEL_TIME_SECONDS,
+        Number.isFinite(travelTime) ? travelTime : fallbackSeconds
+    );
 }
 
 function getPunctuality(deltaSeconds) {
@@ -99,6 +134,140 @@ function buildFallbackTemplates(edgesByLine) {
     return templates;
 }
 
+function findLinePath(lineId, fromId, toId, edgesByLine) {
+    const start = String(fromId || "");
+    const target = String(toId || "");
+    if (!start || !target) return [];
+    if (start === target) return [start];
+
+    const lineEdges = edgesByLine.get(String(lineId)) || [];
+    const adjacency = new Map();
+
+    for (const edge of lineEdges) {
+        const from = String(edge.from);
+        const to = String(edge.to);
+        const travelTime = Math.max(MIN_EDGE_TRAVEL_TIME_SECONDS, Number(edge.travelTime) || MIN_EDGE_TRAVEL_TIME_SECONDS);
+
+        if (!adjacency.has(from)) adjacency.set(from, []);
+        if (!adjacency.has(to)) adjacency.set(to, []);
+        adjacency.get(from).push({ to, travelTime });
+        adjacency.get(to).push({ to: from, travelTime });
+    }
+
+    const distances = new Map([[start, 0]]);
+    const previous = new Map();
+    const queue = [{ id: start, distance: 0 }];
+
+    while (queue.length > 0) {
+        queue.sort((a, b) => a.distance - b.distance);
+        const current = queue.shift();
+        if (!current || current.distance !== distances.get(current.id)) continue;
+        if (current.id === target) break;
+
+        for (const neighbour of adjacency.get(current.id) || []) {
+            const nextDistance = current.distance + neighbour.travelTime;
+            if (nextDistance >= (distances.get(neighbour.to) ?? Infinity)) continue;
+
+            distances.set(neighbour.to, nextDistance);
+            previous.set(neighbour.to, current.id);
+            queue.push({ id: neighbour.to, distance: nextDistance });
+        }
+    }
+
+    if (!distances.has(target)) return [];
+
+    const path = [];
+    let cursor = target;
+    while (cursor) {
+        path.unshift(cursor);
+        if (cursor === start) break;
+        cursor = previous.get(cursor);
+    }
+
+    return path[0] === start ? path : [];
+}
+
+function expandStopQueue({
+    fromId,
+    stops,
+    lineId,
+    nowMs,
+    edgesByLine,
+    directedTravelTimeByLine,
+}) {
+    const expanded = [];
+    let currentId = String(fromId || "");
+    let currentEta = 0;
+    let currentArrivalMs = nowMs;
+
+    for (const stop of stops) {
+        const targetId = String(stop.toId || "");
+        if (!targetId || !currentId || targetId === currentId) {
+            expanded.push(stop);
+            currentId = targetId || currentId;
+            currentEta = Number(stop.eta) || currentEta;
+            currentArrivalMs = Number.isFinite(stop.expectedArrivalMs)
+                ? stop.expectedArrivalMs
+                : nowMs + currentEta * 1000;
+            continue;
+        }
+
+        const path = findLinePath(lineId, currentId, targetId, edgesByLine);
+        if (path.length <= 2) {
+            expanded.push(stop);
+            currentId = targetId;
+            currentEta = Number(stop.eta) || currentEta;
+            currentArrivalMs = Number.isFinite(stop.expectedArrivalMs)
+                ? stop.expectedArrivalMs
+                : nowMs + currentEta * 1000;
+            continue;
+        }
+
+        const segmentTravelTimes = [];
+        for (let i = 1; i < path.length; i++) {
+            segmentTravelTimes.push(getEdgeTravelTime({
+                lineId,
+                fromId: path[i - 1],
+                toId: path[i],
+                fallbackSeconds: MIN_EDGE_TRAVEL_TIME_SECONDS,
+                directedTravelTimeByLine,
+            }));
+        }
+
+        const totalTravelTime = segmentTravelTimes.reduce((sum, travelTime) => sum + travelTime, 0);
+        const targetEta = Number(stop.eta) || currentEta;
+        const targetArrivalMs = Number.isFinite(stop.expectedArrivalMs)
+            ? stop.expectedArrivalMs
+            : nowMs + targetEta * 1000;
+
+        let elapsedTravelTime = 0;
+        for (let i = 1; i < path.length - 1; i++) {
+            elapsedTravelTime += segmentTravelTimes[i - 1];
+            const ratio = totalTravelTime > 0 ? elapsedTravelTime / totalTravelTime : 1;
+            const eta = currentEta + (targetEta - currentEta) * ratio;
+            const expectedArrivalMs = currentArrivalMs + (targetArrivalMs - currentArrivalMs) * ratio;
+
+            expanded.push({
+                ...stop,
+                toId: path[i],
+                eta,
+                expectedArrival: "",
+                expectedArrivalMs,
+                platformName: "",
+                currentLocation: "",
+                isEstimatedSegment: true,
+            });
+        }
+
+        expanded.push(stop);
+        currentId = targetId;
+        currentEta = targetEta;
+        currentArrivalMs = targetArrivalMs;
+    }
+
+    return expanded;
+}
+
 function buildLiveSnapshots({
     arrivals,
     nowMs,
@@ -106,8 +275,9 @@ function buildLiveSnapshots({
     stationNameToId,
     directedTravelTimeByLine,
     inboundByLineTo,
+    edgesByLine,
 }) {
-    const closestByVehicle = new Map();
+    const arrivalsByVehicle = new Map();
 
     for (const prediction of arrivals) {
         const lineId = String(prediction?.lineId || "");
@@ -120,7 +290,7 @@ function buildLiveSnapshots({
             ? (expectedArrivalMs - nowMs) / 1000
             : NaN;
         const eta = Number.isFinite(expectedEta) ? expectedEta : rawEta;
-        if (!Number.isFinite(eta) || eta < -15 || eta > MAX_LIVE_ETA_SECONDS) continue;
+        if (!Number.isFinite(eta) || eta < -15 || eta > MAX_ROUTE_ETA_SECONDS) continue;
 
         const toId = normaliseTflStopId(
             prediction?.naptanId ||
@@ -134,19 +304,20 @@ function buildLiveSnapshots({
             : `${toId}:${prediction?.platformName || ""}:${prediction?.towards || ""}`;
         const vehicleKey = `${lineId}|${vehicleToken}`;
 
-        const existing = closestByVehicle.get(vehicleKey);
-        if (!existing || eta < existing.eta) {
-            closestByVehicle.set(vehicleKey, { prediction, eta, toId, lineId, vehicleKey });
-        }
+        if (!arrivalsByVehicle.has(vehicleKey)) arrivalsByVehicle.set(vehicleKey, []);
+        arrivalsByVehicle.get(vehicleKey).push({ prediction, eta, toId, lineId, vehicleKey });
     }
 
-    const closestArrivals = Array.from(closestByVehicle.values())
-        .sort((a, b) => a.eta - b.eta)
+    const trainRoutes = Array.from(arrivalsByVehicle.values())
+        .map((vehicleArrivals) => vehicleArrivals.sort((a, b) => a.eta - b.eta))
+        .filter((vehicleArrivals) => vehicleArrivals.length > 0 && vehicleArrivals[0].eta <= MAX_LIVE_ETA_SECONDS)
+        .sort((a, b) => a[0].eta - b[0].eta)
         .slice(0, MAX_LIVE_TRAINS);
 
     const snapshots = [];
-    for (const item of closestArrivals) {
-        const { prediction, eta, toId, lineId, vehicleKey } = item;
+    for (const vehicleArrivals of trainRoutes) {
+        const firstArrival = vehicleArrivals[0];
+        const { prediction, eta, toId, lineId, vehicleKey } = firstArrival;
         const fromId = chooseFromStop({
             prediction,
             etaSeconds: Math.max(0, eta),
@@ -158,21 +329,49 @@ function buildLiveSnapshots({
         });
         const resolvedFromId = fromId || toId;
 
-        const travelTime = resolvedFromId
-            ? directedTravelTimeByLine.get(`${lineId}|${resolvedFromId}|${toId}`)
-            : null;
-        const edgeTravelTime = Math.max(
-            MIN_EDGE_TRAVEL_TIME_SECONDS,
-            Number.isFinite(travelTime) ? travelTime : (eta + 20)
-        );
+        const stops = [];
+        const seenStops = new Set();
+        for (const item of vehicleArrivals) {
+            if (seenStops.has(item.toId)) continue;
+            seenStops.add(item.toId);
+
+            stops.push({
+                toId: item.toId,
+                eta: Math.max(0, item.eta),
+                expectedArrival: item.prediction?.expectedArrival || "",
+                expectedArrivalMs: parseTimestampMs(item.prediction?.expectedArrival || ""),
+                platformName: item.prediction?.platformName || "",
+                currentLocation: item.prediction?.currentLocation || "",
+                towards: item.prediction?.towards || item.prediction?.destinationName || "",
+            });
+        }
+
+        const expandedStops = expandStopQueue({
+            fromId: resolvedFromId,
+            stops,
+            lineId,
+            nowMs,
+            edgesByLine,
+            directedTravelTimeByLine,
+        });
+
+        const firstStop = expandedStops[0] || stops[0];
+        const edgeTravelTime = getEdgeTravelTime({
+            lineId,
+            fromId: resolvedFromId,
+            toId: firstStop?.toId || toId,
+            fallbackSeconds: eta + 20,
+            directedTravelTimeByLine,
+        });
 
         snapshots.push({
             id: vehicleKey,
             lineId,
             fromId: resolvedFromId,
-            toId,
+            toId: firstStop?.toId || toId,
             eta: Math.max(0, eta),
             edgeTravelTime,
+            stops: expandedStops,
             capturedAtMs: nowMs,
             platformName: prediction?.platformName || "",
             currentLocation: prediction?.currentLocation || "",
@@ -203,8 +402,8 @@ function mergeLiveSnapshots({
             continue;
         }
 
-        const previousRemaining = estimateRemainingSeconds(previous, nowMs);
-        let nextRemaining = estimateRemainingSeconds(nextSnapshot, nowMs);
+        const previousRemaining = estimateActiveStopRemainingSeconds(previous, nowMs);
+        let nextRemaining = estimateActiveStopRemainingSeconds(nextSnapshot, nowMs);
 
         let stableFromId = nextSnapshot.fromId;
         let stableEdgeTravelTime = nextSnapshot.edgeTravelTime;
@@ -227,6 +426,7 @@ function mergeLiveSnapshots({
             ...nextSnapshot,
             fromId: stableFromId,
             edgeTravelTime: stableEdgeTravelTime,
+            stops: nextSnapshot.stops || [],
             eta: Math.max(0, nextRemaining),
             capturedAtMs: nowMs,
             punctualityDeltaSeconds,
@@ -236,7 +436,7 @@ function mergeLiveSnapshots({
 
     for (const staleSnapshot of previousById.values()) {
         const ageMs = nowMs - Number(staleSnapshot.capturedAtMs || 0);
-        const remaining = estimateRemainingSeconds(staleSnapshot, nowMs);
+        const remaining = estimateActiveStopRemainingSeconds(staleSnapshot, nowMs);
         if (ageMs <= SNAPSHOT_CARRYOVER_MS && remaining > 0) {
             merged.push({
                 ...staleSnapshot,
@@ -247,25 +447,56 @@ function mergeLiveSnapshots({
     }
 
     return merged
-        .sort((a, b) => estimateRemainingSeconds(a, nowMs) - estimateRemainingSeconds(b, nowMs))
+        .sort((a, b) => estimateActiveStopRemainingSeconds(a, nowMs) - estimateActiveStopRemainingSeconds(b, nowMs))
         .slice(0, MAX_LIVE_TRAINS);
 }
 
 function buildLiveTrainPositions(snapshots, nowMs, nodeById) {
     const trains = [];
     for (const snapshot of snapshots) {
-        const fromNode = nodeById.get(snapshot.fromId);
-        const toNode = nodeById.get(snapshot.toId);
+        const stops = Array.isArray(snapshot.stops) && snapshot.stops.length > 0
+            ? snapshot.stops
+            : [{
+                toId: snapshot.toId,
+                eta: snapshot.eta,
+                expectedArrival: snapshot.expectedArrival,
+                expectedArrivalMs: snapshot.expectedArrivalMs,
+                platformName: snapshot.platformName,
+                currentLocation: snapshot.currentLocation,
+                towards: snapshot.towards,
+            }];
+
+        let activeStopIndex = stops.findIndex(
+            (stop) => estimateStopRemainingSeconds(stop, nowMs, snapshot.capturedAtMs) > 0
+        );
+        if (activeStopIndex === -1) activeStopIndex = stops.length - 1;
+
+        const activeStop = stops[activeStopIndex];
+        const previousStop = activeStopIndex > 0 ? stops[activeStopIndex - 1] : null;
+        const activeFromId = previousStop?.toId || snapshot.fromId;
+        const activeToId = activeStop?.toId || snapshot.toId;
+
+        const fromNode = nodeById.get(activeFromId);
+        const toNode = nodeById.get(activeToId);
         if (!fromNode || !toNode) continue;
 
-        const remainingToStation = estimateRemainingSeconds(snapshot, nowMs);
-        const progress = snapshot.fromId === snapshot.toId
+        const remainingToStation = estimateStopRemainingSeconds(activeStop, nowMs, snapshot.capturedAtMs);
+        const previousArrivalMs = previousStop?.expectedArrivalMs;
+        const activeArrivalMs = activeStop?.expectedArrivalMs;
+        const queuedTravelTime = Number.isFinite(previousArrivalMs) && Number.isFinite(activeArrivalMs)
+            ? Math.max(MIN_EDGE_TRAVEL_TIME_SECONDS, (activeArrivalMs - previousArrivalMs) / 1000)
+            : snapshot.edgeTravelTime;
+        const edgeTravelTime = activeStopIndex === 0 ? snapshot.edgeTravelTime : queuedTravelTime;
+        const progress = activeFromId === activeToId
             ? 1
-            : (1 - (remainingToStation / snapshot.edgeTravelTime));
+            : (1 - (remainingToStation / edgeTravelTime));
 
         const position = interpolatePosition(fromNode, toNode, progress);
         const etaLabel = formatEtaShort(remainingToStation);
         const punctuality = getPunctuality(snapshot.punctualityDeltaSeconds);
+        const locationLabel = activeStop.isEstimatedSegment || activeStopIndex > 0
+            ? `Estimated between ${fromNode.name} and ${toNode.name}`
+            : (snapshot.currentLocation || activeStop.currentLocation || "");
         trains.push({
             id: snapshot.id,
             lineId: snapshot.lineId,
@@ -278,10 +509,10 @@ function buildLiveTrainPositions(snapshots, nowMs, nodeById) {
             toName: toNode.name,
             etaSeconds: Math.round(remainingToStation),
             etaLabel,
-            nextArrivalTime: snapshot.expectedArrival || "",
-            towards: snapshot.towards || "",
-            platformName: snapshot.platformName || "",
-            currentLocation: snapshot.currentLocation || "",
+            nextArrivalTime: activeStop.expectedArrival || snapshot.expectedArrival || "",
+            towards: activeStop.towards || snapshot.towards || "",
+            platformName: activeStop.platformName || snapshot.platformName || "",
+            currentLocation: locationLabel,
             vehicleId: snapshot.vehicleId || "",
             punctualityState: punctuality.state,
             punctualityLabel: punctuality.label,
@@ -403,6 +634,7 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
                     stationNameToId,
                     directedTravelTimeByLine,
                     inboundByLineTo,
+                    edgesByLine,
                 });
 
                 if (cancelled) return;
@@ -449,6 +681,7 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
         stationNameToId,
         directedTravelTimeByLine,
         inboundByLineTo,
+        edgesByLine,
     ]);
 
     const trains = useMemo(() => {
