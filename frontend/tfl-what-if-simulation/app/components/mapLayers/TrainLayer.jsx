@@ -1,6 +1,7 @@
-import { Fragment } from "react";
-import { CircleMarker, Popup } from "react-leaflet";
+import { Popup, Marker } from "react-leaflet";
+import L from "leaflet";
 import { TRAIN_COLOURS } from "../mapComponents/constants.js";
+
 
 function formatArrivalTime(isoTimestamp) {
     if (!isoTimestamp) return "";
@@ -38,91 +39,91 @@ function StatusRow({ state, label }) {
     );
 }
 
-function getTrainVisuals(train) {
+function getTrainIcon(train) {
     const lineId = String(train?.lineId || "");
     const isLive = Boolean(train?.isLive);
     const isNorthern = lineId === "northern";
 
     const baseColour = TRAIN_COLOURS[lineId] || "#38bdf8";
-    const coreColour = isNorthern ? "#111827" : baseColour;
+    const trainColour = isNorthern ? "#111827" : baseColour;
+    const borderColour = isNorthern ? "#f8fafc" : "#020617";
     const glowColour = isNorthern ? "#f8fafc" : baseColour;
+    const size = isLive ? 25 : 25;
 
-    return {
-        glowOuterRadius: isLive ? 11.5 : 9.2,
-        glowInnerRadius: isLive ? 8 : 6.5,
-        coreRadius: isLive ? 4.8 : 4,
-        glowOuterOpacity: isNorthern ? (isLive ? 0.26 : 0.2) : (isLive ? 0.2 : 0.14),
-        glowInnerOpacity: isNorthern ? (isLive ? 0.38 : 0.3) : (isLive ? 0.32 : 0.24),
-        coreOpacity: isLive ? 0.98 : 0.9,
-        glowColour,
-        coreColour,
-        coreBorderColour: isNorthern ? "#f8fafc" : "#020617",
-        coreBorderWeight: isNorthern ? 1.8 : 1.6,
-    };
+    return L.divIcon({
+        className: "live-train-marker",
+        html: `
+            <div style="
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 999px;
+                background: rgba(15, 23, 42, 0.92);
+                border: 2px solid ${borderColour};
+                box-shadow: 0 0 ${isLive ? 14 : 9}px ${glowColour};
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg
+                    width="${isLive ? 21 : 18}"
+                    height="${isLive ? 21 : 18}"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M7 2h10c2.2 0 4 1.8 4 4v8c0 2.2-1.8 4-4 4l2 3h-2.3l-1.3-2H8.6l-1.3 2H5l2-3c-2.2 0-4-1.8-4-4V6c0-2.2 1.8-4 4-4Z"
+                        fill="${trainColour}"
+                    />
+                    <path
+                        d="M7 5h10v5H7V5Z"
+                        fill="#ffffff"
+                        opacity="0.95"
+                    />
+                    <circle cx="8" cy="14" r="1.5" fill="#ffffff" />
+                    <circle cx="16" cy="14" r="1.5" fill="#ffffff" />
+                </svg>
+            </div>
+        `,
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2],
+    });
 }
 
 export default function TrainLayer({ trains = [] }) {
     return (
         <>
             {trains.map((train) => {
-                const visuals = getTrainVisuals(train);
+                const trainIcon = getTrainIcon(train);
                 const arrivalLabel = formatArrivalTime(train.nextArrivalTime);
                 const routeLabel = train.routeLabel || `${train.fromName || "?"} → ${train.toName || "?"}`;
 
                 return (
-                    <Fragment key={train.id}>
-                        <CircleMarker
-                            center={[train.lat, train.lon]}
-                            radius={visuals.glowOuterRadius}
-                            pathOptions={{
-                                color: visuals.glowColour,
-                                fillColor: visuals.glowColour,
-                                fillOpacity: visuals.glowOuterOpacity,
-                                weight: 0,
-                            }}
-                            interactive={false}
-                        />
-                        <CircleMarker
-                            center={[train.lat, train.lon]}
-                            radius={visuals.glowInnerRadius}
-                            pathOptions={{
-                                color: visuals.glowColour,
-                                fillColor: visuals.glowColour,
-                                fillOpacity: visuals.glowInnerOpacity,
-                                weight: 0,
-                            }}
-                            interactive={false}
-                        />
-                        <CircleMarker
-                            center={[train.lat, train.lon]}
-                            radius={visuals.coreRadius}
-                            pathOptions={{
-                                color: visuals.coreBorderColour,
-                                fillColor: visuals.coreColour,
-                                fillOpacity: visuals.coreOpacity,
-                                weight: visuals.coreBorderWeight,
-                            }}
-                        >
-                            <Popup>
-                                <div style={{ minWidth: 210, fontFamily: "monospace", fontSize: 12, lineHeight: 1.4 }}>
-                                    <div style={{ fontWeight: 700, marginBottom: 4 }}>{train.label} train</div>
-                                    <DetailRow label="Route" value={routeLabel} />
-                                    <DetailRow label="Next station" value={train.toName || "Unknown"} />
-                                    <DetailRow label="ETA" value={train.etaLabel || "Unknown"} />
-                                    <StatusRow state={train.punctualityState} label={train.punctualityLabel} />
-                                    <DetailRow label="Arrives at" value={arrivalLabel} />
-                                    <DetailRow label="Towards" value={train.towards} />
-                                    <DetailRow label="Platform" value={train.platformName} />
-                                    <DetailRow label="Location" value={train.currentLocation} />
-                                    {!train.isLive && (
-                                        <div style={{ marginTop: 4, color: "#f59e0b" }}>
-                                            Schedule fallback estimate
-                                        </div>
-                                    )}
-                                </div>
-                            </Popup>
-                        </CircleMarker>
-                    </Fragment>
+                    <Marker
+                        key={train.id}
+                        position={[train.lat, train.lon]}
+                        icon={trainIcon}
+                    >
+                        <Popup>
+                            <div style={{ minWidth: 210, fontFamily: "monospace", fontSize: 12, lineHeight: 1.4 }}>
+                                <div style={{ fontWeight: 700, marginBottom: 4 }}>{train.label} train</div>
+                                <DetailRow label="Route" value={routeLabel} />
+                                <DetailRow label="Next station" value={train.toName || "Unknown"} />
+                                <DetailRow label="ETA" value={train.etaLabel || "Unknown"} />
+                                <StatusRow state={train.punctualityState} label={train.punctualityLabel} />
+                                <DetailRow label="Arrives at" value={arrivalLabel} />
+                                <DetailRow label="Towards" value={train.towards} />
+                                <DetailRow label="Platform" value={train.platformName} />
+                                <DetailRow label="Location" value={train.currentLocation} />
+                                {!train.isLive && (
+                                    <div style={{ marginTop: 4, color: "#f59e0b" }}>
+                                        Schedule fallback estimate
+                                    </div>
+                                )}
+                            </div>
+                        </Popup>
+                    </Marker>
                 );
             })}
         </>
