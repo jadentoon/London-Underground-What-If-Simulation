@@ -253,6 +253,9 @@ function expandStopQueue({
                 eta,
                 expectedArrival: "",
                 expectedArrivalMs,
+                platformName: "",
+                currentLocation: "",
+                isEstimatedSegment: true,
             });
         }
 
@@ -491,6 +494,9 @@ function buildLiveTrainPositions(snapshots, nowMs, nodeById) {
         const position = interpolatePosition(fromNode, toNode, progress);
         const etaLabel = formatEtaShort(remainingToStation);
         const punctuality = getPunctuality(snapshot.punctualityDeltaSeconds);
+        const locationLabel = activeStop.isEstimatedSegment || activeStopIndex > 0
+            ? `Estimated between ${fromNode.name} and ${toNode.name}`
+            : (snapshot.currentLocation || activeStop.currentLocation || "");
         trains.push({
             id: snapshot.id,
             lineId: snapshot.lineId,
@@ -506,7 +512,7 @@ function buildLiveTrainPositions(snapshots, nowMs, nodeById) {
             nextArrivalTime: activeStop.expectedArrival || snapshot.expectedArrival || "",
             towards: activeStop.towards || snapshot.towards || "",
             platformName: activeStop.platformName || snapshot.platformName || "",
-            currentLocation: activeStop.currentLocation || snapshot.currentLocation || "",
+            currentLocation: locationLabel,
             vehicleId: snapshot.vehicleId || "",
             punctualityState: punctuality.state,
             punctualityLabel: punctuality.label,
