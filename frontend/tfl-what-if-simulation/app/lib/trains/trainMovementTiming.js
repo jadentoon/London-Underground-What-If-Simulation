@@ -73,13 +73,12 @@ export function estimateRemainingSeconds(snapshot, nowMs) {
 }
 
 /**
- * Finds the first future stop in a snapshot and estimates its remaining time.
+ * Estimates remaining time for a specific stop in a train's stop queue.
  * 
- * Falls
- * @param {*} stop 
- * @param {*} nowMs 
- * @param {*} capturedAtMs 
- * @returns 
+ * @param {Object} stop - Stop prediction data. 
+ * @param {number} nowMs - Current time in epoch milliseconds.
+ * @param {number} capturedAtMs - Time the prediction was captured.
+ * @returns {number} - Remaining time in seconds.
  */
 export function estimateStopRemainingSeconds(stop, nowMs, capturedAtMs) {
     if (!stop) return 0;
@@ -92,6 +91,15 @@ export function estimateStopRemainingSeconds(stop, nowMs, capturedAtMs) {
     return Math.max(0, Number(stop.eta || 0) - elapsedSeconds);
 }
 
+/**
+ * Finds the first future stop in a snapshot and estimates its remaining time.
+ * 
+ * Falls back to the snapshot-level ETA if no active stop is found.
+ * 
+ * @param {Object} snapshot - Live train snapshot.
+ * @param {number} nowMs - Current time in epoch milliseconds.
+ * @returns {number} - Remaining time in seconds.
+ */
 export function estimateActiveStopRemainingSeconds(snapshot, nowMs) {
     const stops = Array.isArray(snapshot?.stops) ? snapshot.stops : [];
     for (const stop of stops) {
@@ -101,6 +109,17 @@ export function estimateActiveStopRemainingSeconds(snapshot, nowMs) {
     return estimateRemainingSeconds(snapshot, nowMs);
 }
 
+/**
+ * Looks up the travel time for an edge, falling back to a minimum safe value.
+ * 
+ * @param {Object} params
+ * @param {string} params.lineId - TfL line ID.
+ * @param {string} params.fromId - Starting station ID.
+ * @param {string} params.toId - Destination station ID.
+ * @param {number} params.fallbackSeconds - Fallback travel time.
+ * @param {Map<String, number>} params.directedTravelTimeByLine - Edge travel time lookup.
+ * @returns {number} - Travel time in seconds.
+ */
 export function getEdgeTravelTime({
     lineId,
     fromId,
@@ -115,6 +134,12 @@ export function getEdgeTravelTime({
     );
 }
 
+/**
+ * Converts an ETA delta into a punctuality state and display label.
+ * 
+ * @param {number} deltaSeconds - Difference from the previous ETA in seconds. 
+ * @returns {{ state: string, label: string }} - Punctuality state and label.
+ */
 export function getPunctuality(deltaSeconds) {
     const delta = Number(deltaSeconds) || 0;
     if (delta > PUNCTUALITY_THRESHOLD_SECONDS) {

@@ -1,6 +1,17 @@
 import { MIN_EDGE_TRAVEL_TIME_SECONDS } from "./trainMovementConstants.js";
 import { getEdgeTravelTime } from "./trainMovementTiming.js";
 
+/**
+ * Finds the shortest path between two stations on a specific line.
+ * 
+ * Uses edge travel time as the path cost and treats line edges as bidirectional.
+ * 
+ * @param {string} lineId - TfL line ID.
+ * @param {string} fromId - Starting station ID.
+ * @param {string} toId - Destination station ID.
+ * @param {Map<string, Array<Object>>} edgesByLine - Edges grouped by line.
+ * @returns {Array<string>} - Ordered station IDs from start to destination.
+ */
 export function findLinePath(lineId, fromId, toId, edgesByLine) {
     const start = String(fromId || "");
     const target = String(toId || "");
@@ -54,6 +65,21 @@ export function findLinePath(lineId, fromId, toId, edgesByLine) {
     return path[0] === start ? path : [];
 }
 
+/**
+ * Expands a train's stop queue by inserting estimated intermediate stations.
+ * 
+ * This makes live train movement smoother when TfL predictions skip stations
+ * between the train's current location and a later predicted stop.
+ * 
+ * @param {Object} params
+ * @param {string} params.fromId - Current or inferred starting station ID.
+ * @param {Array<Object>} params.stops - Predicted upcoming stops.
+ * @param {string} params.lineId - TfL line ID.
+ * @param {number} params.nowMs - Current time in epoch milliseconds.
+ * @param {Map<string, Array<Object>>} params.edgesByLine - Edges grouped by line.
+ * @param {Map<string, number>} params.directedTravelTimeByLine - Edge travel time lookup. 
+ * @returns {Array<Object>} - Stop queue including estimated stops.
+ */
 export function expandStopQueue({
     fromId,
     stops,
