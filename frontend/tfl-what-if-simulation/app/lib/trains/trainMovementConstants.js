@@ -1,3 +1,10 @@
+/**
+ * Shared timing, limit and threshold constants for live and fallback train movement.
+ * 
+ * Keeping these values in one file makes the animation, polling, snapshot and 
+ * fallback logic easier to tune without hunting through the hook implementation.
+ */
+
 export const LIVE_REFRESH_MS = 100_000;
 export const ANIMATION_TICK_MS = 250;
 export const MAX_LIVE_ETA_SECONDS = 480;

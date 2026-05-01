@@ -11,6 +11,15 @@ import {
     interpolatePosition,
 } from "./trainMovementTiming.js";
 
+/**
+ * Builds deterministic fallback train templates from graph edges.
+ * 
+ * These templates are used when live TfL arrivals are unavailable, allowing the
+ * map to continue showing simulated train movement.
+ * 
+ * @param {Map<string, Array<Object>>} edgesByLine - Edges grouped by line. 
+ * @returns {Array<Object>} - Fallback train animation templates.
+ */
 export function buildFallbackTemplates(edgesByLine) {
     const templates = [];
 
@@ -38,6 +47,17 @@ export function buildFallbackTemplates(edgesByLine) {
     return templates;
 }
 
+/**
+ * Converts live train snapshots into map marker positions.
+ * 
+ * Determines each train's active stop, interpolates its current map position
+ * and attaches display metadata for labels, ETA, route and punctuality.
+ * 
+ * @param {Array<Object>} snapshots - Live train snapshots. 
+ * @param {number} nowMs - Current time in epoch milliseconds.
+ * @param {Map<string, Object>} nodeById - Station lookup by ID.
+ * @returns {Array<Object>} - Train marker objects for rendering.
+ */
 export function buildLiveTrainPositions(snapshots, nowMs, nodeById) {
     const trains = [];
     for (const snapshot of snapshots) {
@@ -108,6 +128,17 @@ export function buildLiveTrainPositions(snapshots, nowMs, nodeById) {
     return trains;
 }
 
+/**
+ * Converts fallback train templates into simulated map marker positions.
+ * 
+ * Animates trains back and forth along selected edges using deterministic phase
+ * offsets so fallback movement appears stable between renders.
+ * 
+ * @param {Array<Object>} templates - Fallback train templates.
+ * @param {number} nowMs - Current time in epoch milliseconds.
+ * @param {Map<string, Object>} nodeById - Station lookup by ID.
+ * @returns {Array<Object>} - Simulated train marker objects for rendering.
+ */
 export function buildFallbackTrainPositions(templates, nowMs, nodeById) {
     const nowSeconds = nowMs / 1000;
     const trains = [];
