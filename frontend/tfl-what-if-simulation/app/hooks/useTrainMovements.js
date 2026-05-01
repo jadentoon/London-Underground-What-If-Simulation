@@ -16,6 +16,19 @@ import {
     mergeLiveSnapshots,
 } from "../lib/trains/trainSnapshotBuilder.js";
 
+/**
+ * React hook that manages train marker data for the map.
+ * 
+ * It builds graph lookup indexes, polls the live train API when enabled,
+ * merges live snapshots between refreshes and falls back to simulated train
+ * movement when live data is unavailable.
+ * 
+ * @param {Object} params
+ * @param {Array<Object>} params.nodes - Station nodes from the graph.
+ * @param {Array<Object>} params.edges - Graph edges between stations.
+ * @param {boolean} [params.enabled=true] - Whether train movement should be active.
+ * @returns {{ trains: Array<Object>, feedStatus: Object }} - Train marker data and live feed status.
+ */
 export function useTrainMovements({ nodes, edges, enabled = true }) {
     const [clockMs, setClockMs] = useState(Date.now());
     const [feedSource, setFeedSource] = useState("fallback");
@@ -49,6 +62,7 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
         return () => clearInterval(id);
     }, [enabled]);
 
+    // Poll live arrivals and fall back to simulated movement when the feed is unavailable.
     useEffect(() => {
         if (!enabled) {
             setLiveSnapshots([]);

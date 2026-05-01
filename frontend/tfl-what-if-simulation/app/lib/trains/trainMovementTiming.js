@@ -3,6 +3,14 @@ import {
     PUNCTUALITY_THRESHOLD_SECONDS,
 } from "./trainMovementConstants.js";
 
+/**
+ * Creates a stable numeric hash from a string.
+ * 
+ * Used to give fallback train animations deterministic phase offsets.
+ * 
+ * @param {string | number} input - Value to hash. 
+ * @returns {number} - Positive integer hash.
+ */
 export function hashString(input) {
     let hash = 0;
     const text = String(input);
@@ -13,6 +21,14 @@ export function hashString(input) {
     return Math.abs(hash);
 }
 
+/**
+ * Interpolates a latiude/longitude position between two station nodes.
+ * 
+ * @param {{ lat: number, lon: number }} fromNode - Starting station node.
+ * @param {{ lat: number, lon: number }} toNode - Destination station node.
+ * @param {number} progress - Movement progress to 0 to 1.
+ * @returns {{ lat: number, lon: number }} - Interpolated map position.
+ */
 export function interpolatePosition(fromNode, toNode, progress) {
     const p = Math.max(0, Math.min(1, progress));
     return {
@@ -21,6 +37,12 @@ export function interpolatePosition(fromNode, toNode, progress) {
     };
 }
 
+/**
+ * Formats an ETA in seconds into a compact display label.
+ * 
+ * @param {number} seconds - ETA in seconds. 
+ * @returns {string} - Short ETA label, for example "45s" or "3m 20s".
+ */
 export function formatEtaShort(seconds) {
     const s = Math.max(0, Math.round(Number(seconds) || 0));
     if (s < 60) return `${s}s`;
@@ -29,6 +51,16 @@ export function formatEtaShort(seconds) {
     return rem === 0 ? `${m}m` : `${m}m ${rem}s`;
 }
 
+/**
+ * Estimates the remaining time for a train snapshot.
+ * 
+ * Uses the expected arrival timestamp when available, otherwise calculates
+ * elapsed time from the snapshot capture time and original ETA.
+ * 
+ * @param {Object} snapshot - Live train snapshot.
+ * @param {number} nowMs - Current time in epoch milliseconds.
+ * @returns {number} - Remaining time in seconds.
+ */
 export function estimateRemainingSeconds(snapshot, nowMs) {
     if (!snapshot) return 0;
 
@@ -40,6 +72,15 @@ export function estimateRemainingSeconds(snapshot, nowMs) {
     return Math.max(0, Number(snapshot.eta || 0) - elapsedSeconds);
 }
 
+/**
+ * Finds the first future stop in a snapshot and estimates its remaining time.
+ * 
+ * Falls
+ * @param {*} stop 
+ * @param {*} nowMs 
+ * @param {*} capturedAtMs 
+ * @returns 
+ */
 export function estimateStopRemainingSeconds(stop, nowMs, capturedAtMs) {
     if (!stop) return 0;
 
