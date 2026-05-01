@@ -14,6 +14,22 @@ import {
 } from "./trainMovementTiming.js";
 import { expandStopQueue } from "./trainRouteExpansion.js";
 
+/**
+ * Converts raw TfL arrival predictions into live train snapshots.
+ * 
+ * Groups predictions by vehicle, resolves station IDs, estimates the train's
+ * current edge, expands skipped stops and prepares snapshot data for animation.
+ * 
+ * @param {Object} params
+ * @param {Array<Object>} params.arrivals - Raw TfL arrival predictions.
+ * @param {number} params.nowMs - Current time in epoch milliseconds.
+ * @param {Map<string, Object>} params.nodeById - Station lookup by ID.
+ * @param {Map<string, string>} params.stationNameToId - Normalised station name lookup.
+ * @param {Map<string, number>} params.directedTravelTimeByLine - Edge travel time lookup.
+ * @param {Map<string, Array<Object>>} params.inboundByLineTo - Inbound edge lookup.
+ * @param {Map<string, Array<Object>>} params.edgesByLine - Edges grouped by line.
+ * @returns {Array<Object>} - Live train snapshots.
+ */
 export function buildLiveSnapshots({
     arrivals,
     nowMs,
@@ -132,6 +148,19 @@ export function buildLiveSnapshots({
     return snapshots;
 }
 
+/**
+ * Merges newly fetched live snapshots with previous snapshots.
+ * 
+ * Preserves smooth movement between API polls, limits sudden ETA jumps, carries
+ * forward recently stale trains and sorts snapshots by soonest arrival.
+ * 
+ * @param {Object} params
+ * @param {Array<Object>} params.previousSnapshots - Existing train snapshots.
+ * @param {Array<Object>} params.nextSnapshots - Newly fetched train snapshots.
+ * @param {number} params.nowMs - Current time in epoch milliseconds.
+ * @param {Map<string, number>} params.directedTravelTimeByLine - Edge travel time lookup.
+ * @returns {Array<Object>} - Merged live train snapshots.
+ */
 export function mergeLiveSnapshots({
     previousSnapshots,
     nextSnapshots,
