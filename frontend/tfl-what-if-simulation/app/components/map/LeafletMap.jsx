@@ -237,7 +237,7 @@ const LeafletMap = ({
         return out;
     }, [edges, hypotheticalSettingsEnabled, partialStationIdsByLine]);
 
-    function handleSingleClickStation(stationId) {
+    const handleSingleClickStation = useCallback((stationId) => {
         const id = String(stationId);
 
         if (!start) {
@@ -290,7 +290,20 @@ const LeafletMap = ({
             });
         }
         setEnd(id);
-    }
+    }, [
+        start,
+        graph,
+        nodeById,
+        hypotheticalSettingsEnabled,
+        closedSet,
+        closedLineSet,
+        partialEdgeKeys,
+        onRoutingError
+    ]);
+
+    const handleDoubleClickStation = useCallback((id) => {
+        onToggleStationClosed?.(id);
+    }, [onToggleStationClosed]);
 
     const pathSet = useMemo(() => new Set(path.map(String)), [path]);
 
@@ -515,7 +528,7 @@ const LeafletMap = ({
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 redXIcon={redXIcon}
                 onSingleClickStation={handleSingleClickStation}
-                onDoubleClickStation={(id) => onToggleStationClosed?.(id)}
+                onDoubleClickStation={handleDoubleClickStation}
                 zoomLevel={zoomLevel}
                 liveClosedSet={liveClosedSet}
             />
