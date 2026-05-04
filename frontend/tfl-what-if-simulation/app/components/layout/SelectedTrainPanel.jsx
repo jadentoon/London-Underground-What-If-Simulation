@@ -40,7 +40,7 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
             aria-label="Selected train details"
             style={{
                 position: "absolute",
-                right: isMobilePortrait ? 12 : 20,
+                right: isMobilePortrait ? 12 : 70,
                 bottom: isMobilePortrait ? 18 : 24,
                 width: isMobilePortrait ? "calc(100% - 24px)" : 320,
                 maxWidth: "calc(100% - 24px)",

@@ -133,6 +133,8 @@ const LeafletMap = ({
     liveClosedStations = new Set(),
     onTrainFeedStatusChange,
     showTrains = true,
+    selectedTrainId = null,
+    onSelectedTrainIdChange,
     trainFilterMode = "all",
     visibleTrainLines = new Set(),
     isMobilePortrait = false,
@@ -157,7 +159,6 @@ const LeafletMap = ({
         changeCount: 0,
         statePath: [],
     });
-    const [selectedTrainId, setSelectedTrainId] = useState(null);
 
     const [zoomLevel, setZoomLevel] = useState(14);
 
@@ -218,7 +219,7 @@ const LeafletMap = ({
     }, [filteredTrains, selectedTrainId]);
 
     const handleTrainSelect = useCallback((trainId) => {
-        setSelectedTrainId(trainId ? String(trainId) : null);
+        onSelectedTrainIdChange?.(trainId ? String(trainId) : null);
     }, []);
 
     const groupedEdges = useMemo(() => {
@@ -555,7 +556,7 @@ const LeafletMap = ({
             <SelectedTrainPanel
                 train={selectedTrain}
                 layout={{ isMobilePortrait }}
-                onClose={() => setSelectedTrainId(null)}
+                onClose={() => onSelectedTrainIdChange?.(null)}
             />
         </>
     )
