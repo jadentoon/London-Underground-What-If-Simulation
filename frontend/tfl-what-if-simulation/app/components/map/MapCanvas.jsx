@@ -209,6 +209,7 @@ export function MapCanvas() {
                 showTrains={showTrains}
                 trainFilterMode={trainFilterMode}
                 visibleTrainLines={visibleTrainLines}
+                isMobilePortrait={isMobilePortrait}
             />
 
             <MapTitleOverlay

@@ -27,7 +27,8 @@ import { useTrainMovements } from "../../hooks/useTrainMovements.js";
 import RouteLayer from "../mapLayers/RouteLayer.jsx";
 import EdgeLayer from "../mapLayers/EdgeLayer.jsx";
 import StationLayer from "../mapLayers/StationLayer.jsx";
-import TrainLayer from "../mapLayers/TrainLayer.jsx";
+import CanvasTrainLayer from "../mapLayers/CanvasTrainLayer.jsx";
+import { SelectedTrainPanel } from "../layout/SelectedTrainPanel.jsx";
 
 setupLeafletDefaultIcons();
 
@@ -134,6 +135,7 @@ const LeafletMap = ({
     showTrains = true,
     trainFilterMode = "all",
     visibleTrainLines = new Set(),
+    isMobilePortrait = false,
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -155,6 +157,7 @@ const LeafletMap = ({
         changeCount: 0,
         statePath: [],
     });
+    const [selectedTrainId, setSelectedTrainId] = useState(null);
 
     const [zoomLevel, setZoomLevel] = useState(14);
 
@@ -209,6 +212,14 @@ const LeafletMap = ({
         if (trainFilterMode === "all") return trains;
         return trains.filter((train) => visibleTrainLines.has(String(train.lineId)));
     }, [trains, showTrains, trainFilterMode, visibleTrainLines]);
+    const selectedTrain = useMemo(() => {
+        if (!selectedTrainId) return null;
+        return filteredTrains.find((train) => String(train.id) === String(selectedTrainId)) ?? null;
+    }, [filteredTrains, selectedTrainId]);
+
+    const handleTrainSelect = useCallback((trainId) => {
+        setSelectedTrainId(trainId ? String(trainId) : null);
+    }, []);
 
     const groupedEdges = useMemo(() => {
         const unique = dedupeEdges(edges);
@@ -471,68 +482,82 @@ const LeafletMap = ({
     }, [feedStatus, onTrainFeedStatusChange]);
 
     return (
-        <MapContainer
-            center={LONDON_CENTER}
-            zoom={zoomLevel}
-            minZoom={12}
-            maxZoom={16}
-            maxBounds={LONDON_MAX_BOUNDS}
-            maxBoundsViscosity={1.0}
-            renderer={vectorRenderer}
-            scrollWheelZoom
-            dragging
-            doubleClickZoom={false}
-            zoomControl={true}
-            attributionControl={false}
-            style={{
-                position: "absolute",
-                inset: 0,
-                zIndex: 0,
-            }}
-        >
-            <TileLayer 
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                bounds={LONDON_MAX_BOUNDS}
-                noWrap
-                keepBuffer={7}
-                updateWhenIdle={false}
-                updateWhenZooming={true}
-                updateInterval={100}
+        <>
+            <MapContainer
+                center={LONDON_CENTER}
+                zoom={zoomLevel}
+                minZoom={12}
+                maxZoom={16}
+                maxBounds={LONDON_MAX_BOUNDS}
+                maxBoundsViscosity={1.0}
+                renderer={vectorRenderer}
+                scrollWheelZoom
+                dragging
+                doubleClickZoom={false}
+                zoomControl={true}
+                attributionControl={false}
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 0,
+                }}
+            >
+                <TileLayer 
+                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    bounds={LONDON_MAX_BOUNDS}
+                    noWrap
+                    keepBuffer={7}
+                    updateWhenIdle={false}
+                    updateWhenZooming={true}
+                    updateInterval={100}
+                />
+
+                {/* Camera Change Listener */}
+                <MapEvents onChange={handleMapChange} />
+                <MapInstance onReady={onMapReady} />
+                <ClearOnMapClick enabled={hasPath} onClear={clearRoute} />
+
+                <RouteLayer pathPositions={pathPositions} />
+
+                <EdgeLayer 
+                    groupedEdges={groupedEdges} 
+                    nodeById={nodeById} 
+                    dimmed={hasPath} 
+                    closedLines={closedLines} 
+                    partialEdgeKeys={partialEdgeKeys}
+                    onLineToggle={onLineToggle}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                />
+                {trainVisualsEnabled && showTrains && (
+                    <CanvasTrainLayer
+                        trains={filteredTrains}
+                        selectedTrainId={selectedTrainId}
+                        onTrainSelect={handleTrainSelect}
+                    />
+                )}
+
+                <StationLayer
+                    nodes={nodes}
+                    startId={start}
+                    setStartId={setStart}
+                    pathSet={pathSet}
+                    closedSet={closedSet}
+                    hasPath={hasPath}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    redXIcon={redXIcon}
+                    onSingleClickStation={handleSingleClickStation}
+                    onDoubleClickStation={handleDoubleClickStation}
+                    zoomLevel={zoomLevel}
+                    liveClosedSet={liveClosedSet}
+                />
+            </MapContainer>
+
+            <SelectedTrainPanel
+                train={selectedTrain}
+                layout={{ isMobilePortrait }}
+                onClose={() => setSelectedTrainId(null)}
             />
-
-            {/* Camera Change Listener */}
-            <MapEvents onChange={handleMapChange} />
-            <MapInstance onReady={onMapReady} />
-            <ClearOnMapClick enabled={hasPath} onClear={clearRoute} />
-
-            <RouteLayer pathPositions={pathPositions} />
-
-            <EdgeLayer 
-                groupedEdges={groupedEdges} 
-                nodeById={nodeById} 
-                dimmed={hasPath} 
-                closedLines={closedLines} 
-                partialEdgeKeys={partialEdgeKeys}
-                onLineToggle={onLineToggle}
-                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-            />
-            {trainVisualsEnabled && showTrains && <TrainLayer trains={filteredTrains} />}
-
-            <StationLayer
-                nodes={nodes}
-                startId={start}
-                setStartId={setStart}
-                pathSet={pathSet}
-                closedSet={closedSet}
-                hasPath={hasPath}
-                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                redXIcon={redXIcon}
-                onSingleClickStation={handleSingleClickStation}
-                onDoubleClickStation={handleDoubleClickStation}
-                zoomLevel={zoomLevel}
-                liveClosedSet={liveClosedSet}
-            />
-        </MapContainer>
+        </>
     )
 }
 

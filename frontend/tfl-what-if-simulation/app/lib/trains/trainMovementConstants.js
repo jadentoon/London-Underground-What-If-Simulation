@@ -5,7 +5,7 @@
  * fallback logic easier to tune without hunting through the hook implementation.
  */
 
-export const LIVE_REFRESH_MS = 100_000;
+export const LIVE_REFRESH_MS = 500_000;
 export const ANIMATION_TICK_MS = 1000;
 export const MAX_LIVE_ETA_SECONDS = 480;
 export const MAX_ROUTE_ETA_SECONDS = 3600;
