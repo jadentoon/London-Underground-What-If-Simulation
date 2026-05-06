@@ -28,7 +28,7 @@ export function RouteInfoPanel({
     const changes = routeInfo?.changeCount ?? 0;
 
     //const rightOffset = hypotheticalSettingsEnabled ? 70 : 25;
-    const bottomOffset = isMobilePortrait ? 16 : (hypotheticalSettingsEnabled ? 70 : 16);
+    const bottomOffset = isMobilePortrait ? 70 : (hypotheticalSettingsEnabled ?  70: 25);
     const actionColor = accentColor ?? "#3b82f6";
 
     return (

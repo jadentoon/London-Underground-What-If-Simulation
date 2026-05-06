@@ -16,6 +16,8 @@ export function SidebarToggleButton({
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const sidebarWidth = layout?.sidebarWidth ?? 280;
+
+    const mobileTop = hypotheticalSettingsEnabled ? 42 : 42;
     const leftOffset = isMobilePortrait
         ? (isSidebarOpen ? "calc(100vw - 44px)" : 0)
         : (isSidebarOpen ? sidebarWidth : 0);
@@ -25,7 +27,7 @@ export function SidebarToggleButton({
             onClick={onToggle}
             style={{
                 position: "fixed",
-                top: isMobilePortrait ? (hypotheticalSettingsEnabled ? 110 : 90) : "50%",
+                top: isMobilePortrait ? mobileTop : "50%",
                 left: leftOffset,
                 transform: isMobilePortrait ? "translateY(0)" : "translateY(-50%)",
                 width: isMobilePortrait ? 44 : 32,

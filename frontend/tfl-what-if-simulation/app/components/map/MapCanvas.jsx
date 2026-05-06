@@ -222,6 +222,7 @@ export function MapCanvas() {
 
             <MapSearchBox
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                isSidebarOpen={isSidebarOpen}
                 layout={{ isMobilePortrait }}
                 COLORS={COLORS}
                 accentColor={accentColor}

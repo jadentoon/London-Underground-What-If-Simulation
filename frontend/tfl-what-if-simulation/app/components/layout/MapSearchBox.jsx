@@ -7,6 +7,7 @@ import { useState } from "react";
 
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
+    isSidebarOpen = false,
     layout,
     COLORS,
     accentColor,
@@ -19,8 +20,14 @@ export function MapSearchBox({
     const [isOpen, setIsOpen] = useState(false);
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const anchorTop = hypotheticalSettingsEnabled ? 150 : 170;
+
+    if (isSidebarOpen) return null;
+
+    const mobileButtonBottom = hypotheticalSettingsEnabled ? 785 : 785;
+    const mobilePanelBottom = mobileButtonBottom + 50;
+
     const buttonTop = isMobilePortrait ? "auto" : anchorTop;
-    const buttonBottom = isMobilePortrait ? 90 : "auto";
+    const buttonBottom = isMobilePortrait ? mobileButtonBottom : "auto";
     const panelWidth = isMobilePortrait ? "min(320px, calc(100vw - 32px))" : 280;
 
     return (
@@ -57,7 +64,7 @@ export function MapSearchBox({
                 style={{
                     position: "fixed",
                     top: isMobilePortrait ? "auto" : anchorTop,
-                    bottom: isMobilePortrait ? 140 : "auto",
+                    bottom: isMobilePortrait ? mobilePanelBottom : "auto",
                     right: isMobilePortrait ? (isOpen ? 16 : "-400px") : (isOpen ? 64 : -320),
                     width: panelWidth,
                     background: COLORS.card,
