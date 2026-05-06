@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from "react";
+
 function formatDuration(seconds) {
     if (!Number.isFinite(seconds) || seconds <= 0) return "-";
     const mins = Math.round(seconds / 60);
@@ -13,6 +15,7 @@ export function RouteInfoPanel({
     isOpen,
     onToggle,
     routeInfo,
+    isSidebarOpen = false,
     COLORS,
     accentColor,
     layout,
@@ -24,11 +27,21 @@ export function RouteInfoPanel({
     const hasPath = !!routeInfo?.hasPath;
     const stops = routeInfo?.stops ?? [];
 
+    const shouldHideInMobile = isMobilePortrait && !hasPath;
+
+    useEffect(() => {
+        if (shouldHideInMobile && isOpen) onToggle?.();
+    }, [shouldHideInMobile, isOpen, onToggle]);
+
+    if (shouldHideInMobile) return null;
+
+    const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
+
     const groupedLegs = routeInfo?.groupedLegs ?? [];
     const changes = routeInfo?.changeCount ?? 0;
 
     //const rightOffset = hypotheticalSettingsEnabled ? 70 : 25;
-    const bottomOffset = isMobilePortrait ? 70 : (hypotheticalSettingsEnabled ?  70: 25);
+    const bottomOffset = isMobilePortrait ? 18 : (hypotheticalSettingsEnabled ?  70: 25);
     const actionColor = accentColor ?? "#3b82f6";
 
     return (
@@ -41,7 +54,9 @@ export function RouteInfoPanel({
                 zIndex: 1200,
                 width: isMobilePortrait ? "auto" : 340,
                 maxWidth: "calc(100vw - 32px)",
-                pointerEvents: "auto",
+                transform: shouldSlideOffscreen ? "translateY(calc(100% + 24px))" : "translateY(0)",
+                transition: isMobilePortrait ? "transform 220ms ease" : undefined,
+                pointerEvents: shouldSlideOffscreen ? "none" : "auto",
             }}
         >
             {/* Collapsed Pill */}

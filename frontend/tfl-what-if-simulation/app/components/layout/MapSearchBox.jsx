@@ -21,7 +21,7 @@ export function MapSearchBox({
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const anchorTop = hypotheticalSettingsEnabled ? 150 : 170;
 
-    if (isSidebarOpen) return null;
+    const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
 
     const mobileButtonBottom = hypotheticalSettingsEnabled ? 785 : 785;
     const mobilePanelBottom = mobileButtonBottom + 50;
@@ -40,6 +40,9 @@ export function MapSearchBox({
                     top: buttonTop,
                     bottom: buttonBottom,
                     right: 16,
+                    transform: shouldSlideOffscreen ? "translateX(calc(100% + 24px))" : "translateX(0)",
+                    transition: isMobilePortrait ? "transform 220ms ease" : undefined,
+                    pointerEvents: shouldSlideOffscreen ? "none" : "auto",
                     width: 40,
                     height: 40,
                     background: COLORS.card,
@@ -66,6 +69,7 @@ export function MapSearchBox({
                     top: isMobilePortrait ? "auto" : anchorTop,
                     bottom: isMobilePortrait ? mobilePanelBottom : "auto",
                     right: isMobilePortrait ? (isOpen ? 16 : "-400px") : (isOpen ? 64 : -320),
+                    transform: shouldSlideOffscreen ? "translateX(calc(100% + 24px))" : "translateX(0)",
                     width: panelWidth,
                     background: COLORS.card,
                     backdropFilter: "blur(8px)",
@@ -74,7 +78,8 @@ export function MapSearchBox({
                     padding: 10,
                     zIndex: 1000,
                     fontFamily: "monospace",
-                    transition: "right 0.3s ease-in-out",
+                    transition: isMobilePortrait ? "right 0.3s ease-in-out, transform 220ms ease" : "right 0.3s ease-in-out",
+                    pointerEvents: shouldSlideOffscreen ? "none" : "auto",
                 }}
             >
             <input

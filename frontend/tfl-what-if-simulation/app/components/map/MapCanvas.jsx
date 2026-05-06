@@ -293,6 +293,7 @@ export function MapCanvas() {
                 isOpen={isRoutePanelOpen}
                 onToggle={toggleRoutePanel}
                 routeInfo={routeInfo}
+                isSidebarOpen={isSidebarOpen}
                 layout={{ isMobilePortrait }}
                 COLORS={COLORS}
                 accentColor={accentColor}
