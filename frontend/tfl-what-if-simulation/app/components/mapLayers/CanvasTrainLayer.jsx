@@ -3,10 +3,25 @@ import { useMap } from "react-leaflet";
 import L from "leaflet";
 import { TRAIN_COLOURS } from "../mapComponents/constants.js";
 
-const TRAIN_RADIUS = 9;
-const HIT_RADIUS = 13;
+const MIN_TRAIN_ZOOM = 12;
+const MAX_TRAIN_ZOOM = 16;
+const TRAIN_RADIUS_AT_MIN_ZOOM = 4;
+const TRAIN_RADIUS_ZOOM_STEP = 1;
 
-function drawTrain(ctx, point, train, isSelected) {
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function getTrainRadiusForZoom(zoom) {
+    const safeZoom = clamp(Number.isFinite(zoom) ? zoom : MAX_TRAIN_ZOOM, MIN_TRAIN_ZOOM, MAX_TRAIN_ZOOM);
+    return TRAIN_RADIUS_AT_MIN_ZOOM + ((safeZoom - MIN_TRAIN_ZOOM) * TRAIN_RADIUS_ZOOM_STEP);
+}
+
+function getTrainHitRadius(radius) {
+    return Math.max(radius + 2, 8);
+}
+
+function drawTrain(ctx, point, train, isSelected, radius) {
     const lineId = String(train?.lineId || "");
     const isNorthern = lineId === "northern";
     const fillColour = isNorthern ? "#111827" : (TRAIN_COLOURS[lineId] || "#38bdf8");
@@ -14,40 +29,46 @@ function drawTrain(ctx, point, train, isSelected) {
     const glowColour = isNorthern ? "#f8fafc" : fillColour;
     const x = point.x;
     const y = point.y;
+    const scale = radius / 11;
 
     ctx.save();
-    ctx.shadowBlur = train.isLive ? 12 : 8;
+    ctx.shadowBlur = (train.isLive ? 16 : 11) * scale;
     ctx.shadowColor = glowColour;
     ctx.beginPath();
-    ctx.arc(x, y, TRAIN_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
+    ctx.arc(x, y, radius + Math.max(2, 2.5 * scale), 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(248, 250, 252, 0.88)";
     ctx.fill();
     ctx.restore();
 
     ctx.beginPath();
-    ctx.arc(x, y, TRAIN_RADIUS, 0, Math.PI * 2);
+    ctx.arc(x, y, radius + Math.max(1, 1.4 * scale), 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(15, 23, 42, 0.96)";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fillStyle = fillColour;
     ctx.fill();
-    ctx.lineWidth = 2;
+    ctx.lineWidth = Math.max(1, 2 * scale);
     ctx.strokeStyle = borderColour;
     ctx.stroke();
 
     if (isSelected) {
         ctx.beginPath();
-        ctx.arc(x, y, TRAIN_RADIUS + 5, 0, Math.PI * 2);
-        ctx.lineWidth = 3;
+        ctx.arc(x, y, radius + (5 * scale), 0, Math.PI * 2);
+        ctx.lineWidth = Math.max(1.5, 3 * scale);
         ctx.strokeStyle = "#f8fafc";
         ctx.stroke();
     }
 
     ctx.fillStyle = "#ffffff";
     ctx.globalAlpha = 0.95;
-    ctx.fillRect(x - 4.5, y - 5, 9, 4);
+    ctx.fillRect(x - (4.5 * scale), y - (5 * scale), 9 * scale, 4 * scale);
     ctx.globalAlpha = 1;
 
     ctx.beginPath();
-    ctx.arc(x - 3.5, y + 4, 1.4, 0, Math.PI * 2);
-    ctx.arc(x + 3.5, y + 4, 1.4, 0, Math.PI * 2);
+    ctx.arc(x - (3.5 * scale), y + (4 * scale), 1.4 * scale, 0, Math.PI * 2);
+    ctx.arc(x + (3.5 * scale), y + (4 * scale), 1.4 * scale, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
 }
@@ -70,19 +91,22 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
         ctx.setTransform(scale, 0, 0, scale, 0, 0);
         ctx.clearRect(0, 0, size.x, size.y);
 
+        const trainRadius = getTrainRadiusForZoom(map.getZoom());
+        const hitRadius = getTrainHitRadius(trainRadius);
+
         for (const train of trainsRef.current) {
             if (!Number.isFinite(train?.lat) || !Number.isFinite(train?.lon)) continue;
             const point = map.latLngToContainerPoint([train.lat, train.lon]);
             if (
-                point.x < -HIT_RADIUS ||
-                point.y < -HIT_RADIUS ||
-                point.x > size.x + HIT_RADIUS ||
-                point.y > size.y + HIT_RADIUS
+                point.x < -hitRadius ||
+                point.y < -hitRadius ||
+                point.x > size.x + hitRadius ||
+                point.y > size.y + hitRadius
             ) {
                 continue;
             }
 
-            drawTrain(ctx, point, train, String(train.id) === String(selectedTrainIdRef.current));
+            drawTrain(ctx, point, train, String(train.id) === String(selectedTrainIdRef.current), trainRadius);
         }
     }, [map]);
 
@@ -130,6 +154,7 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
         function handleMapClick(event) {
             const clickPoint = map.latLngToContainerPoint(event.latlng);
             let clickedTrain = null;
+            const hitRadius = getTrainHitRadius(getTrainRadiusForZoom(map.getZoom()));
 
             for (let i = trainsRef.current.length - 1; i >= 0; i -= 1) {
                 const train = trainsRef.current[i];
@@ -139,7 +164,7 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
                 const dx = point.x - clickPoint.x;
                 const dy = point.y - clickPoint.y;
 
-                if ((dx * dx) + (dy * dy) <= HIT_RADIUS * HIT_RADIUS) {
+                if ((dx * dx) + (dy * dy) <= hitRadius * hitRadius) {
                     clickedTrain = train;
                     break;
                 }
