@@ -134,6 +134,7 @@ const LeafletMap = ({
     showTrains = true,
     trainFilterMode = "all",
     visibleTrainLines = new Set(),
+    highlightedStationId,
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -531,6 +532,7 @@ const LeafletMap = ({
                 onDoubleClickStation={handleDoubleClickStation}
                 zoomLevel={zoomLevel}
                 liveClosedSet={liveClosedSet}
+                highlightedStationId={highlightedStationId}
             />
         </MapContainer>
     )

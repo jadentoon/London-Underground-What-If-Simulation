@@ -116,6 +116,8 @@ export function MapCanvas() {
         handleStationsLoaded,
         goToStation,
         selectFirstStationMatch,
+        highlightedStationId,
+        setHighlightedStationId,
     } = useStationSearch(leafletMapRef);
 
     const {
@@ -167,6 +169,7 @@ export function MapCanvas() {
         clearClosedStations();
         setIsSidebarOpen(false);
         setStationQuery("");
+        setHighlightedStationId(null);
     }, []);
     
     const handleToggleWhatIfMode = useCallback(() => {
@@ -209,6 +212,7 @@ export function MapCanvas() {
                 showTrains={showTrains}
                 trainFilterMode={trainFilterMode}
                 visibleTrainLines={visibleTrainLines}
+                highlightedStationId={highlightedStationId}
             />
 
             <MapTitleOverlay

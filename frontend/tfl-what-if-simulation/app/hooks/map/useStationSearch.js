@@ -7,6 +7,9 @@ export function useStationSearch(leafletMapRef) {
     //Search input value
     const [stationQuery, setStationQuery] = useState("");
 
+    // Highlighted station after search selection
+    const [highlightedStationId, setHighlightedStationId] = useState(null);
+
     const handleStationsLoaded = useCallback((nodes) => {
         setStationsForSearch(nodes || []);
     }, []);
@@ -19,6 +22,14 @@ export function useStationSearch(leafletMapRef) {
 
         leafletMapRef.current.setView([station.lat, station.lon], 16);
         setStationQuery(station.name);
+
+        // highlight searched station
+        setHighlightedStationId(String(station.id));
+
+        // remove highlight after a few seconds
+        setTimeout(() => {
+            setHighlightedStationId(null);
+        }, 4000);
     }, [leafletMapRef]);
 
     const stationMatches = useMemo(() => {
@@ -42,5 +53,7 @@ export function useStationSearch(leafletMapRef) {
         handleStationsLoaded,
         goToStation,
         selectFirstStationMatch,
+        highlightedStationId,
+        setHighlightedStationId,
     };
 }
