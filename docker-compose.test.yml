@@ -1,0 +1,43 @@
+services:
+  all-tests:
+    image: node:22-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - root_node_modules:/workspace/node_modules
+      - frontend_node_modules:/workspace/frontend/tfl-what-if-simulation/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - .env
+      - frontend/tfl-what-if-simulation/.env.local
+    environment:
+      NODE_ENV: test
+      NEXT_TELEMETRY_DISABLED: "1"
+    command: >
+      sh -c "
+        root_status=0;
+        frontend_status=0;
+
+        echo 'Running root tests...';
+        npm ci &&
+        npm test -- --testPathIgnorePatterns=frontend/tfl-what-if-simulation ||
+        root_status=$?;
+
+        echo 'Running frontend tests...';
+        cd frontend/tfl-what-if-simulation &&
+        npm ci &&
+        npm test -- __tests__ ||
+        frontend_status=$?;
+
+        if [ \"$root_status\" -ne 0 ] || [ \"$frontend_status\" -ne 0 ]; then
+          echo 'One or more test suites failed.';
+          exit 1;
+        fi;
+
+        echo 'All test suites passed.'
+      "
+
+volumes:
+  root_node_modules:
+  frontend_node_modules:
