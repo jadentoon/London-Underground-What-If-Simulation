@@ -67,9 +67,9 @@ export const LINE_LABELS = {
  * zoom level 16 - radius 13
  */
 export const ZOOM_LEVELS = {
-    12: 8,
-    13: 10,
-    14: 12,
-    15: 14,
-    16: 16
+    12: 7,
+    13: 9,
+    14: 11,
+    15: 13,
+    16: 15
 }

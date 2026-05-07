@@ -5,8 +5,9 @@ import { TRAIN_COLOURS } from "../mapComponents/constants.js";
 
 const MIN_TRAIN_ZOOM = 12;
 const MAX_TRAIN_ZOOM = 16;
-const TRAIN_RADIUS_AT_MIN_ZOOM = 4;
+const TRAIN_RADIUS_AT_MIN_ZOOM = 5;
 const TRAIN_RADIUS_ZOOM_STEP = 1;
+const HIDE_TRAINS_AT_ZOOM = 12;
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -15,6 +16,10 @@ function clamp(value, min, max) {
 function getTrainRadiusForZoom(zoom) {
     const safeZoom = clamp(Number.isFinite(zoom) ? zoom : MAX_TRAIN_ZOOM, MIN_TRAIN_ZOOM, MAX_TRAIN_ZOOM);
     return TRAIN_RADIUS_AT_MIN_ZOOM + ((safeZoom - MIN_TRAIN_ZOOM) * TRAIN_RADIUS_ZOOM_STEP);
+}
+
+function shouldHideTrains(zoom) {
+    return (Number.isFinite(zoom) ? zoom : MAX_TRAIN_ZOOM) < HIDE_TRAINS_AT_ZOOM + 1;
 }
 
 function getTrainHitRadius(radius) {
@@ -91,7 +96,10 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
         ctx.setTransform(scale, 0, 0, scale, 0, 0);
         ctx.clearRect(0, 0, size.x, size.y);
 
-        const trainRadius = getTrainRadiusForZoom(map.getZoom());
+        const zoom = map.getZoom();
+        if (shouldHideTrains(zoom)) return;
+
+        const trainRadius = getTrainRadiusForZoom(zoom);
         const hitRadius = getTrainHitRadius(trainRadius);
 
         for (const train of trainsRef.current) {
@@ -152,6 +160,11 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
         }
 
         function handleMapClick(event) {
+            if (shouldHideTrains(map.getZoom())) {
+                onTrainSelect?.(null);
+                return;
+            }
+
             const clickPoint = map.latLngToContainerPoint(event.latlng);
             let clickedTrain = null;
             const hitRadius = getTrainHitRadius(getTrainRadiusForZoom(map.getZoom()));

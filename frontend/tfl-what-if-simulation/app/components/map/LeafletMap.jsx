@@ -489,6 +489,12 @@ const LeafletMap = ({
                 zoom={zoomLevel}
                 minZoom={12}
                 maxZoom={16}
+                zoomSnap={0.5}
+                zoomDelta={0.5}
+                wheelPxPerZoomLevel={90}
+                zoomAnimation
+                fadeAnimation
+                markerZoomAnimation
                 maxBounds={LONDON_MAX_BOUNDS}
                 maxBoundsViscosity={1.0}
                 renderer={vectorRenderer}

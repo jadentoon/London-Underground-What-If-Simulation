@@ -12,8 +12,14 @@ import { ZOOM_LEVELS } from "../mapComponents/constants.js";
  */
 
 function getRadiusForZoom(zoom) {
-    const z = Math.min(16, Math.max(12, Math.round(zoom ?? 14)));
-    return ZOOM_LEVELS[z] ?? 9;
+    const z = Math.min(16, Math.max(12, Number.isFinite(zoom) ? zoom : 14));
+    const lowerZoom = Math.floor(z);
+    const upperZoom = Math.ceil(z);
+    const lowerRadius = ZOOM_LEVELS[lowerZoom] ?? 9;
+    const upperRadius = ZOOM_LEVELS[upperZoom] ?? lowerRadius;
+    const progress = z - lowerZoom;
+
+    return lowerRadius + ((upperRadius - lowerRadius) * progress);
 }
 
 function StationLayerComponent({
