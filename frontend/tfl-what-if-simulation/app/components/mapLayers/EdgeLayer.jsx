@@ -15,7 +15,8 @@ function EdgeLayerComponent({
     closedLines,
     partialEdgeKeys = new Set(),
     onLineToggle,
-    hypotheticalSettingsEnabled
+    hypotheticalSettingsEnabled,
+    interactionMode = "route",
 }) {
     const edgeCoreOpacity = dimmed ? 0.18 : LINE_STYLE.OPACITY;
     const edgeOutlineOpacity = dimmed ? 0.12 : LINE_STYLE.OPACITY;
@@ -44,7 +45,7 @@ function EdgeLayerComponent({
                     const isPartlyClosedLine = !isClosedLine && partialEdgeKeys.has(edgeKey);
                     const useDisruptedStyle = isClosedLine || isPartlyClosedLine;
 
-                    const color = useDisruptedStyle
+                    const lineColour = useDisruptedStyle
                         ? DISRUPTED_LINE_CORE_COLOUR
                         : (LINE_COLOURS[line] || "#3b82f6");
 
@@ -76,7 +77,7 @@ function EdgeLayerComponent({
                             <Polyline
                                 positions={positions}
                                 pathOptions={{
-                                    color,
+                                    color: lineColour,
                                     weight: LINE_STYLE.STROKE_WEIGHT,
                                     opacity: edgeCoreOpacity,
                                     lineCap: "round",
@@ -87,10 +88,17 @@ function EdgeLayerComponent({
                                     className: "edge-core",
                                 }}
                                 eventHandlers={{
+                                    click: (e) => {
+                                        e.originalEvent?.preventDefault();
+                                        e.originalEvent?.stopPropagation();
+                                        if (hypotheticalSettingsEnabled && interactionMode === "closures" && onLineToggle) {
+                                            onLineToggle(line);
+                                        }
+                                    },
                                     dblclick: (e) => {
                                         e.originalEvent?.preventDefault();
                                         e.originalEvent?.stopPropagation();
-                                        if (hypotheticalSettingsEnabled && onLineToggle) {
+                                        if (hypotheticalSettingsEnabled && interactionMode !== "closures" && onLineToggle) {
                                             onLineToggle(line);
                                         }
                                     }
@@ -117,7 +125,8 @@ const EdgeLayer = React.memo(EdgeLayerComponent, (prev, next) => {
         prev.closedLines === next.closedLines &&
         prev.partialEdgeKeys === next.partialEdgeKeys &&
         prev.onLineToggle === next.onLineToggle &&
-        prev.hypotheticalSettingsEnabled === next.hypotheticalSettingsEnabled
+        prev.hypotheticalSettingsEnabled === next.hypotheticalSettingsEnabled &&
+        prev.interactionMode === next.interactionMode
     );
 });
 
