@@ -39,18 +39,24 @@ function StatusRow({ state, label }) {
     );
 }
 
+const trainIconCache = new Map();
+
 function getTrainIcon(train) {
     const lineId = String(train?.lineId || "");
     const isLive = Boolean(train?.isLive);
-    const isNorthern = lineId === "northern";
+    const cacheKey = `${lineId}|${isLive ? "live" : "fallback"}`;
 
+    const cached = trainIconCache.get(cacheKey);
+    if (cached) return cached;
+
+    const isNorthern = lineId === "northern";
     const baseColour = TRAIN_COLOURS[lineId] || "#38bdf8";
     const trainColour = isNorthern ? "#111827" : baseColour;
     const borderColour = isNorthern ? "#f8fafc" : "#020617";
     const glowColour = isNorthern ? "#f8fafc" : baseColour;
-    const size = isLive ? 25 : 25;
+    const size = 25;
 
-    return L.divIcon({
+    const icon = L.divIcon({
         className: "live-train-marker",
         html: `
             <div style="
@@ -89,6 +95,9 @@ function getTrainIcon(train) {
         iconAnchor: [size / 2, size / 2],
         popupAnchor: [0, -size / 2],
     });
+
+    trainIconCache.set(cacheKey, icon);
+    return icon;
 }
 
 export default function TrainLayer({ trains = [] }) {

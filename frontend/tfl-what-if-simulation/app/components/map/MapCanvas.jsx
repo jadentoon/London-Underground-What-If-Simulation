@@ -71,6 +71,7 @@ export function MapCanvas() {
     // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+
     // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
     const [mobileInteractionMode, setMobileInteractionMode] = useState("route");
@@ -81,6 +82,9 @@ export function MapCanvas() {
         reason: "Waiting for live feed",
         trainCount: 0,
     });
+
+    const [selectedTrainId, setSelectedTrainId] = useState(null);
+    const isTrainPanelOpen = Boolean(selectedTrainId);
 
     // Dynamic accent colour based on hypothetical mode
     const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -196,9 +200,9 @@ export function MapCanvas() {
                 accentColor={accentColour}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
-            
-            <LeafletMap 
-                onMapChange={handleMapChange} 
+
+            <LeafletMap
+                onMapChange={handleMapChange}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onToggleStationClosed={toggleClosedStation}
@@ -212,8 +216,11 @@ export function MapCanvas() {
                 liveClosedStations={liveClosedStations}
                 onTrainFeedStatusChange={setTrainFeedStatus}
                 showTrains={showTrains}
+                selectedTrainId={selectedTrainId}
+                onSelectedTrainIdChange={setSelectedTrainId}
                 trainFilterMode={trainFilterMode}
                 visibleTrainLines={visibleTrainLines}
+                isMobilePortrait={isMobilePortrait}
                 interactionMode={interactionMode}
             />
 
@@ -340,20 +347,22 @@ export function MapCanvas() {
                 />
             )}
 
-            <RouteInfoPanel 
-                isOpen={isRoutePanelOpen}
-                onToggle={toggleRoutePanel}
-                routeInfo={routeInfo}
-                isSidebarOpen={isSidebarOpen}
-                layout={{ isMobilePortrait, hasMobileModeBar: showMobileModeBar }}
-                COLORS={COLORS}
-                accentColor={accentColour}
-                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                lineColours={LINE_COLOURS}
-                lineLabels={LINE_LABELS}
-                onResetView={handleResetView}
+            {!isTrainPanelOpen && (
+                <RouteInfoPanel
+                    isOpen={isRoutePanelOpen}
+                    onToggle={toggleRoutePanel}
+                    routeInfo={routeInfo}
+                    isSidebarOpen={isSidebarOpen}
+                    layout={{ isMobilePortrait, hasMobileModeBar: showMobileModeBar }}
+                    COLORS={COLORS}
+                    accentColor={accentColour}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    lineColours={LINE_COLOURS}
+                    lineLabels={LINE_LABELS}
+                    onResetView={handleResetView}
                 mobileInteractionMode={mobileInteractionMode}
             />
+            )}
 
             <RoutingErrorBox
                 error={routingError}
