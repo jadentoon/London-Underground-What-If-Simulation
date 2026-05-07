@@ -5,7 +5,7 @@
  * Shows in what-if mode when closed stations prevent routing.
  */
 
-export function RoutingErrorBox({ error, COLORS, layout, onClose }) {
+export function RoutingErrorBox({ error, layout, onClose }) {
     if (!error) return null;
 
     const isMobilePortrait = layout?.isMobilePortrait ?? false;

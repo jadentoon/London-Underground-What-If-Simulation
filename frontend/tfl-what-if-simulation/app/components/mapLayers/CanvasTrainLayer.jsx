@@ -8,6 +8,8 @@ const MAX_TRAIN_ZOOM = 16;
 const TRAIN_RADIUS_AT_MIN_ZOOM = 5;
 const TRAIN_RADIUS_ZOOM_STEP = 1;
 const HIDE_TRAINS_AT_ZOOM = 12;
+const TRAIN_BASE_OPACITY = 0.58;
+const TRAIN_SELECTED_OPACITY = 0.95;
 
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -36,6 +38,8 @@ function drawTrain(ctx, point, train, isSelected, radius) {
     const y = point.y;
     const scale = radius / 11;
 
+    ctx.save();
+    ctx.globalAlpha = isSelected ? TRAIN_SELECTED_OPACITY : TRAIN_BASE_OPACITY;
     ctx.save();
     ctx.shadowBlur = (train.isLive ? 16 : 11) * scale;
     ctx.shadowColor = glowColour;
@@ -76,6 +80,7 @@ function drawTrain(ctx, point, train, isSelected, radius) {
     ctx.arc(x + (3.5 * scale), y + (4 * scale), 1.4 * scale, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
+    ctx.restore();
 }
 
 function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrainSelect }) {

@@ -87,7 +87,7 @@ function MapInstance({ onReady }) {
 
 function ClearOnMapClick({ enabled, onClear }) {
     useMapEvents({
-        click(e) {
+        click() {
             if (!enabled) return;
             onClear?.();
         }
