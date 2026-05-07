@@ -5,17 +5,21 @@
  * Shows in what-if mode when closed stations prevent routing.
  */
 
-export function RoutingErrorBox({ error, COLORS, onClose }) {
+export function RoutingErrorBox({ error, COLORS, layout, onClose }) {
     if (!error) return null;
+
+    const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const hasMobileModeBar = layout?.hasMobileModeBar ?? false;
 
     return (
         <div
             style={{
                 position: "fixed",
-                bottom: 20,
-                left: "50%",
-                transform: "translateX(-50%)",
-                maxWidth: 400,
+                bottom: isMobilePortrait ? (hasMobileModeBar ? 176 : 108) : 20,
+                left: isMobilePortrait ? 12 : "50%",
+                right: isMobilePortrait ? 12 : "auto",
+                transform: isMobilePortrait ? "none" : "translateX(-50%)",
+                maxWidth: isMobilePortrait ? "none" : 400,
                 background: "rgba(239, 68, 68, 0.95)",
                 backdropFilter: "blur(8px)",
                 border: "1px solid #dc2626",
@@ -24,7 +28,7 @@ export function RoutingErrorBox({ error, COLORS, onClose }) {
                 zIndex: 1002,
                 fontFamily: "monospace",
                 boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-                animation: "slideUp 0.3s ease",
+                animation: isMobilePortrait ? "none" : "slideUp 0.3s ease",
             }}
         >
             <div style={{ 

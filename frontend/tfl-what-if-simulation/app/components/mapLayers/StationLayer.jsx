@@ -28,6 +28,7 @@ function StationLayerComponent({
     onDoubleClickStation,
     zoomLevel,
     liveClosedSet = new Set(),
+    interactionMode = "route",
     highlightedStationId,
 }) {
 
@@ -85,6 +86,12 @@ function StationLayerComponent({
                 click: (e) => {
                     e?.originalEvent?.stopPropagation?.();
 
+                                    if (hypotheticalSettingsEnabled && interactionMode === "closures") {
+                                        onDoubleClickStation?.(id);
+                                        setStartId(null);
+                                        return;
+                                    }
+
                     if (isClosed) return;
 
                     if (isStart) {
@@ -98,7 +105,7 @@ function StationLayerComponent({
                     e?.originalEvent?.preventDefault?.();
                     e?.originalEvent?.stopPropagation?.();
 
-                    if (hypotheticalSettingsEnabled) {
+                    if (hypotheticalSettingsEnabled && interactionMode !== "closures") {
                         onDoubleClickStation?.(id);
                         setStartId(null);
                     }
@@ -157,7 +164,7 @@ const StationLayer = React.memo(StationLayerComponent, (prev, next) => {
         prev.onDoubleClickStation === next.onDoubleClickStation &&
         prev.zoomLevel === next.zoomLevel &&
         prev.liveClosedSet === next.liveClosedSet &&
-        prev.highlightedStationId === next.highlightedStationId
+        prev.interactionMode === next.interactionMode
     );
 });
 

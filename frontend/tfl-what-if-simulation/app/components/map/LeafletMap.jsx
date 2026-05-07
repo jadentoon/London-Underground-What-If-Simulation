@@ -134,7 +134,7 @@ const LeafletMap = ({
     showTrains = true,
     trainFilterMode = "all",
     visibleTrainLines = new Set(),
-    highlightedStationId,
+    interactionMode = "route",
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -504,7 +504,7 @@ const LeafletMap = ({
             {/* Camera Change Listener */}
             <MapEvents onChange={handleMapChange} />
             <MapInstance onReady={onMapReady} />
-            <ClearOnMapClick enabled={hasPath} onClear={clearRoute} />
+            <ClearOnMapClick enabled={hasPath && interactionMode !== "closures"} onClear={clearRoute} />
 
             <RouteLayer pathPositions={pathPositions} />
 
@@ -516,6 +516,7 @@ const LeafletMap = ({
                 partialEdgeKeys={partialEdgeKeys}
                 onLineToggle={onLineToggle}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                interactionMode={interactionMode}
             />
             {trainVisualsEnabled && showTrains && <TrainLayer trains={filteredTrains} />}
 
@@ -532,7 +533,7 @@ const LeafletMap = ({
                 onDoubleClickStation={handleDoubleClickStation}
                 zoomLevel={zoomLevel}
                 liveClosedSet={liveClosedSet}
-                highlightedStationId={highlightedStationId}
+                interactionMode={interactionMode}
             />
         </MapContainer>
     )

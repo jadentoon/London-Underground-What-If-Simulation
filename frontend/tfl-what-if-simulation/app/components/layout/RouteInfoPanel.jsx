@@ -13,23 +13,30 @@ export function RouteInfoPanel({
     isOpen,
     onToggle,
     routeInfo,
+    isSidebarOpen = false,
     COLORS,
-    accentColor,
+    accentColor: accentColour,
     layout,
     hypotheticalSettingsEnabled = false,
     lineColours,
-    lineLabels
+    lineLabels,
+    onResetView,
+    mobileInteractionMode = "route",
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
+    const hasMobileModeBar = layout?.hasMobileModeBar ?? false;
     const hasPath = !!routeInfo?.hasPath;
     const stops = routeInfo?.stops ?? [];
-
+    const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
     const groupedLegs = routeInfo?.groupedLegs ?? [];
     const changes = routeInfo?.changeCount ?? 0;
-
-    //const rightOffset = hypotheticalSettingsEnabled ? 70 : 25;
-    const bottomOffset = isMobilePortrait ? 16 : (hypotheticalSettingsEnabled ? 70 : 16);
-    const actionColor = accentColor ?? "#3b82f6";
+    const totalTravelSeconds = routeInfo?.totalTravelSeconds ?? 0;
+    const stopCount = Math.max(0, stops.length - 1);
+    const bottomOffset = isMobilePortrait ? (hasMobileModeBar ? 86 : 18) : (hypotheticalSettingsEnabled ? 70 : 25);
+    const actionColour = accentColour ?? "#3b82f6";
+    const mobileInstruction = hypotheticalSettingsEnabled && mobileInteractionMode === "closures"
+        ? "Select stations or lines on the map to close or reopen them."
+        : "Select a start station, then select your destination.";
 
     return (
         <div
@@ -41,13 +48,13 @@ export function RouteInfoPanel({
                 zIndex: 1200,
                 width: isMobilePortrait ? "auto" : 340,
                 maxWidth: "calc(100vw - 32px)",
-                pointerEvents: "auto",
+                transform: shouldSlideOffscreen ? "translateY(calc(100% + 24px))" : "translateY(0)",
+                transition: isMobilePortrait ? "transform 220ms ease" : undefined,
+                pointerEvents: shouldSlideOffscreen ? "none" : "auto",
             }}
         >
-            {/* Collapsed Pill */}
             {!isOpen && (
-                <button
-                    onClick={onToggle}
+                <div
                     style={{
                         width: "100%",
                         display: "flex",
@@ -60,48 +67,78 @@ export function RouteInfoPanel({
                         background: COLORS.card,
                         color: COLORS.text,
                         backdropFilter: "blur(10px)",
-                        cursor: "pointer",
+                        boxShadow: isMobilePortrait ? "0 12px 30px rgba(0,0,0,0.28)" : "none",
                     }}
                 >
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <div style={{ fontWeight: 700, color: "#e2e8f0" }}>Route</div>
+                        <div style={{ fontWeight: 700, color: "#e2e8f0" }}>
+                            {isMobilePortrait ? "Route Planner" : "Route"}
+                        </div>
                         <div style={{ fontSize: 12, color: COLORS.textMuted }}>
                             {hasPath
                                 ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
-                                : "No route selected"
+                                : (isMobilePortrait ? mobileInstruction : "No route selected")
                             }
                         </div>
+                        {isMobilePortrait && hasPath && (
+                            <div style={{ marginTop: 6, fontSize: 12, color: COLORS.textMuted }}>
+                                {`${formatDuration(totalTravelSeconds)} · ${changes} change${changes === 1 ? "" : "s"} · ${stopCount} stops`}
+                            </div>
+                        )}
                     </div>
 
-                    <div
-                        style={{
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            border: `1px solid ${COLORS.border}`,
-                            color: actionColor,
-                            fontWeight: 700,
-                            fontSize: 12,
-                        }}
-                    >
-                        Open
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        {isMobilePortrait && onResetView && (
+                            <button
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onResetView();
+                                }}
+                                style={{
+                                    padding: "8px 10px",
+                                    borderRadius: 999,
+                                    border: `1px solid ${COLORS.border}`,
+                                    background: "rgba(0, 0, 0, 0.18)",
+                                    color: COLORS.text,
+                                    fontWeight: 700,
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Reset
+                            </button>
+                        )}
+                        <button
+                            onClick={onToggle}
+                            style={{
+                                padding: "6px 10px",
+                                borderRadius: 999,
+                                border: `1px solid ${COLORS.border}`,
+                                background: "transparent",
+                                color: actionColour,
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: "pointer",
+                            }}
+                        >
+                            View Route
+                        </button>
                     </div>
-                </button>
+                </div>
             )}
 
-            {/* Expanded Panel */}
             {isOpen && (
                 <div
                     style={{
-                        borderRadius: 16,
                         border: `1px solid ${COLORS.border}`,
                         background: COLORS.card,
                         color: COLORS.text,
                         backdropFilter: "blur(10px)",
                         boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
                         overflow: "hidden",
+                        borderRadius: isMobilePortrait ? 22 : 16,
                     }}
                 >
-                    {/* Header */}
                     <div
                         style={{
                             display: "flex",
@@ -111,11 +148,13 @@ export function RouteInfoPanel({
                             borderBottom: `1px solid ${COLORS.border}`,
                         }}>
                         <div style={{ display: "flex", flexDirection: "column" }}>
-                            <div style={{ fontWeight: 800, color: "#e2e8f0" }}>Route Details</div>
+                            <div style={{ fontWeight: 800, color: "#e2e8f0" }}>
+                                Route Details
+                            </div>
                             <div style={{ fontSize: 12, color: COLORS.textMuted }}>
                                 {hasPath
                                     ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}: ${stops.length - 1} stops`
-                                    : "Select two stations to generate a route"
+                                    : mobileInstruction
                                 }
                             </div>
                         </div>
@@ -135,11 +174,101 @@ export function RouteInfoPanel({
                         </button>
                     </div>
 
-                    {/* Body */}
-                    <div style={{ padding: 12, maxHeight: 340, overflow: "auto" }}>
+                    <div style={{ padding: 12, maxHeight: isMobilePortrait ? "52vh" : 340, overflow: "auto" }}>
+                        {isMobilePortrait && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }}>
+                                <div
+                                    style={{
+                                        display: "grid",
+                                        gridTemplateColumns: hasPath ? "repeat(3, minmax(0, 1fr))" : "1fr",
+                                        gap: 8,
+                                    }}
+                                >
+                                    {hasPath ? (
+                                        <>
+                                            <div
+                                                style={{
+                                                    padding: "10px 12px",
+                                                    borderRadius: 14,
+                                                    border: `1px solid ${COLORS.border}`,
+                                                    background: "rgba(0, 0, 0, 0.14)",
+                                                }}
+                                            >
+                                                <div style={{ fontSize: 11, color: COLORS.textMuted }}>Duration</div>
+                                                <div style={{ marginTop: 4, fontWeight: 800, color: "#e2e8f0" }}>
+                                                    {formatDuration(totalTravelSeconds)}
+                                                </div>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    padding: "10px 12px",
+                                                    borderRadius: 14,
+                                                    border: `1px solid ${COLORS.border}`,
+                                                    background: "rgba(0, 0, 0, 0.14)",
+                                                }}
+                                            >
+                                                <div style={{ fontSize: 11, color: COLORS.textMuted }}>Changes</div>
+                                                <div style={{ marginTop: 4, fontWeight: 800, color: "#e2e8f0" }}>
+                                                    {changes}
+                                                </div>
+                                            </div>
+                                            <div
+                                                style={{
+                                                    padding: "10px 12px",
+                                                    borderRadius: 14,
+                                                    border: `1px solid ${COLORS.border}`,
+                                                    background: "rgba(0, 0, 0, 0.14)",
+                                                }}
+                                            >
+                                                <div style={{ fontSize: 11, color: COLORS.textMuted }}>Stops</div>
+                                                <div style={{ marginTop: 4, fontWeight: 800, color: "#e2e8f0" }}>
+                                                    {stopCount}
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div
+                                            style={{
+                                                padding: "12px 14px",
+                                                borderRadius: 14,
+                                                border: `1px solid ${COLORS.border}`,
+                                                background: "rgba(0, 0, 0, 0.14)",
+                                                color: COLORS.textMuted,
+                                                fontSize: 13,
+                                                lineHeight: 1.45,
+                                            }}
+                                        >
+                                            {mobileInstruction}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {onResetView && (
+                                    <button
+                                        onClick={onResetView}
+                                        style={{
+                                            width: "100%",
+                                            padding: "10px 12px",
+                                            borderRadius: 12,
+                                            border: `1px solid ${actionColour}`,
+                                            background: "transparent",
+                                            color: actionColour,
+                                            fontWeight: 700,
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        Reset map view
+                                    </button>
+                                )}
+                            </div>
+                        )}
+
                         {!hasPath ? (
                             <div style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.4 }}>
-                                Click a station to set a start, then click another station to create a route.
+                                {isMobilePortrait
+                                    ? mobileInstruction
+                                    : "Click a station to set a start, then click another station to create a route."
+                                }
                             </div>
                         ) : (
                             <>

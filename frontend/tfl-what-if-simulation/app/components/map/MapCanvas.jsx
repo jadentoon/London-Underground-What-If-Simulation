@@ -24,6 +24,8 @@ import { SidebarToggleButton } from "../layout/SidebarToggleButton";
 import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
 import { RoutingErrorBox } from "../layout/RoutingErrorBox";
 import { RouteInfoPanel } from "../layout/RouteInfoPanel";
+import { MobileControlSheet } from "../layout/MobileControlSheet";
+import { MobileInteractionModeBar } from "../layout/MobileInteractionModeBar";
 import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";
 import { useLineDelays } from "../../hooks/map/useLineDelays";
 import { useHudState } from "../../hooks/map/useHudState";
@@ -68,9 +70,10 @@ export function MapCanvas() {
 
     // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    
+
     // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
+    const [mobileInteractionMode, setMobileInteractionMode] = useState("route");
 
     const [trainFeedStatus, setTrainFeedStatus] = useState({
         source: "fallback",
@@ -79,8 +82,8 @@ export function MapCanvas() {
         trainCount: 0,
     });
 
-    // Dynamic accent color based on hypothetical mode
-    const accentColor = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
+    // Dynamic accent colour based on hypothetical mode
+    const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
     const titleShadow = "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000";
 
     const {
@@ -92,6 +95,8 @@ export function MapCanvas() {
     const isMobilePortrait = viewport.isMobile && viewport.isPortrait;
     const sidebarWidth = isMobilePortrait ? Math.min(360, viewport.width || 360) : (viewport.isLargeDesktop ? 320 : 280);
     const sidebarOffset = isSidebarOpen && !isMobilePortrait ? sidebarWidth + 85 : null;
+    const showMobileModeBar = isMobilePortrait && hypotheticalSettingsEnabled;
+    const interactionMode = showMobileModeBar ? mobileInteractionMode : "route";
 
     const liveClosedStations = useLiveStationClosures({
         enabled: !hypotheticalSettingsEnabled,
@@ -147,7 +152,7 @@ export function MapCanvas() {
         isLiveLines,
         linesUpdatedAt,
         lineStatusLabel,
-        lineStatusColor,
+        lineStatusColor: lineStatusColour,
         lineStatusBg,
     } = useLineStatus({
         hypotheticalSettingsEnabled,
@@ -160,25 +165,22 @@ export function MapCanvas() {
      * Also resets any filters / what-if state to the original defaults.
      */
     const handleResetView = useCallback(() => {
-        // reset camera
         if (leafletMapRef.current) {
             leafletMapRef.current.setView(LONDON_CENTER, 14);
         }
 
-        // reset filters / UI state
         clearClosedStations();
         setIsSidebarOpen(false);
         setStationQuery("");
-        setHighlightedStationId(null);
-    }, []);
+        setMobileInteractionMode("route");
+    }, [clearClosedStations, setStationQuery]);
     
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
+        setMobileInteractionMode("route");
         clearClosedLines();
-        setTimeout(() => {
-            setIsSidebarOpen(false);
-        }, 1500);
-    }, []);
+        setIsSidebarOpen(false);
+    }, [clearClosedLines]);
 
     return (
         <div
@@ -191,7 +193,7 @@ export function MapCanvas() {
         >
             <MapLeafletChrome
                 COLORS={COLORS}
-                accentColor={accentColor}
+                accentColor={accentColour}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
             />
             
@@ -212,7 +214,7 @@ export function MapCanvas() {
                 showTrains={showTrains}
                 trainFilterMode={trainFilterMode}
                 visibleTrainLines={visibleTrainLines}
-                highlightedStationId={highlightedStationId}
+                interactionMode={interactionMode}
             />
 
             <MapTitleOverlay
@@ -220,15 +222,16 @@ export function MapCanvas() {
                 isSidebarOpen={isSidebarOpen}
                 layout={{ isMobilePortrait, sidebarOffset }}
                 COLORS={COLORS}
-                accentColor={accentColor}
+                accentColor={accentColour}
                 titleShadow={titleShadow}
             />
 
             <MapSearchBox
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                isSidebarOpen={isSidebarOpen}
                 layout={{ isMobilePortrait }}
                 COLORS={COLORS}
-                accentColor={accentColor}
+                accentColor={accentColour}
                 stationQuery={stationQuery}
                 onStationQueryChange={setStationQuery}
                 stationMatches={stationMatches}
@@ -241,54 +244,99 @@ export function MapCanvas() {
                 isSidebarOpen={isSidebarOpen}
                 layout={{ isMobilePortrait, sidebarOffset }}
                 COLORS={COLORS}
-                accentColor={accentColor}
+                accentColor={accentColour}
                 hudState={hudState}
                 onResetView={handleResetView}
             />
 
-            <MapSidebar
+            {!isMobilePortrait && (
+                <MapSidebar
+                    isSidebarOpen={isSidebarOpen}
+                    layout={{ sidebarWidth }}
+                    COLORS={COLORS}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    accentColor={accentColour}
+                    onToggleWhatIfMode={handleToggleWhatIfMode}
+                    onResetClosures={handleResetClosures}
+                    effectiveLines={effectiveLines}
+                    closedLines={effectiveClosedLines}
+                    partialLines={effectivePartialLines}
+                    onLineToggle={handleLineToggle}
+                    lineStatusLabel={lineStatusLabel}
+                    lineStatusColor={lineStatusColour}
+                    lineStatusBg={lineStatusBg}
+                    isLiveLines={isLiveLines}
+                    linesUpdatedAt={linesUpdatedAt}
+                    trainFeedSource={trainFeedStatus.source}
+                    trainFeedUpdatedAt={trainFeedStatus.updatedAt}
+                    trainFeedReason={trainFeedStatus.reason}
+                    trainFeedCount={trainFeedStatus.trainCount}
+                    lineDelays={lineDelays}
+                    showTrains={showTrains}
+                    trainFilterMode={trainFilterMode}
+                    visibleTrainLines={visibleTrainLines}
+                    onToggleShowTrains={handleToggleShowTrains}
+                    onTrainFilterModeChange={handleTrainFilterModeChange}
+                    onToggleVisibleTrainLine={handleToggleVisibleTrainLine}
+                />
+            )}
+
+            {isMobilePortrait && (
+                <MobileControlSheet
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                    COLORS={COLORS}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    accentColor={accentColour}
+                    onToggleWhatIfMode={handleToggleWhatIfMode}
+                    onResetClosures={handleResetClosures}
+                    effectiveLines={effectiveLines}
+                    closedLines={effectiveClosedLines}
+                    partialLines={effectivePartialLines}
+                    onLineToggle={handleLineToggle}
+                    lineStatusLabel={lineStatusLabel}
+                    lineStatusColor={lineStatusColour}
+                    lineStatusBg={lineStatusBg}
+                    isLiveLines={isLiveLines}
+                    linesUpdatedAt={linesUpdatedAt}
+                    trainFeedSource={trainFeedStatus.source}
+                    trainFeedUpdatedAt={trainFeedStatus.updatedAt}
+                    trainFeedReason={trainFeedStatus.reason}
+                    trainFeedCount={trainFeedStatus.trainCount}
+                    lineDelays={lineDelays}
+                    showTrains={showTrains}
+                    trainFilterMode={trainFilterMode}
+                    visibleTrainLines={visibleTrainLines}
+                    onToggleShowTrains={handleToggleShowTrains}
+                    onTrainFilterModeChange={handleTrainFilterModeChange}
+                    onToggleVisibleTrainLine={handleToggleVisibleTrainLine}
+                    interactionMode={mobileInteractionMode}
+                    onInteractionModeChange={setMobileInteractionMode}
+                />
+            )}
+
+            <MobileInteractionModeBar
+                isVisible={showMobileModeBar}
                 isSidebarOpen={isSidebarOpen}
-                layout={{ isMobilePortrait, sidebarWidth }}
                 COLORS={COLORS}
-                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                accentColor={accentColor}
-                onToggleWhatIfMode={handleToggleWhatIfMode}
-                onResetClosures={handleResetClosures}
-                effectiveLines={effectiveLines}
-                closedLines={effectiveClosedLines}
-                partialLines={effectivePartialLines}
-                onLineToggle={handleLineToggle}
-                lineStatusLabel={lineStatusLabel}
-                lineStatusColor={lineStatusColor}
-                lineStatusBg={lineStatusBg}
-                isLiveLines={isLiveLines}
-                linesUpdatedAt={linesUpdatedAt}
-                trainFeedSource={trainFeedStatus.source}
-                trainFeedUpdatedAt={trainFeedStatus.updatedAt}
-                trainFeedReason={trainFeedStatus.reason}
-                trainFeedCount={trainFeedStatus.trainCount}
-                lineDelays={lineDelays}
-                showTrains={showTrains}
-                trainFilterMode={trainFilterMode}
-                visibleTrainLines={visibleTrainLines}
-                onToggleShowTrains={handleToggleShowTrains}
-                onTrainFilterModeChange={handleTrainFilterModeChange}
-                onToggleVisibleTrainLine={handleToggleVisibleTrainLine}
+                accentColor={accentColour}
+                interactionMode={mobileInteractionMode}
+                onInteractionModeChange={setMobileInteractionMode}
             />
 
             <SidebarToggleButton
                 isSidebarOpen={isSidebarOpen}
                 layout={{ isMobilePortrait, sidebarWidth }}
                 COLORS={COLORS}
-                accentColor={accentColor}
+                accentColor={accentColour}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                onToggle={() => setIsSidebarOpen((prev) => !prev)}
             />
 
             {hypotheticalSettingsEnabled && !isMobilePortrait && (
                 <MapWhatIfOverlay
                     isSidebarOpen={isSidebarOpen}
-                    accentColor={accentColor}
+                    accentColor={accentColour}
                 />
             )}
 
@@ -296,17 +344,21 @@ export function MapCanvas() {
                 isOpen={isRoutePanelOpen}
                 onToggle={toggleRoutePanel}
                 routeInfo={routeInfo}
-                layout={{ isMobilePortrait }}
+                isSidebarOpen={isSidebarOpen}
+                layout={{ isMobilePortrait, hasMobileModeBar: showMobileModeBar }}
                 COLORS={COLORS}
-                accentColor={accentColor}
+                accentColor={accentColour}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 lineColours={LINE_COLOURS}
                 lineLabels={LINE_LABELS}
+                onResetView={handleResetView}
+                mobileInteractionMode={mobileInteractionMode}
             />
 
             <RoutingErrorBox
                 error={routingError}
                 COLORS={COLORS}
+                layout={{ isMobilePortrait, hasMobileModeBar: showMobileModeBar }}
                 onClose={() => setRoutingError(null)}
             />
         </div>

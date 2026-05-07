@@ -10,14 +10,15 @@ export function SidebarToggleButton({
     isSidebarOpen,
     layout,
     COLORS,
-    accentColor,
+    accentColor: accentColour,
     hypotheticalSettingsEnabled,
     onToggle,
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const sidebarWidth = layout?.sidebarWidth ?? 280;
+
     const leftOffset = isMobilePortrait
-        ? (isSidebarOpen ? "calc(100vw - 44px)" : 0)
+        ? 12
         : (isSidebarOpen ? sidebarWidth : 0);
 
     return (
@@ -25,7 +26,7 @@ export function SidebarToggleButton({
             onClick={onToggle}
             style={{
                 position: "fixed",
-                top: isMobilePortrait ? (hypotheticalSettingsEnabled ? 110 : 90) : "50%",
+                top: isMobilePortrait ? 12 : "50%",
                 left: leftOffset,
                 transform: isMobilePortrait ? "translateY(0)" : "translateY(-50%)",
                 width: isMobilePortrait ? 44 : 32,
@@ -33,17 +34,18 @@ export function SidebarToggleButton({
                 background: COLORS.card,
                 backdropFilter: "blur(8px)",
                 border: `1px solid ${COLORS.border}`,
-                borderLeft: isSidebarOpen ? `1px solid ${COLORS.border}` : "none",
-                borderRadius: isMobilePortrait ? 10 : "0 8px 8px 0",
+                borderLeft: isMobilePortrait ? `1px solid ${COLORS.border}` : (isSidebarOpen ? `1px solid ${COLORS.border}` : "none"),
+                borderRadius: isMobilePortrait ? 14 : "0 8px 8px 0",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: accentColor,
+                color: accentColour,
                 fontSize: isMobilePortrait ? 18 : 16,
                 zIndex: 1001,
-                transition: "left 0.3s ease",
+                transition: isMobilePortrait ? "background-color 0.2s ease" : "left 0.3s ease",
                 outline: "none",
+                boxShadow: isMobilePortrait ? "0 10px 28px rgba(0, 0, 0, 0.24)" : "none",
             }}
             onMouseEnter={(e) => {
                 e.currentTarget.style.background = hypotheticalSettingsEnabled
@@ -54,7 +56,7 @@ export function SidebarToggleButton({
                 e.currentTarget.style.background = COLORS.card;
             }}
         >
-            {isSidebarOpen ? "◀" : "▶"}
+            {isMobilePortrait ? (isSidebarOpen ? "✕" : "☰") : (isSidebarOpen ? "◀" : "▶")}
         </button>
     );
 }
