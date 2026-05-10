@@ -139,6 +139,7 @@ const LeafletMap = ({
     visibleTrainLines = new Set(),
     interactionMode = "route",
     isMobilePortrait = false,
+    resetRouteSequence = 0,
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -428,6 +429,14 @@ const LeafletMap = ({
 
     const lastRouteKeyRef = useRef("");
     const lastFeedStatusKeyRef = useRef("");
+    const lastResetRouteSequenceRef = useRef(resetRouteSequence);
+
+    useEffect(() => {
+        if (resetRouteSequence === lastResetRouteSequenceRef.current) return;
+
+        lastResetRouteSequenceRef.current = resetRouteSequence;
+        clearRoute();
+    }, [resetRouteSequence, clearRoute]);
 
     useEffect(() => {
         if (!onRouteChange) return;

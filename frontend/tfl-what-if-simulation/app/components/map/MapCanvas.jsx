@@ -85,6 +85,7 @@ export function MapCanvas() {
 
     const [selectedTrainId, setSelectedTrainId] = useState(null);
     const isTrainPanelOpen = Boolean(selectedTrainId);
+    const [resetRouteSequence, setResetRouteSequence] = useState(0);
 
     // Dynamic accent colour based on hypothetical mode
     const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -146,6 +147,7 @@ export function MapCanvas() {
         isRoutePanelOpen,
         handleRouteChange,
         toggleRoutePanel,
+        clearRoutePanel,
     } = useRoutePanel();
 
     const {
@@ -174,10 +176,12 @@ export function MapCanvas() {
         }
 
         clearClosedStations();
+        clearRoutePanel();
         setIsSidebarOpen(false);
         setStationQuery("");
         setMobileInteractionMode("route");
-    }, [clearClosedStations, setStationQuery]);
+        setResetRouteSequence((value) => value + 1);
+    }, [clearClosedStations, clearRoutePanel, setStationQuery]);
     
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
@@ -222,6 +226,7 @@ export function MapCanvas() {
                 visibleTrainLines={visibleTrainLines}
                 isMobilePortrait={isMobilePortrait}
                 interactionMode={interactionMode}
+                resetRouteSequence={resetRouteSequence}
             />
 
             <MapTitleOverlay

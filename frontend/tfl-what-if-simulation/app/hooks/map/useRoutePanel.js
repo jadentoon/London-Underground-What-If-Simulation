@@ -19,6 +19,12 @@ export function useRoutePanel() {
         setIsRoutePanelOpen((value) => !value);
     }, []);
 
+    const clearRoutePanel = useCallback(() => {
+        setRoutingError(null);
+        setRouteInfo(null);
+        setIsRoutePanelOpen(false);
+    }, []);
+
     return {
         routingError,
         setRoutingError,
@@ -26,5 +32,6 @@ export function useRoutePanel() {
         isRoutePanelOpen,
         handleRouteChange,
         toggleRoutePanel,
+        clearRoutePanel,
     };
 }
