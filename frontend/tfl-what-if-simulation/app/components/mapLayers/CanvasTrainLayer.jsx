@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 import { TRAIN_COLOURS } from "../mapComponents/constants.js";
+import { getStationOcclusionRadius } from "../mapComponents/stationMarkerSizing.js";
 
 const MIN_TRAIN_ZOOM = 12;
 const MAX_TRAIN_ZOOM = 16;
@@ -26,6 +27,34 @@ function shouldHideTrains(zoom) {
 
 function getTrainHitRadius(radius) {
     return Math.max(radius + 2, 8);
+}
+
+function isPointWithinRadius(point, center, radius) {
+    const dx = center.x - point.x;
+    const dy = center.y - point.y;
+
+    return ((dx * dx) + (dy * dy)) <= (radius * radius);
+}
+
+function isPointInsideStationOcclusion(point, map, stations, zoomLevel) {
+    for (const station of stations) {
+        if (!Number.isFinite(station?.lat) || !Number.isFinite(station?.lon)) continue;
+
+        const stationPoint = map.latLngToContainerPoint([station.lat, station.lon]);
+        const occlusionRadius = getStationOcclusionRadius({
+            zoomLevel,
+            isHighlighted: Boolean(station.isHighlighted),
+            isStart: Boolean(station.isStart),
+            isOnPath: Boolean(station.isOnPath),
+            isClosed: Boolean(station.isClosed),
+        });
+
+        if (isPointWithinRadius(point, stationPoint, occlusionRadius)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 function drawTrain(ctx, point, train, isSelected, radius) {
@@ -83,10 +112,17 @@ function drawTrain(ctx, point, train, isSelected, radius) {
     ctx.restore();
 }
 
-function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrainSelect }) {
+function CanvasTrainLayerComponent({
+    trains = [],
+    selectedTrainId = null,
+    onTrainSelect,
+    stations = [],
+    paneName,
+}) {
     const map = useMap();
     const canvasRef = useRef(null);
     const trainsRef = useRef(trains);
+    const stationsRef = useRef(stations);
     const selectedTrainIdRef = useRef(selectedTrainId);
     const animationFrameRef = useRef(null);
 
@@ -142,11 +178,15 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
     }, [selectedTrainId, scheduleDraw]);
 
     useEffect(() => {
+        stationsRef.current = stations;
+    }, [stations]);
+
+    useEffect(() => {
         const canvas = L.DomUtil.create("canvas", "canvas-train-layer");
-        const pane = map.getPanes().overlayPane;
+        const pane = map.getPane(paneName) ?? map.getPanes().overlayPane;
         canvas.style.position = "absolute";
         canvas.style.pointerEvents = "none";
-        canvas.style.zIndex = "450";
+        canvas.style.zIndex = "0";
         pane.appendChild(canvas);
         canvasRef.current = canvas;
 
@@ -165,24 +205,31 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
         }
 
         function handleMapClick(event) {
-            if (shouldHideTrains(map.getZoom())) {
+            const zoom = map.getZoom();
+
+            if (shouldHideTrains(zoom)) {
                 onTrainSelect?.(null);
                 return;
             }
 
             const clickPoint = map.latLngToContainerPoint(event.latlng);
+            if (isPointInsideStationOcclusion(clickPoint, map, stationsRef.current, zoom)) {
+                return;
+            }
+
             let clickedTrain = null;
-            const hitRadius = getTrainHitRadius(getTrainRadiusForZoom(map.getZoom()));
+            const hitRadius = getTrainHitRadius(getTrainRadiusForZoom(zoom));
 
             for (let i = trainsRef.current.length - 1; i >= 0; i -= 1) {
                 const train = trainsRef.current[i];
                 if (!Number.isFinite(train?.lat) || !Number.isFinite(train?.lon)) continue;
 
                 const point = map.latLngToContainerPoint([train.lat, train.lon]);
-                const dx = point.x - clickPoint.x;
-                const dy = point.y - clickPoint.y;
+                if (isPointInsideStationOcclusion(point, map, stationsRef.current, zoom)) {
+                    continue;
+                }
 
-                if ((dx * dx) + (dy * dy) <= hitRadius * hitRadius) {
+                if (isPointWithinRadius(clickPoint, point, hitRadius)) {
                     clickedTrain = train;
                     break;
                 }
@@ -210,7 +257,7 @@ function CanvasTrainLayerComponent({ trains = [], selectedTrainId = null, onTrai
             canvas.remove();
             canvasRef.current = null;
         };
-    }, [map, onTrainSelect, scheduleDraw]);
+    }, [map, onTrainSelect, paneName, scheduleDraw]);
 
     return null;
 }

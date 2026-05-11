@@ -60,11 +60,11 @@ export const LINE_LABELS = {
 };
 
 /**
- * zoom level 12 - radius 5
- * zoom level 13 - radius 7
- * zoom level 14 - radius 9
- * zoom level 15 - radius 11
- * zoom level 16 - radius 13
+ * zoom level 12 - radius 7
+ * zoom level 13 - radius 9
+ * zoom level 14 - radius 11
+ * zoom level 15 - radius 13
+ * zoom level 16 - radius 15
  */
 export const ZOOM_LEVELS = {
     12: 7,
