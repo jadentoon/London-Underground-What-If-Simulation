@@ -11,7 +11,7 @@
  * depends on browser APIs (window, DOM) used by Leaflet.
  */
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "../mapComponents/constants";
 import { useLineStatus } from "../../hooks/useLineStatus";
@@ -86,6 +86,7 @@ export function MapCanvas() {
     const [selectedTrainId, setSelectedTrainId] = useState(null);
     const isTrainPanelOpen = Boolean(selectedTrainId);
     const [resetRouteSequence, setResetRouteSequence] = useState(0);
+    const [routeCompletionSequence, setRouteCompletionSequence] = useState(0);
     const [stationActionRequest, setStationActionRequest] = useState(null);
     const [routeSelection, setRouteSelection] = useState({
         startId: null,
@@ -95,6 +96,7 @@ export function MapCanvas() {
         hasPath: false,
     });
     const stationActionSequenceRef = useRef(0);
+    const lastCompletedRouteKeyRef = useRef("");
 
     // Dynamic accent colour based on hypothetical mode
     const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -204,6 +206,22 @@ export function MapCanvas() {
         setIsSidebarOpen(false);
     }, [clearClosedLines]);
 
+    const hasActiveRoute = Boolean(routeInfo?.hasPath || routeSelection.hasPath);
+
+    const clearActiveRoute = useCallback(() => {
+        if (!hasActiveRoute) return;
+
+        clearRoutePanel();
+        setRouteSelection({
+            startId: null,
+            startName: null,
+            endId: null,
+            endName: null,
+            hasPath: false,
+        });
+        setResetRouteSequence((value) => value + 1);
+    }, [clearRoutePanel, hasActiveRoute]);
+
     const handleRouteSelectionChange = useCallback((selection) => {
         const hasSelection = Boolean(selection?.startId || selection?.endId || selection?.hasPath);
 
@@ -243,20 +261,40 @@ export function MapCanvas() {
     }, []);
 
     const handleSearchStationSelection = useCallback((station) => {
-        if (routeSelection.hasPath) {
-            clearRoutePanel();
-            setRouteSelection({
-                startId: null,
-                startName: null,
-                endId: null,
-                endName: null,
-                hasPath: false,
-            });
-            setResetRouteSequence((value) => value + 1);
+        clearActiveRoute();
+        goToStation(station);
+    }, [clearActiveRoute, goToStation]);
+
+    const handleSearchQueryStart = useCallback(() => {
+        clearActiveRoute();
+    }, [clearActiveRoute]);
+
+    const handleSearchInputFocus = useCallback(() => {
+        setSelectedTrainId(null);
+        collapseRoutePanel();
+    }, [collapseRoutePanel]);
+
+    useEffect(() => {
+        const hasPath = Boolean(routeInfo?.hasPath);
+
+        if (!hasPath) {
+            lastCompletedRouteKeyRef.current = "";
+            return;
         }
 
-        goToStation(station);
-    }, [clearRoutePanel, goToStation, routeSelection.hasPath]);
+        const stopKey = routeInfo?.stops?.map((stop) => String(stop.id)).join("->") ?? "";
+        const routeKey = stopKey || [
+            routeInfo?.startName ?? "",
+            routeInfo?.endName ?? "",
+            routeInfo?.totalTravelSeconds ?? 0,
+            routeInfo?.changeCount ?? 0,
+        ].join("|");
+
+        if (!routeKey || routeKey === lastCompletedRouteKeyRef.current) return;
+
+        lastCompletedRouteKeyRef.current = routeKey;
+        setRouteCompletionSequence((value) => value + 1);
+    }, [routeInfo]);
 
     const focusedStationId = focusedStation?.id ? String(focusedStation.id) : null;
     const isFocusedStationHypotheticallyClosed = hypotheticalSettingsEnabled
@@ -332,20 +370,20 @@ export function MapCanvas() {
                 onSelectStation={handleSearchStationSelection}
                 onEnterFirstMatch={selectFirstStationMatch}
                 focusedStation={focusedStation}
-                focusedStationSource={focusedStationSource}
                 onClearFocusedStation={clearFocusedStation}
+                onSearchQueryStart={handleSearchQueryStart}
+                routeCompletionSequence={routeCompletionSequence}
                 currentRouteStartId={routeSelection.startId}
                 currentRouteStartName={routeSelection.startName}
                 currentRouteEndId={routeSelection.endId}
                 currentRouteEndName={routeSelection.endName}
-                currentRouteHasPath={routeSelection.hasPath}
                 isFocusedStationUnavailableForRouting={isFocusedStationUnavailableForRouting}
                 isFocusedStationHypotheticallyClosed={isFocusedStationHypotheticallyClosed}
                 onSetFocusedStationAsStart={() => handleStationAction("set-start", focusedStation)}
                 onSetFocusedStationAsDestination={() => handleStationAction("set-destination", focusedStation)}
                 onToggleFocusedStationClosure={() => handleStationAction("toggle-closure", focusedStation)}
                 onDesktopSearchOpen={collapseRoutePanel}
-                onSearchInputFocus={() => setSelectedTrainId(null)}
+                onSearchInputFocus={handleSearchInputFocus}
             />
 
             <MapHud

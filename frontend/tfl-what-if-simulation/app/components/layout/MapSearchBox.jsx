@@ -19,14 +19,14 @@ export function MapSearchBox({
     stationMatches,
     onSelectStation,
     onEnterFirstMatch,
+    onSearchQueryStart,
     focusedStation,
-    focusedStationSource,
     onClearFocusedStation,
+    routeCompletionSequence = 0,
     currentRouteStartId,
     currentRouteStartName,
     currentRouteEndId,
     currentRouteEndName,
-    currentRouteHasPath = false,
     isFocusedStationUnavailableForRouting = false,
     isFocusedStationHypotheticallyClosed = false,
     onSetFocusedStationAsStart,
@@ -41,7 +41,7 @@ export function MapSearchBox({
     const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
     const [isOpen, setIsOpen] = useState(!isMobilePortrait);
     const [selectedIndex, setSelectedIndex] = useState(0);
-    const autoCollapseRouteKeyRef = useRef("");
+    const routeResetSequenceRef = useRef(routeCompletionSequence);
     const focusedStationId = focusedStation?.id ? String(focusedStation.id) : null;
     const isFocusedStationCurrentStart = focusedStationId !== null
         && currentRouteStartId !== null
@@ -73,34 +73,19 @@ export function MapSearchBox({
     useEffect(() => {
         if (isMobilePortrait) return;
 
-        if (!focusedStation || focusedStationSource !== "search") {
-            autoCollapseRouteKeyRef.current = "";
+        if (!routeCompletionSequence || routeCompletionSequence === routeResetSequenceRef.current) {
             return;
         }
 
-        if (!currentRouteHasPath && !currentRouteEndId) {
-            autoCollapseRouteKeyRef.current = "";
-            return;
-        }
-
-        if (!currentRouteHasPath) return;
-
-        const routeKey = `${currentRouteStartId ?? ""}|${currentRouteEndId ?? ""}`;
-
-        if (!routeKey || routeKey === autoCollapseRouteKeyRef.current) return;
-
-        autoCollapseRouteKeyRef.current = routeKey;
-        setIsOpen(false);
+        routeResetSequenceRef.current = routeCompletionSequence;
+        onStationQueryChange("");
         onClearFocusedStation?.();
         setSelectedIndex(0);
     }, [
-        focusedStation,
-        focusedStationSource,
-        currentRouteEndId,
-        currentRouteHasPath,
-        currentRouteStartId,
         isMobilePortrait,
+        onStationQueryChange,
         onClearFocusedStation,
+        routeCompletionSequence,
     ]);
 
     const handleOpenSearch = () => {
@@ -115,10 +100,16 @@ export function MapSearchBox({
     };
 
     const handleQueryChange = (nextQuery) => {
+        const isStartingNewSearch = stationQuery.trim().length === 0 && nextQuery.trim().length > 0;
+
         onStationQueryChange(nextQuery);
 
         if (focusedStation && nextQuery !== focusedStation.name) {
             onClearFocusedStation?.();
+        }
+
+        if (isStartingNewSearch) {
+            onSearchQueryStart?.();
         }
     };
 
