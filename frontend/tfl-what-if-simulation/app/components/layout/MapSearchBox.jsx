@@ -37,6 +37,7 @@ export function MapSearchBox({
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const desktopTop = hypotheticalSettingsEnabled ? 148 : 20;
+    const desktopRight = 70;
     const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
     const [isOpen, setIsOpen] = useState(!isMobilePortrait);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -273,7 +274,7 @@ export function MapSearchBox({
                     style={{
                         position: "fixed",
                         top: desktopTop,
-                        right: 16,
+                        right: desktopRight,
                         minWidth: 220,
                         padding: "12px 14px",
                         background: COLORS.card,
@@ -318,7 +319,7 @@ export function MapSearchBox({
                     style={{
                         position: "fixed",
                         top: desktopTop,
-                        right: 16,
+                        right: desktopRight,
                         width: 320,
                         background: COLORS.card,
                         backdropFilter: "blur(10px)",
