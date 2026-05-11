@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export function useStationSearch(leafletMapRef) {
     // Stations list for search (filled by LeafletMap once loaded)
@@ -9,9 +9,32 @@ export function useStationSearch(leafletMapRef) {
 
     // Highlighted station after search selection
     const [highlightedStationId, setHighlightedStationId] = useState(null);
+    const [focusedStation, setFocusedStation] = useState(null);
+    const highlightTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        return () => {
+            if (highlightTimeoutRef.current) {
+                clearTimeout(highlightTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleStationsLoaded = useCallback((nodes) => {
         setStationsForSearch(nodes || []);
+    }, []);
+
+    const highlightStation = useCallback((stationId) => {
+        setHighlightedStationId(String(stationId));
+
+        if (highlightTimeoutRef.current) {
+            clearTimeout(highlightTimeoutRef.current);
+        }
+
+        highlightTimeoutRef.current = setTimeout(() => {
+            setHighlightedStationId(null);
+            highlightTimeoutRef.current = null;
+        }, 4000);
     }, []);
 
      /**
@@ -21,16 +44,14 @@ export function useStationSearch(leafletMapRef) {
         if (!station || !leafletMapRef.current) return;
 
         leafletMapRef.current.setView([station.lat, station.lon], 16);
-        setStationQuery(station.name);
+        setStationQuery("");
+        setFocusedStation(station);
+        highlightStation(station.id);
+    }, [highlightStation, leafletMapRef]);
 
-        // highlight searched station
-        setHighlightedStationId(String(station.id));
-
-        // remove highlight after a few seconds
-        setTimeout(() => {
-            setHighlightedStationId(null);
-        }, 4000);
-    }, [leafletMapRef]);
+    const clearFocusedStation = useCallback(() => {
+        setFocusedStation(null);
+    }, []);
 
     const stationMatches = useMemo(() => {
         const query = stationQuery.trim().toLowerCase();
@@ -53,6 +74,8 @@ export function useStationSearch(leafletMapRef) {
         handleStationsLoaded,
         goToStation,
         selectFirstStationMatch,
+        focusedStation,
+        clearFocusedStation,
         highlightedStationId,
         setHighlightedStationId,
     };

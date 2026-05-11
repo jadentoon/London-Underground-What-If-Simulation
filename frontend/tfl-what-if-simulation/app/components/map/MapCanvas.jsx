@@ -86,6 +86,15 @@ export function MapCanvas() {
     const [selectedTrainId, setSelectedTrainId] = useState(null);
     const isTrainPanelOpen = Boolean(selectedTrainId);
     const [resetRouteSequence, setResetRouteSequence] = useState(0);
+    const [stationActionRequest, setStationActionRequest] = useState(null);
+    const [routeSelection, setRouteSelection] = useState({
+        startId: null,
+        startName: null,
+        endId: null,
+        endName: null,
+        hasPath: false,
+    });
+    const stationActionSequenceRef = useRef(0);
 
     // Dynamic accent colour based on hypothetical mode
     const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -126,8 +135,9 @@ export function MapCanvas() {
         handleStationsLoaded,
         goToStation,
         selectFirstStationMatch,
+        focusedStation,
+        clearFocusedStation,
         highlightedStationId,
-        setHighlightedStationId,
     } = useStationSearch(leafletMapRef);
 
     const {
@@ -147,6 +157,7 @@ export function MapCanvas() {
         isRoutePanelOpen,
         handleRouteChange,
         toggleRoutePanel,
+        collapseRoutePanel,
         clearRoutePanel,
     } = useRoutePanel();
 
@@ -177,11 +188,12 @@ export function MapCanvas() {
 
         clearClosedStations();
         clearRoutePanel();
+        clearFocusedStation();
         setIsSidebarOpen(false);
         setStationQuery("");
         setMobileInteractionMode("route");
         setResetRouteSequence((value) => value + 1);
-    }, [clearClosedStations, clearRoutePanel, setStationQuery]);
+    }, [clearClosedStations, clearFocusedStation, clearRoutePanel, setStationQuery]);
     
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
@@ -189,6 +201,44 @@ export function MapCanvas() {
         clearClosedLines();
         setIsSidebarOpen(false);
     }, [clearClosedLines]);
+
+    const handleRouteSelectionChange = useCallback((selection) => {
+        setRouteSelection((prev) => {
+            const sameStartId = prev.startId === selection?.startId;
+            const sameStartName = prev.startName === selection?.startName;
+            const sameEndId = prev.endId === selection?.endId;
+            const sameEndName = prev.endName === selection?.endName;
+            const sameHasPath = prev.hasPath === selection?.hasPath;
+
+            if (sameStartId && sameStartName && sameEndId && sameEndName && sameHasPath) {
+                return prev;
+            }
+
+            return selection;
+        });
+    }, []);
+
+    const handleStationAction = useCallback((action, station) => {
+        if (!station?.id) return;
+
+        stationActionSequenceRef.current += 1;
+
+        setStationActionRequest({
+            sequence: stationActionSequenceRef.current,
+            action,
+            stationId: String(station.id),
+        });
+    }, []);
+
+    const focusedStationId = focusedStation?.id ? String(focusedStation.id) : null;
+    const isFocusedStationHypotheticallyClosed = hypotheticalSettingsEnabled
+        && focusedStationId !== null
+        && closedStations.has(focusedStationId);
+    const isFocusedStationUnavailableForRouting = focusedStationId !== null
+        && (
+            liveClosedStations.has(focusedStationId)
+            || (hypotheticalSettingsEnabled && closedStations.has(focusedStationId))
+        );
 
     return (
         <div
@@ -227,6 +277,9 @@ export function MapCanvas() {
                 isMobilePortrait={isMobilePortrait}
                 interactionMode={interactionMode}
                 resetRouteSequence={resetRouteSequence}
+                highlightedStationId={highlightedStationId}
+                stationActionRequest={stationActionRequest}
+                onRouteSelectionChange={handleRouteSelectionChange}
             />
 
             <MapTitleOverlay
@@ -249,6 +302,19 @@ export function MapCanvas() {
                 stationMatches={stationMatches}
                 onSelectStation={goToStation}
                 onEnterFirstMatch={selectFirstStationMatch}
+                focusedStation={focusedStation}
+                onClearFocusedStation={clearFocusedStation}
+                currentRouteStartId={routeSelection.startId}
+                currentRouteStartName={routeSelection.startName}
+                currentRouteEndId={routeSelection.endId}
+                currentRouteEndName={routeSelection.endName}
+                currentRouteHasPath={routeSelection.hasPath}
+                isFocusedStationUnavailableForRouting={isFocusedStationUnavailableForRouting}
+                isFocusedStationHypotheticallyClosed={isFocusedStationHypotheticallyClosed}
+                onSetFocusedStationAsStart={() => handleStationAction("set-start", focusedStation)}
+                onSetFocusedStationAsDestination={() => handleStationAction("set-destination", focusedStation)}
+                onToggleFocusedStationClosure={() => handleStationAction("toggle-closure", focusedStation)}
+                onDesktopSearchOpen={collapseRoutePanel}
             />
 
             <MapHud

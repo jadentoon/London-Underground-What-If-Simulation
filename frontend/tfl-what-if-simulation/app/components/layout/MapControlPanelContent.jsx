@@ -256,6 +256,19 @@ export function MapControlPanelContent({
                     </span>
                 </div>
 
+                {hypotheticalSettingsEnabled && (
+                    <div
+                        style={{
+                            marginTop: -2,
+                            fontSize: 12,
+                            lineHeight: 1.45,
+                            color: COLORS.textMuted,
+                        }}
+                    >
+                        Use the line list below to close or reopen lines from the sidebar.
+                    </div>
+                )}
+
                 {showFeedStatusBlocks && (
                     <>
                         <div

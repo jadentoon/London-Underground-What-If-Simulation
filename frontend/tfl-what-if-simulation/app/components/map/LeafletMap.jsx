@@ -140,6 +140,9 @@ const LeafletMap = ({
     interactionMode = "route",
     isMobilePortrait = false,
     resetRouteSequence = 0,
+    highlightedStationId = null,
+    stationActionRequest = null,
+    onRouteSelectionChange,
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -172,12 +175,27 @@ const LeafletMap = ({
     const closedLineSet = useMemo(() => normaliseIdSet(closedLines), [closedLines]);
     const liveClosedSet = useMemo(
         () => new Set(Array.from(liveClosedStations ?? []).map((id) => String(id))), [liveClosedStations]);
+    const isStationUnavailableForRouting = useCallback((stationId) => {
+        const id = String(stationId);
+
+        return liveClosedSet.has(id) || (hypotheticalSettingsEnabled && closedSet.has(id));
+    }, [closedSet, hypotheticalSettingsEnabled, liveClosedSet]);
 
     const clearRoute = useCallback(() => {
         setPath([]);
         setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
         setStart(null);
         setEnd(null);
+        onRoutingError?.(null);
+    }, [onRoutingError]);
+
+    const setRouteStartSelection = useCallback((stationId) => {
+        const id = String(stationId);
+
+        setStart(id);
+        setEnd(null);
+        setPath([]);
+        setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
         onRoutingError?.(null);
     }, [onRoutingError]);
 
@@ -251,21 +269,12 @@ const LeafletMap = ({
         return out;
     }, [edges, hypotheticalSettingsEnabled, partialStationIdsByLine]);
 
-    const handleSingleClickStation = useCallback((stationId) => {
-        const id = String(stationId);
+    const selectRouteDestination = useCallback((destinationId) => {
+        const id = String(destinationId);
 
-        if (!start) {
-            setStart(id);
-            setEnd(null);
-            setPath([]);
-            setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
-            onRoutingError?.(null);
-            return;
-        }
+        if (!start || !graph) return;
 
-        if (!graph) return;
-
-        // pass all the closed stationsd to dijkstra's algorithm so it can avoid them when calculating the path
+        // pass all the closed stations to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
         const linesToAvoid = closedLineSet;
         const blockedEdges = partialEdgeKeys;
@@ -277,19 +286,18 @@ const LeafletMap = ({
         const changeCount = Array.isArray(result) ? null : result?.changeCount;
         const statePath = Array.isArray(result) ? [] : (result?.statePath ?? []);
 
-        //check if path is found 
         if (newPath.length === 0 && String(start) !== id) {
             const startStation = nodeById.get(String(start));
             const endStation = nodeById.get(id);
             const hasClosedStations = hypotheticalSettingsEnabled && closedSet.size > 0;
             const hasLineDisruptions = closedLineSet.size > 0 || partialEdgeKeys.size > 0;
 
-             onRoutingError?.({
+            onRoutingError?.({
                 from: startStation?.name || start,
                 to: endStation?.name || id,
                 reason: hasClosedStations
-                        ? "closed-stations"
-                        : (hasLineDisruptions ? "closed-lines" : "no-connection")
+                    ? "closed-stations"
+                    : (hasLineDisruptions ? "closed-lines" : "no-connection")
             });
             setPath([]);
             setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
@@ -303,6 +311,7 @@ const LeafletMap = ({
                 statePath,
             });
         }
+
         setEnd(id);
     }, [
         start,
@@ -312,12 +321,29 @@ const LeafletMap = ({
         closedSet,
         closedLineSet,
         partialEdgeKeys,
-        onRoutingError
+        onRoutingError,
     ]);
 
-    const handleDoubleClickStation = useCallback((id) => {
+    const handleSingleClickStation = useCallback((stationId) => {
+        const id = String(stationId);
+
+        if (!start) {
+            setRouteStartSelection(id);
+            return;
+        }
+
+        selectRouteDestination(id);
+    }, [selectRouteDestination, setRouteStartSelection, start]);
+
+    const handleToggleStationClosure = useCallback((id) => {
+        clearRoute();
         onToggleStationClosed?.(id);
-    }, [onToggleStationClosed]);
+    }, [clearRoute, onToggleStationClosed]);
+
+    const handleToggleLineClosure = useCallback((lineId) => {
+        clearRoute();
+        onLineToggle?.(lineId);
+    }, [clearRoute, onLineToggle]);
 
     const pathSet = useMemo(() => new Set(path.map(String)), [path]);
 
@@ -428,8 +454,10 @@ const LeafletMap = ({
     }, [routeMeta.changeCount, groupedLegs.length]);
 
     const lastRouteKeyRef = useRef("");
+    const lastRouteSelectionKeyRef = useRef("");
     const lastFeedStatusKeyRef = useRef("");
     const lastResetRouteSequenceRef = useRef(resetRouteSequence);
+    const lastStationActionSequenceRef = useRef(stationActionRequest?.sequence ?? 0);
 
     useEffect(() => {
         if (resetRouteSequence === lastResetRouteSequenceRef.current) return;
@@ -437,6 +465,65 @@ const LeafletMap = ({
         lastResetRouteSequenceRef.current = resetRouteSequence;
         clearRoute();
     }, [resetRouteSequence, clearRoute]);
+
+    useEffect(() => {
+        const actionSequence = stationActionRequest?.sequence ?? 0;
+
+        if (!actionSequence || actionSequence === lastStationActionSequenceRef.current) {
+            return;
+        }
+
+        lastStationActionSequenceRef.current = actionSequence;
+
+        const stationId = String(stationActionRequest?.stationId ?? "");
+
+        if (!stationId) return;
+
+        if (stationActionRequest?.action === "set-start") {
+            if (isStationUnavailableForRouting(stationId)) return;
+
+            setRouteStartSelection(stationId);
+            return;
+        }
+
+        if (stationActionRequest?.action === "set-destination") {
+            if (isStationUnavailableForRouting(stationId)) return;
+            if (!start || String(start) === stationId) return;
+
+            selectRouteDestination(stationId);
+            return;
+        }
+
+        if (stationActionRequest?.action === "toggle-closure") {
+            handleToggleStationClosure(stationId);
+        }
+    }, [
+        handleToggleStationClosure,
+        isStationUnavailableForRouting,
+        selectRouteDestination,
+        setRouteStartSelection,
+        start,
+        stationActionRequest,
+    ]);
+
+    useEffect(() => {
+        if (!onRouteSelectionChange) return;
+
+        const payload = {
+            startId: start ? String(start) : null,
+            startName: start ? (nodeById.get(String(start))?.name ?? String(start)) : null,
+            endId: end ? String(end) : null,
+            endName: end ? (nodeById.get(String(end))?.name ?? String(end)) : null,
+            hasPath,
+        };
+
+        const key = JSON.stringify(payload);
+
+        if (key === lastRouteSelectionKeyRef.current) return;
+        lastRouteSelectionKeyRef.current = key;
+
+        onRouteSelectionChange(payload);
+    }, [end, hasPath, nodeById, onRouteSelectionChange, start]);
 
     useEffect(() => {
         if (!onRouteChange) return;
@@ -540,9 +627,9 @@ const LeafletMap = ({
                     dimmed={hasPath} 
                     closedLines={closedLines} 
                     partialEdgeKeys={partialEdgeKeys}
-                    onLineToggle={onLineToggle}
+                    onLineToggle={handleToggleLineClosure}
                     hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                interactionMode={interactionMode}
+                    interactionMode={interactionMode}
                 />
                 {trainVisualsEnabled && showTrains && (
                     <CanvasTrainLayer
@@ -562,11 +649,12 @@ const LeafletMap = ({
                     hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                     redXIcon={redXIcon}
                     onSingleClickStation={handleSingleClickStation}
-                    onDoubleClickStation={handleDoubleClickStation}
+                    onDoubleClickStation={handleToggleStationClosure}
                     zoomLevel={zoomLevel}
                     liveClosedSet={liveClosedSet}
                     interactionMode={interactionMode}
-            />
+                    highlightedStationId={highlightedStationId}
+                />
             </MapContainer>
 
             <SelectedTrainPanel

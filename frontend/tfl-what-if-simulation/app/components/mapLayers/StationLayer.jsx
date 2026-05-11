@@ -170,7 +170,8 @@ const StationLayer = React.memo(StationLayerComponent, (prev, next) => {
         prev.onDoubleClickStation === next.onDoubleClickStation &&
         prev.zoomLevel === next.zoomLevel &&
         prev.liveClosedSet === next.liveClosedSet &&
-        prev.interactionMode === next.interactionMode
+        prev.interactionMode === next.interactionMode &&
+        prev.highlightedStationId === next.highlightedStationId
     );
 });
 
