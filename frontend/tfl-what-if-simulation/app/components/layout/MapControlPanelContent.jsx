@@ -77,6 +77,10 @@ export function MapControlPanelContent({
     accentColor: accentColour,
     onToggleWhatIfMode,
     onResetClosures,
+    savedScenarios = [],
+    onSaveScenario,
+    onLoadScenario,
+    onDeleteScenario,
     effectiveLines,
     closedLines,
     partialLines,
@@ -111,6 +115,8 @@ export function MapControlPanelContent({
     const showFeedStatusBlocks = !hypotheticalSettingsEnabled;
 
     const [expandedLineId, setExpandedLineId] = useState(null);
+    const [selectedScenarioId, setSelectedScenarioId] = useState("");
+    const [scenarioName, setScenarioName] = useState("");
     const hoverTimeoutRef = useRef(null);
 
     const handleMouseEnter = (lineId, hasDelay) => {
@@ -226,6 +232,132 @@ export function MapControlPanelContent({
                     >
                         Reset all closures
                     </button>
+                )}
+
+                {hypotheticalSettingsEnabled && (
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 10,
+                            padding: "12px",
+                            border: `1px solid ${COLORS.border}`,
+                            borderRadius: 12,
+                            background: "rgba(0, 0, 0, 0.3)",
+                        }}
+                    >
+                        <div>
+                            <h3 style={{ margin: "0 0 4px", color: COLORS.text }}>Saved Scenarios</h3>
+                            <div style={{ fontSize: 12, lineHeight: 1.4, color: COLORS.textMuted }}>
+                                Save the current closed stations and lines, then load them again later from this browser.
+                            </div>
+                        </div>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8 }}>
+                            <input
+                                type="text"
+                                value={scenarioName}
+                                onChange={(event) => setScenarioName(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key !== "Enter") return;
+
+                                    const savedScenario = onSaveScenario?.(scenarioName);
+                                    if (savedScenario?.id) {
+                                        setSelectedScenarioId(savedScenario.id);
+                                        setScenarioName("");
+                                    }
+                                }}
+                                placeholder="Scenario name"
+                                style={{
+                                    minWidth: 0,
+                                    padding: "10px 12px",
+                                    background: "rgba(15, 23, 42, 0.85)",
+                                    color: COLORS.text,
+                                    border: `1px solid ${COLORS.border}`,
+                                    borderRadius: 10,
+                                    outline: "none",
+                                }}
+                            />
+                            <button
+                                onClick={() => {
+                                    const savedScenario = onSaveScenario?.(scenarioName);
+                                    if (savedScenario?.id) {
+                                        setSelectedScenarioId(savedScenario.id);
+                                        setScenarioName("");
+                                    }
+                                }}
+                                style={{
+                                    padding: "10px 12px",
+                                    background: accentColour,
+                                    color: "#0f172a",
+                                    border: "none",
+                                    borderRadius: 10,
+                                    cursor: "pointer",
+                                    fontWeight: 800,
+                                }}
+                            >
+                                Save
+                            </button>
+                        </div>
+
+                        <select
+                            value={selectedScenarioId}
+                            onChange={(event) => setSelectedScenarioId(event.target.value)}
+                            style={{
+                                width: "100%",
+                                padding: "10px 12px",
+                                background: "rgba(15, 23, 42, 0.85)",
+                                color: COLORS.text,
+                                border: `1px solid ${COLORS.border}`,
+                                borderRadius: 10,
+                                outline: "none",
+                            }}
+                        >
+                            <option value="">{savedScenarios.length ? "Choose saved scenario" : "No saved scenarios yet"}</option>
+                            {savedScenarios.map((scenario) => (
+                                <option key={scenario.id} value={scenario.id}>
+                                    {scenario.name} ({scenario.closedStations.length} stations, {scenario.closedLines.length} lines)
+                                </option>
+                            ))}
+                        </select>
+
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                            <button
+                                onClick={() => selectedScenarioId && onLoadScenario?.(selectedScenarioId)}
+                                disabled={!selectedScenarioId}
+                                style={{
+                                    padding: "9px 10px",
+                                    background: selectedScenarioId ? "rgba(34, 197, 94, 0.18)" : "rgba(148, 163, 184, 0.12)",
+                                    color: selectedScenarioId ? "#86efac" : COLORS.textMuted,
+                                    border: `1px solid ${selectedScenarioId ? "#22c55e" : COLORS.border}`,
+                                    borderRadius: 10,
+                                    cursor: selectedScenarioId ? "pointer" : "not-allowed",
+                                    fontWeight: 700,
+                                }}
+                            >
+                                Load
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (!selectedScenarioId) return;
+                                    onDeleteScenario?.(selectedScenarioId);
+                                    setSelectedScenarioId("");
+                                }}
+                                disabled={!selectedScenarioId}
+                                style={{
+                                    padding: "9px 10px",
+                                    background: selectedScenarioId ? "rgba(239, 68, 68, 0.16)" : "rgba(148, 163, 184, 0.12)",
+                                    color: selectedScenarioId ? "#fca5a5" : COLORS.textMuted,
+                                    border: `1px solid ${selectedScenarioId ? "#ef4444" : COLORS.border}`,
+                                    borderRadius: 10,
+                                    cursor: selectedScenarioId ? "pointer" : "not-allowed",
+                                    fontWeight: 700,
+                                }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
                 )}
 
                 <h3 style={{ margin: "0 0 4px", color: COLORS.text }}>Lines</h3>

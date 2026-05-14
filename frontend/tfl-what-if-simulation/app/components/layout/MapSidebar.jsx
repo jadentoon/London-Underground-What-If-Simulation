@@ -12,6 +12,10 @@ export function MapSidebar({
     accentColor,
     onToggleWhatIfMode,
     onResetClosures,
+    savedScenarios,
+    onSaveScenario,
+    onLoadScenario,
+    onDeleteScenario,
     effectiveLines,
     closedLines,
     partialLines,
@@ -61,6 +65,10 @@ export function MapSidebar({
                 accentColor={accentColor}
                 onToggleWhatIfMode={onToggleWhatIfMode}
                 onResetClosures={onResetClosures}
+                savedScenarios={savedScenarios}
+                onSaveScenario={onSaveScenario}
+                onLoadScenario={onLoadScenario}
+                onDeleteScenario={onDeleteScenario}
                 effectiveLines={effectiveLines}
                 closedLines={closedLines}
                 partialLines={partialLines}

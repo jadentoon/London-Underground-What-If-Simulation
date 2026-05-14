@@ -143,11 +143,15 @@ export function MapCanvas() {
     const {
         closedStations,
         closedLines,
+        savedScenarios,
         toggleClosedStation,
         handleLineToggle,
         handleResetClosures,
         clearClosedStations,
         clearClosedLines,
+        saveCurrentScenario,
+        loadScenario,
+        deleteScenario,
     } = useWhatIfClosures(hypotheticalSettingsEnabled);
 
     const {
@@ -201,6 +205,16 @@ export function MapCanvas() {
         clearClosedLines();
         setIsSidebarOpen(false);
     }, [clearClosedLines]);
+
+    const handleLoadScenario = useCallback((scenarioId) => {
+        const loadedScenario = loadScenario(scenarioId);
+        if (!loadedScenario) return;
+
+        setHypotheticalSettingsEnabled(true);
+        setMobileInteractionMode("closures");
+        clearRoutePanel();
+        setResetRouteSequence((value) => value + 1);
+    }, [clearRoutePanel, loadScenario]);
 
     const handleRouteSelectionChange = useCallback((selection) => {
         setRouteSelection((prev) => {
@@ -336,6 +350,10 @@ export function MapCanvas() {
                     accentColor={accentColour}
                     onToggleWhatIfMode={handleToggleWhatIfMode}
                     onResetClosures={handleResetClosures}
+                    savedScenarios={savedScenarios}
+                    onSaveScenario={saveCurrentScenario}
+                    onLoadScenario={handleLoadScenario}
+                    onDeleteScenario={deleteScenario}
                     effectiveLines={effectiveLines}
                     closedLines={effectiveClosedLines}
                     partialLines={effectivePartialLines}
@@ -368,6 +386,10 @@ export function MapCanvas() {
                     accentColor={accentColour}
                     onToggleWhatIfMode={handleToggleWhatIfMode}
                     onResetClosures={handleResetClosures}
+                    savedScenarios={savedScenarios}
+                    onSaveScenario={saveCurrentScenario}
+                    onLoadScenario={handleLoadScenario}
+                    onDeleteScenario={deleteScenario}
                     effectiveLines={effectiveLines}
                     closedLines={effectiveClosedLines}
                     partialLines={effectivePartialLines}
