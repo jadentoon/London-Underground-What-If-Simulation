@@ -40,9 +40,9 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
 // Theme colours used throughout the component.
 const COLORS = {
-    bg: "#0a0f1a",                  // Background colour for map container.
-    card: "rgba(15, 23, 42, 0.8)",  // HUD and control backgrounds.
-    border: "#1e3a5f",              // Border for HUD / UI panels.
+    bg: "var(--map-bg)",                  // Background colour for map container.
+    card: "var(--panel-bg)",  // HUD and control backgrounds.
+    border: "var",              // Border for HUD / UI panels.
     accent: "#3b82f6",              // Highlight colour for HUD labels.
     text: "#94a3b8",                // Primary text colour.
     textMuted: "#64748b",           // Secondary / muted text.

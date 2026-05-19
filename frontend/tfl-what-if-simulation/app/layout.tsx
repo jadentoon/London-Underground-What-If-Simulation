@@ -4,44 +4,47 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import "leaflet/dist/leaflet.css";
 import './global.css'
+import { ThemeProvider } from "./theme-provider";
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'London Underground What-If Simulator',
-  description: 'Interactive map visualiser for the London Underground network',
-  generator: 'Next.js',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+    title: 'London Underground What-If Simulator',
+    description: 'Interactive map visualiser for the London Underground network',
+    generator: 'Next.js',
+    icons: {
+        icon: [
+            {
+                url: '/icon-light-32x32.png',
+                media: '(prefers-color-scheme: light)',
+            },
+            {
+                url: '/icon-dark-32x32.png',
+                media: '(prefers-color-scheme: dark)',
+            },
+            {
+                url: '/icon.svg',
+                type: 'image/svg+xml',
+            },
+        ],
+        apple: '/apple-icon.png',
+    },
 }
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
-  children: React.ReactNode
+    children: React.ReactNode
 }>) {
-  return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
-        {children}
-        <Analytics />
-      </body>
-    </html>
-  )
+    return (
+        <html lang="en" suppressHydrationWarning>
+            <body className={`font-sans antialiased`}>
+                <ThemeProvider>
+                    {children}
+                    <Analytics />
+                </ThemeProvider>
+            </body>
+        </html>
+    )
 }

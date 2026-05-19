@@ -4,137 +4,207 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  /* Dark theme by default - London Underground inspired */
-  --background: oklch(0.12 0.01 250);
-  --foreground: oklch(0.9 0 0);
-  --card: oklch(0.15 0.015 250);
-  --card-foreground: oklch(0.9 0 0);
-  --popover: oklch(0.15 0.015 250);
-  --popover-foreground: oklch(0.9 0 0);
-  --primary: oklch(0.5 0.15 250);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.2 0.02 250);
-  --secondary-foreground: oklch(0.9 0 0);
-  --muted: oklch(0.2 0.01 250);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.45 0.18 250);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.25 0.03 250);
-  --input: oklch(0.2 0.02 250);
-  --ring: oklch(0.5 0.15 250);
-  --chart-1: oklch(0.5 0.15 250);
-  --chart-2: oklch(0.6 0.12 200);
-  --chart-3: oklch(0.55 0.1 280);
-  --chart-4: oklch(0.65 0.15 220);
-  --chart-5: oklch(0.45 0.12 260);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.1 0.01 250);
-  --sidebar-foreground: oklch(0.9 0 0);
-  --sidebar-primary: oklch(0.5 0.15 250);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.2 0.02 250);
-  --sidebar-accent-foreground: oklch(0.9 0 0);
-  --sidebar-border: oklch(0.25 0.03 250);
-  --sidebar-ring: oklch(0.5 0.15 250);
-  
-  /* Custom map colors */
-  --map-grid: oklch(0.3 0.08 250);
-  --map-grid-major: oklch(0.4 0.12 250);
-  --map-label: oklch(0.55 0.05 250);
+:root,
+.dark {
+    /* Dark theme by default - London Underground inspired */
+    --background: oklch(0.12 0.01 250);
+    --foreground: oklch(0.9 0 0);
+    --card: oklch(0.15 0.015 250);
+    --card-foreground: oklch(0.9 0 0);
+    --popover: oklch(0.15 0.015 250);
+    --popover-foreground: oklch(0.9 0 0);
+    --primary: oklch(0.5 0.15 250);
+    --primary-foreground: oklch(0.98 0 0);
+    --secondary: oklch(0.2 0.02 250);
+    --secondary-foreground: oklch(0.9 0 0);
+    --muted: oklch(0.2 0.01 250);
+    --muted-foreground: oklch(0.6 0 0);
+    --accent: oklch(0.45 0.18 250);
+    --accent-foreground: oklch(0.98 0 0);
+    --destructive: oklch(0.5 0.2 25);
+    --destructive-foreground: oklch(0.98 0 0);
+    --border: oklch(0.25 0.03 250);
+    --input: oklch(0.2 0.02 250);
+    --ring: oklch(0.5 0.15 250);
+    --chart-1: oklch(0.5 0.15 250);
+    --chart-2: oklch(0.6 0.12 200);
+    --chart-3: oklch(0.55 0.1 280);
+    --chart-4: oklch(0.65 0.15 220);
+    --chart-5: oklch(0.45 0.12 260);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.1 0.01 250);
+    --sidebar-foreground: oklch(0.9 0 0);
+    --sidebar-primary: oklch(0.5 0.15 250);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.2 0.02 250);
+    --sidebar-accent-foreground: oklch(0.9 0 0);
+    --sidebar-border: oklch(0.25 0.03 250);
+    --sidebar-ring: oklch(0.5 0.15 250);
+
+    /* Custom map colors */
+    --map-bg: #0a0f1a;
+    --panel-bg: rgba(15, 23, 42, 0.8);
+    --panel-border: #1e3a5f;
+    --panel-text: #94a3ba;
+    --panel-text-strong: #e2e8f0;
+    --panel-text-muted: #64748b;
+    --map-grid: oklch(0.3 0.08 250);
+    --map-grid-major: oklch(0.4 0.12 250);
+    --map-label: oklch(0.55 0.05 250);
+}
+
+.light {
+    --background: oklch(0.98 0.01 250);
+    --foreground: oklch(0.18 0.03 250);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.18 0.03 250);
+
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.18 0.03 250);
+
+    --primary: oklch(0.48 0.16 250);
+    --primary-foreground: oklch(0.98 0 0);
+
+    --secondary: oklch(0.93 0.02 250);
+    --secondary-foreground: oklch(0.2 0.03 250);
+
+    --muted: oklch(0.94 0.015 250);
+    --muted-foreground: oklch(0.45 0.02 250);
+
+    --accent: oklch(0.5 0.16 250);
+    --accent-foreground: oklch(0.98 0 0);
+
+    --destructive: oklch(0.55 0.2 25);
+    --destructive-foreground: oklch(0.98 0 0);
+
+    --border: oklch(0.82 0.025 250);
+    --input: oklch(0.95 0.01 250);
+    --ring: oklch(0.5 0.16 250);
+
+    --chart-1: oklch(0.48 0.16 250);
+    --chart-2: oklch(0.55 0.13 200);
+    --chart-3: oklch(0.5 0.12 280);
+    --chart-4: oklch(0.58 0.15 220);
+    --chart-5: oklch(0.45 0.13 260);
+
+    --radius: 0.625rem;
+
+    --sidebar: oklch(0.985 0.005 250);
+    --sidebar-foreground: oklch(0.18 0.03 250);
+    --sidebar-primary: oklch(0.48 0.16 250);
+    --sidebar-primary-foreground: oklch(0.98 0 0);
+    --sidebar-accent: oklch(0.93 0.02 250);
+    --sidebar-accent-foreground: oklch(0.2 0.03 250);
+    --sidebar-border: oklch(0.82 0.025 250);
+    --sidebar-ring: oklch(0.5 0.16 250);
+
+    --map-grid: oklch(0.78 0.04 250);
+    --map-grid-major: oklch(0.66 0.07 250);
+    --map-label: oklch(0.42 0.04 250);
+
+    --map-bg: #f3f6fb;
+    --panel-bg: rgba(255, 255, 255, 0.88);
+    --panel-border: rgba(37, 99, 145, 0.28);
+    --panel-text: #334155;
+    --panel-text-strong: #0f172a;
+    --panel-text-muted: #64748b;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-map-grid: var(--map-grid);
-  --color-map-grid-major: var(--map-grid-major);
-  --color-map-label: var(--map-label);
+    --font-sans: 'Geist', 'Geist Fallback';
+    --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-map-grid: var(--map-grid);
+    --color-map-grid-major: var(--map-grid-major);
+    --color-map-label: var(--map-label);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
 }
 
 /* Layout resets so full-viewport sizing works for Tailwind `h-screen` */
-html, body, #__next {
-  height: 100%;
+html,
+body,
+#__next {
+    height: 100%;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 body {
-  background-color: #000; /* keep the background black so that it doesnt flash when zooming */
+    margin: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background-color: #000;
+    /* keep the background black so that it doesnt flash when zooming */
 }
 
 .leaflet-container {
-  background-color: #000 !important;
+    background-color: #000 !important;
 }
 
 .leaflet-tile {
-  background-color: transparent;
-  transition: opacity 160ms linear;
+    background-color: transparent;
+    transition: opacity 160ms linear;
 }
 
 .leaflet-tooltip.line-tooltip {
-  transform: translateY(-20px);
-  pointer-events: none;
+    transform: translateY(-20px);
+    pointer-events: none;
 }
 
 .closed-line {
-  filter: drop-shadow(0 0 8px rgba(255, 26, 26, 0.9)) drop-shadow(0 0 14px rgba(255, 26, 26, 0.75));
+    filter: drop-shadow(0 0 8px rgba(255, 26, 26, 0.9)) drop-shadow(0 0 14px rgba(255, 26, 26, 0.75));
 }
 
 /* Hide Next.js dev overlay / badge in development for clean UI */
@@ -146,7 +216,6 @@ body {
 .nextjs-badge,
 [data-nextjs-devtools],
 [data-nextjs-overlay],
-[data-nextjs]
-{
-  display: none !important;
+[data-nextjs] {
+    display: none !important;
 }
