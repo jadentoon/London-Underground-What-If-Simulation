@@ -39,7 +39,7 @@ export function MapSearchBox({
     const desktopTop = hypotheticalSettingsEnabled ? 148 : 20;
     const desktopRight = 70;
     const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
-    const [isOpen, setIsOpen] = useState(!isMobilePortrait);
+    const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const autoCollapseRouteKeyRef = useRef("");
     const focusedStationId = focusedStation?.id ? String(focusedStation.id) : null;
@@ -64,11 +64,6 @@ export function MapSearchBox({
         setSelectedIndex(0);
     }, [stationQuery, stationMatches.length]);
 
-    useEffect(() => {
-        if (!isMobilePortrait) {
-            setIsOpen(true);
-        }
-    }, [isMobilePortrait]);
 
     useEffect(() => {
         if (isMobilePortrait) return;

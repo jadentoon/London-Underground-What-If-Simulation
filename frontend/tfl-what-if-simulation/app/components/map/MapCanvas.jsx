@@ -208,6 +208,14 @@ export function MapCanvas() {
         setIsSidebarOpen(false);
     }, [clearClosedLines]);
 
+    const handleOpenWhatIfMode = useCallback(() => {
+        setHypotheticalSettingsEnabled(true);
+        setMobileInteractionMode("closures");
+        setIsSidebarOpen(true);
+        clearRoutePanel();
+        setSelectedTrainId(null);
+    }, [clearRoutePanel]);
+
     const handleLoadScenario = useCallback((scenarioId) => {
         const loadedScenario = loadScenario(scenarioId);
         if (!loadedScenario) return;
@@ -333,6 +341,63 @@ export function MapCanvas() {
                 accentColor={accentColour}
                 titleShadow={titleShadow}
             />
+
+            {!hypotheticalSettingsEnabled && !isMobilePortrait && (
+                <button
+                    onClick={handleOpenWhatIfMode}
+                    type="button"
+                    style={{
+                        position: "fixed",
+                        top: 96,
+                        right: 70,
+                        width: 320,
+                        padding: "14px 16px",
+                        background: "rgba(251, 191, 36, 0.16)",
+                        backdropFilter: "blur(10px)",
+                        border: "1px solid rgba(251, 191, 36, 0.65)",
+                        borderRadius: 18,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        cursor: "pointer",
+                        zIndex: 999,
+                        color: "#fef3c7",
+                        boxShadow: "0 16px 42px rgba(0, 0, 0, 0.32)",
+                    }}
+                    title="Open the What-If Simulator"
+                >
+                    <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
+                        <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#fbbf24", fontWeight: 900 }}>
+                            What-If Simulator
+                        </span>
+                        <span style={{ fontSize: 15, fontWeight: 900, color: "#fff7ed" }}>
+                            Try What-If Mode
+                        </span>
+                        <span style={{ fontSize: 12, color: "rgba(254, 243, 199, 0.78)", textAlign: "left" }}>
+                            Simulate station or line closures.
+                        </span>
+                    </span>
+                    <span
+                        aria-hidden="true"
+                        style={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 999,
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(251, 191, 36, 0.22)",
+                            color: "#fbbf24",
+                            fontSize: 18,
+                            fontWeight: 900,
+                            flex: "0 0 auto",
+                        }}
+                    >
+                        ⚡
+                    </span>
+                </button>
+            )}
 
             <MapSearchBox
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
