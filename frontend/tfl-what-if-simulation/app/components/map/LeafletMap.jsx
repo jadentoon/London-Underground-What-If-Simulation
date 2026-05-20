@@ -88,6 +88,23 @@ function MapInstance({ onReady }) {
     return null;
 }
 
+function RouteFitController({ pathPositions }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (!map || !pathPositions || pathPositions.length < 2) return;
+
+        map.fitBounds(pathPositions, {
+            padding: [80, 80],
+            maxZoom: 14,
+            animate: true,
+        });
+    }, [map, pathPositions]);
+
+    return null;
+}
+
+
 function ClearOnMapClick({ enabled, onClear }) {
     useMapEvents({
         click() {
@@ -653,6 +670,7 @@ const LeafletMap = ({
             {/* Camera Change Listener */}
             <MapEvents onChange={handleMapChange} />
             <MapInstance onReady={onMapReady} />
+            <RouteFitController pathPositions={pathPositions} />
             <ClearOnMapClick enabled={hasPath && interactionMode !== "closures"} onClear={clearRoute} />
 
                 <RouteLayer pathPositions={pathPositions} />
