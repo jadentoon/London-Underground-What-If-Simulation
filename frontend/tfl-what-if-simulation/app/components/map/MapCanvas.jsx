@@ -136,7 +136,9 @@ export function MapCanvas() {
         goToStation,
         selectFirstStationMatch,
         focusedStation,
+        focusedStationSource,
         clearFocusedStation,
+        setCurrentStation,
         highlightedStationId,
     } = useStationSearch(leafletMapRef);
 
@@ -217,6 +219,12 @@ export function MapCanvas() {
     }, [clearRoutePanel, loadScenario]);
 
     const handleRouteSelectionChange = useCallback((selection) => {
+        const hasSelection = Boolean(selection?.startId || selection?.endId || selection?.hasPath);
+
+        if (!hasSelection && focusedStationSource === "map") {
+            clearFocusedStation();
+        }
+
         setRouteSelection((prev) => {
             const sameStartId = prev.startId === selection?.startId;
             const sameStartName = prev.startName === selection?.startName;
@@ -230,10 +238,14 @@ export function MapCanvas() {
 
             return selection;
         });
-    }, []);
+    }, [clearFocusedStation, focusedStationSource]);
 
     const handleStationAction = useCallback((action, station) => {
         if (!station?.id) return;
+
+        if (action === "set-start" || action === "set-destination") {
+            setSelectedTrainId(null);
+        }
 
         stationActionSequenceRef.current += 1;
 
@@ -243,6 +255,22 @@ export function MapCanvas() {
             stationId: String(station.id),
         });
     }, []);
+
+    const handleSearchStationSelection = useCallback((station) => {
+        if (routeSelection.hasPath) {
+            clearRoutePanel();
+            setRouteSelection({
+                startId: null,
+                startName: null,
+                endId: null,
+                endName: null,
+                hasPath: false,
+            });
+            setResetRouteSequence((value) => value + 1);
+        }
+
+        goToStation(station);
+    }, [clearRoutePanel, goToStation, routeSelection.hasPath]);
 
     const focusedStationId = focusedStation?.id ? String(focusedStation.id) : null;
     const isFocusedStationHypotheticallyClosed = hypotheticalSettingsEnabled
@@ -294,6 +322,7 @@ export function MapCanvas() {
                 highlightedStationId={highlightedStationId}
                 stationActionRequest={stationActionRequest}
                 onRouteSelectionChange={handleRouteSelectionChange}
+                onFocusedStationChange={(station) => setCurrentStation(station, "map")}
             />
 
             <MapTitleOverlay
@@ -314,9 +343,10 @@ export function MapCanvas() {
                 stationQuery={stationQuery}
                 onStationQueryChange={setStationQuery}
                 stationMatches={stationMatches}
-                onSelectStation={goToStation}
+                onSelectStation={handleSearchStationSelection}
                 onEnterFirstMatch={selectFirstStationMatch}
                 focusedStation={focusedStation}
+                focusedStationSource={focusedStationSource}
                 onClearFocusedStation={clearFocusedStation}
                 currentRouteStartId={routeSelection.startId}
                 currentRouteStartName={routeSelection.startName}
@@ -329,6 +359,7 @@ export function MapCanvas() {
                 onSetFocusedStationAsDestination={() => handleStationAction("set-destination", focusedStation)}
                 onToggleFocusedStationClosure={() => handleStationAction("toggle-closure", focusedStation)}
                 onDesktopSearchOpen={collapseRoutePanel}
+                onSearchInputFocus={() => setSelectedTrainId(null)}
             />
 
             <MapHud

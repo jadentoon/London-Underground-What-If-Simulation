@@ -20,6 +20,7 @@ export function MapSearchBox({
     onSelectStation,
     onEnterFirstMatch,
     focusedStation,
+    focusedStationSource,
     onClearFocusedStation,
     currentRouteStartId,
     currentRouteStartName,
@@ -32,6 +33,7 @@ export function MapSearchBox({
     onSetFocusedStationAsDestination,
     onToggleFocusedStationClosure,
     onDesktopSearchOpen,
+    onSearchInputFocus,
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const desktopTop = hypotheticalSettingsEnabled ? 148 : 20;
@@ -71,7 +73,7 @@ export function MapSearchBox({
     useEffect(() => {
         if (isMobilePortrait) return;
 
-        if (!focusedStation) {
+        if (!focusedStation || focusedStationSource !== "search") {
             autoCollapseRouteKeyRef.current = "";
             return;
         }
@@ -93,6 +95,7 @@ export function MapSearchBox({
         setSelectedIndex(0);
     }, [
         focusedStation,
+        focusedStationSource,
         currentRouteEndId,
         currentRouteHasPath,
         currentRouteStartId,
@@ -187,6 +190,7 @@ export function MapSearchBox({
                     <input
                         value={stationQuery}
                         onChange={(e) => handleQueryChange(e.target.value)}
+                        onFocus={onSearchInputFocus}
                         placeholder="Search stations"
                         style={{
                             flex: 1,
@@ -385,6 +389,7 @@ export function MapSearchBox({
                         <input
                             value={stationQuery}
                             onChange={(e) => handleQueryChange(e.target.value)}
+                            onFocus={onSearchInputFocus}
                             placeholder="Search stations"
                             style={{
                                 width: "100%",
@@ -473,7 +478,7 @@ export function MapSearchBox({
                         >
                             <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                 <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                    Selected Station
+                                    Current station
                                 </span>
                                 <span style={{ fontSize: 16, fontWeight: 800, color: "#e2e8f0" }}>
                                     {focusedStation.name}

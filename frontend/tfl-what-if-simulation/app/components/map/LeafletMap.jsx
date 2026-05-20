@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
-import { MapContainer, TileLayer, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, useMapEvents, useMap, Pane } from "react-leaflet";
 import L from "leaflet";
 
 // Debounce utility for map events
@@ -31,6 +31,9 @@ import CanvasTrainLayer from "../mapLayers/CanvasTrainLayer.jsx";
 import { SelectedTrainPanel } from "../layout/SelectedTrainPanel.jsx";
 
 setupLeafletDefaultIcons();
+
+const TRAIN_PANE_NAME = "train-pane";
+const STATION_PANE_NAME = "station-pane";
 
 /**
  * MapEvents
@@ -143,6 +146,7 @@ const LeafletMap = ({
     highlightedStationId = null,
     stationActionRequest = null,
     onRouteSelectionChange,
+    onFocusedStationChange,
 }) => {
     //keep panning constrained to the Greater London area.
     const LONDON_MAX_BOUNDS = useMemo(() => ([
@@ -242,6 +246,11 @@ const LeafletMap = ({
         onSelectedTrainIdChange?.(trainId ? String(trainId) : null);
     }, []);
 
+    const focusStationById = useCallback((stationId) => {
+        const station = nodeById.get(String(stationId)) ?? null;
+        onFocusedStationChange?.(station);
+    }, [nodeById, onFocusedStationChange]);
+
     const groupedEdges = useMemo(() => {
         const unique = dedupeEdges(edges);
         return groupEdges(unique);
@@ -327,13 +336,15 @@ const LeafletMap = ({
     const handleSingleClickStation = useCallback((stationId) => {
         const id = String(stationId);
 
+        focusStationById(id);
+
         if (!start) {
             setRouteStartSelection(id);
             return;
         }
 
         selectRouteDestination(id);
-    }, [selectRouteDestination, setRouteStartSelection, start]);
+    }, [focusStationById, selectRouteDestination, setRouteStartSelection, start]);
 
     const handleToggleStationClosure = useCallback((id) => {
         clearRoute();
@@ -346,6 +357,31 @@ const LeafletMap = ({
     }, [clearRoute, onLineToggle]);
 
     const pathSet = useMemo(() => new Set(path.map(String)), [path]);
+    const stationOcclusionTargets = useMemo(() => {
+        return nodes.map((station) => {
+            const id = String(station.id);
+            const isLiveClosed = liveClosedSet.has(id);
+            const isHypotheticalClosed = hypotheticalSettingsEnabled && closedSet.has(id);
+
+            return {
+                id,
+                lat: station.lat,
+                lon: station.lon,
+                isHighlighted: id === String(highlightedStationId),
+                isStart: id === String(start),
+                isOnPath: pathSet.has(id),
+                isClosed: isLiveClosed || isHypotheticalClosed,
+            };
+        });
+    }, [
+        closedSet,
+        highlightedStationId,
+        hypotheticalSettingsEnabled,
+        liveClosedSet,
+        nodes,
+        pathSet,
+        start,
+    ]);
 
     const pathPositions = useMemo(() => {
         if (!path.length) return [];
@@ -631,30 +667,37 @@ const LeafletMap = ({
                     hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                     interactionMode={interactionMode}
                 />
-                {trainVisualsEnabled && showTrains && (
-                    <CanvasTrainLayer
-                        trains={filteredTrains}
-                        selectedTrainId={selectedTrainId}
-                        onTrainSelect={handleTrainSelect}
-                    />
-                )}
+                <Pane name={TRAIN_PANE_NAME} style={{ zIndex: 450 }}>
+                    {trainVisualsEnabled && showTrains && (
+                        <CanvasTrainLayer
+                            trains={filteredTrains}
+                            selectedTrainId={selectedTrainId}
+                            onTrainSelect={handleTrainSelect}
+                            stations={stationOcclusionTargets}
+                            paneName={TRAIN_PANE_NAME}
+                        />
+                    )}
+                </Pane>
 
-                <StationLayer
-                    nodes={nodes}
-                    startId={start}
-                    setStartId={setStart}
-                    pathSet={pathSet}
-                    closedSet={closedSet}
-                    hasPath={hasPath}
-                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                    redXIcon={redXIcon}
-                    onSingleClickStation={handleSingleClickStation}
-                    onDoubleClickStation={handleToggleStationClosure}
-                    zoomLevel={zoomLevel}
-                    liveClosedSet={liveClosedSet}
-                    interactionMode={interactionMode}
-                    highlightedStationId={highlightedStationId}
-                />
+                <Pane name={STATION_PANE_NAME} style={{ zIndex: 460 }}>
+                    <StationLayer
+                        nodes={nodes}
+                        startId={start}
+                        setStartId={setStart}
+                        pathSet={pathSet}
+                        closedSet={closedSet}
+                        hasPath={hasPath}
+                        hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                        redXIcon={redXIcon}
+                        onSingleClickStation={handleSingleClickStation}
+                        onDoubleClickStation={handleToggleStationClosure}
+                        zoomLevel={zoomLevel}
+                        liveClosedSet={liveClosedSet}
+                        interactionMode={interactionMode}
+                        highlightedStationId={highlightedStationId}
+                        paneName={STATION_PANE_NAME}
+                    />
+                </Pane>
             </MapContainer>
 
             <SelectedTrainPanel

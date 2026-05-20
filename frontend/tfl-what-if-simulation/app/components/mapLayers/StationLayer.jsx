@@ -1,25 +1,9 @@
 import React, { Fragment } from "react";
 import { CircleMarker, Tooltip, Marker } from "react-leaflet";
-import { ZOOM_LEVELS } from "../mapComponents/constants.js";
-
-/**
- * zoom level 12 - radius 5
- * zoom level 13 - radius 7
- * zoom level 14 - radius 9
- * zoom level 15 - radius 11
- * zoom level 16 - radius 13
- */
-
-function getRadiusForZoom(zoom) {
-    const z = Math.min(16, Math.max(12, Number.isFinite(zoom) ? zoom : 14));
-    const lowerZoom = Math.floor(z);
-    const upperZoom = Math.ceil(z);
-    const lowerRadius = ZOOM_LEVELS[lowerZoom] ?? 9;
-    const upperRadius = ZOOM_LEVELS[upperZoom] ?? lowerRadius;
-    const progress = z - lowerZoom;
-
-    return lowerRadius + ((upperRadius - lowerRadius) * progress);
-}
+import {
+    getStationMarkerRadius,
+    getStationMarkerStrokeWeight,
+} from "../mapComponents/stationMarkerSizing.js";
 
 function StationLayerComponent({
     nodes,
@@ -36,6 +20,7 @@ function StationLayerComponent({
     liveClosedSet = new Set(),
     interactionMode = "route",
     highlightedStationId,
+    paneName,
 }) {
 
     return (
@@ -58,39 +43,44 @@ function StationLayerComponent({
                 const isClosed = isLiveClosed || isHypotheticalClosed;
 
                 const dim = hasPath && !isOnPath && !isStart;
-
-                const baseRadius = getRadiusForZoom(zoomLevel);
-
-                const radius =
-                    isHighlighted ? baseRadius + 4 :
-                    isStart ? baseRadius + 2 :
-                    isOnPath ? baseRadius + 1 :
-                    baseRadius;
+                const radius = getStationMarkerRadius({
+                    zoomLevel,
+                    isHighlighted,
+                    isStart,
+                    isOnPath,
+                });
+                const strokeWeight = getStationMarkerStrokeWeight({
+                    isHighlighted,
+                    isStart,
+                    isOnPath,
+                    isClosed,
+                });
 
                 return (
-    <Fragment key={id}>
+                    <Fragment key={id}>
+                        {isHighlighted && (
+                            <CircleMarker
+                                center={[s.lat, s.lon]}
+                                radius={radius + 8}
+                                interactive={false}
+                                pane={paneName}
+                                pathOptions={{
+                                    color: "#3b82f6",
+                                    weight: 3,
+                                    fillColor: "#3b82f6",
+                                    fillOpacity: 0.25,
+                                    opacity: 0.8,
+                                }}
+                            />
+                        )}
 
-        {isHighlighted && (
-            <CircleMarker
-                center={[s.lat, s.lon]}
-                radius={radius + 8}
-                interactive={false}
-                pathOptions={{
-                    color: "#3b82f6",
-                    weight: 3,
-                    fillColor: "#3b82f6",
-                    fillOpacity: 0.25,
-                    opacity: 0.8,
-                }}
-            />
-        )}
-
-        <CircleMarker
-            center={[s.lat, s.lon]}
-            radius={radius}
-            eventHandlers={{
-                click: (e) => {
-                    e?.originalEvent?.stopPropagation?.();
+                        <CircleMarker
+                            center={[s.lat, s.lon]}
+                            radius={radius}
+                            pane={paneName}
+                            eventHandlers={{
+                                click: (e) => {
+                                    e?.originalEvent?.stopPropagation?.();
 
                                     if (hypotheticalSettingsEnabled && interactionMode === "closures") {
                                         onDoubleClickStation?.(id);
@@ -98,53 +88,54 @@ function StationLayerComponent({
                                         return;
                                     }
 
-                    if (isClosed) return;
+                                    if (isClosed) return;
 
-                    if (isStart) {
-                        setStartId(null);
-                        return;
-                    }
+                                    if (isStart) {
+                                        setStartId(null);
+                                        return;
+                                    }
 
-                    onSingleClickStation?.(id);
-                },
-                dblclick: (e) => {
-                    e?.originalEvent?.preventDefault?.();
-                    e?.originalEvent?.stopPropagation?.();
+                                    onSingleClickStation?.(id);
+                                },
+                                dblclick: (e) => {
+                                    e?.originalEvent?.preventDefault?.();
+                                    e?.originalEvent?.stopPropagation?.();
 
-                    if (hypotheticalSettingsEnabled && interactionMode !== "closures") {
-                        onDoubleClickStation?.(id);
-                        setStartId(null);
-                    }
-                },
-            }}
-            pathOptions={{
-                color: isClosed
-                    ? "#ef4444"
-                    : isHighlighted
-                    ? "#3b82f6"
-                    : isStart || isOnPath
-                    ? "#22c55e"    
-                    : "#ffffff",
-                weight: isHighlighted ? 5 : isStart || isOnPath || isClosed ? 3 : 2,
-                fillColor: isClosed
-                    ? "#7f1d1d"
-                    : isHighlighted
-                    ? "#1d4ed8"
-                    : isOnPath
-                    ? "#052e16"
-                    : "#000000",
-                fillOpacity: dim ? 0.6 : 1,
-                opacity: dim ? 0.35 : 1,
-            }}
-        >
-            {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
-        </CircleMarker>
+                                    if (hypotheticalSettingsEnabled && interactionMode !== "closures") {
+                                        onDoubleClickStation?.(id);
+                                        setStartId(null);
+                                    }
+                                },
+                            }}
+                            pathOptions={{
+                                color: isClosed
+                                    ? "#ef4444"
+                                    : isHighlighted
+                                    ? "#3b82f6"
+                                    : isStart || isOnPath
+                                    ? "#22c55e"
+                                    : "#ffffff",
+                                weight: strokeWeight,
+                                fillColor: isClosed
+                                    ? "#7f1d1d"
+                                    : isHighlighted
+                                    ? "#1d4ed8"
+                                    : isOnPath
+                                    ? "#052e16"
+                                    : "#000000",
+                                fillOpacity: dim ? 0.6 : 1,
+                                opacity: dim ? 0.35 : 1,
+                            }}
+                        >
+                            {!hasPath && <Tooltip sticky>{s.name}</Tooltip>}
+                        </CircleMarker>
 
                         {redXIcon && (isLiveClosed || (hypotheticalSettingsEnabled && isHypotheticalClosed)) && (
                             <Marker
                                 position={[s.lat, s.lon]}
                                 icon={redXIcon}
                                 interactive={false}
+                                pane={paneName}
                             />
                         )}
                     </Fragment>
@@ -171,7 +162,8 @@ const StationLayer = React.memo(StationLayerComponent, (prev, next) => {
         prev.zoomLevel === next.zoomLevel &&
         prev.liveClosedSet === next.liveClosedSet &&
         prev.interactionMode === next.interactionMode &&
-        prev.highlightedStationId === next.highlightedStationId
+        prev.highlightedStationId === next.highlightedStationId &&
+        prev.paneName === next.paneName
     );
 });
 
