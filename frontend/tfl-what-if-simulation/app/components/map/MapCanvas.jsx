@@ -42,7 +42,7 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 const COLORS = {
     bg: "var(--map-bg)",                  // Background colour for map container.
     card: "var(--panel-bg)",  // HUD and control backgrounds.
-    border: "var",              // Border for HUD / UI panels.
+    border: "var(--panel-border)",              // Border for HUD / UI panels.
     accent: "#3b82f6",              // Highlight colour for HUD labels.
     text: "#94a3b8",                // Primary text colour.
     textMuted: "#64748b",           // Secondary / muted text.
