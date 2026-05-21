@@ -88,23 +88,6 @@ function MapInstance({ onReady }) {
     return null;
 }
 
-function RouteFitController({ pathPositions }) {
-    const map = useMap();
-
-    useEffect(() => {
-        if (!map || !pathPositions || pathPositions.length < 2) return;
-
-        map.fitBounds(pathPositions, {
-            padding: [80, 80],
-            maxZoom: 14,
-            animate: true,
-        });
-    }, [map, pathPositions]);
-
-    return null;
-}
-
-
 function ClearOnMapClick({ enabled, onClear }) {
     useMapEvents({
         click() {
@@ -112,6 +95,38 @@ function ClearOnMapClick({ enabled, onClear }) {
             onClear?.();
         }
     });
+    return null;
+}
+
+function RouteFitController({ pathPositions, hasPath }) {
+    const map = useMap();
+    const lastFitKeyRef = useRef("");
+
+    useEffect(() => {
+        if (!map || !hasPath || !Array.isArray(pathPositions) || pathPositions.length < 2) {
+            lastFitKeyRef.current = "";
+            return;
+        }
+
+        const boundsPositions = pathPositions.filter(([lat, lon]) => (
+            Number.isFinite(Number(lat)) && Number.isFinite(Number(lon))
+        ));
+
+        if (boundsPositions.length < 2) return;
+
+        const fitKey = boundsPositions.map(([lat, lon]) => `${lat},${lon}`).join("|");
+        if (fitKey === lastFitKeyRef.current) return;
+        lastFitKeyRef.current = fitKey;
+
+        const bounds = L.latLngBounds(boundsPositions);
+        map.fitBounds(bounds, {
+            paddingTopLeft: [90, 120],
+            paddingBottomRight: [90, 90],
+            maxZoom: 14,
+            animate: true,
+        });
+    }, [map, pathPositions, hasPath]);
+
     return null;
 }
 
@@ -670,8 +685,8 @@ const LeafletMap = ({
             {/* Camera Change Listener */}
             <MapEvents onChange={handleMapChange} />
             <MapInstance onReady={onMapReady} />
-            <RouteFitController pathPositions={pathPositions} />
             <ClearOnMapClick enabled={hasPath && interactionMode !== "closures"} onClear={clearRoute} />
+            <RouteFitController pathPositions={pathPositions} hasPath={hasPath} />
 
                 <RouteLayer pathPositions={pathPositions} />
 
