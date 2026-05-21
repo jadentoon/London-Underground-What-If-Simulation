@@ -104,6 +104,7 @@ export function MapControlPanelContent({
     showHeading = true,
     isTouchLayout = false,
     showInteractionModeToggle = false,
+    showWhatIfToggle = true,
     interactionMode = "route",
     onInteractionModeChange,
 }) {
@@ -157,52 +158,54 @@ export function MapControlPanelContent({
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {showHeading && <h2 style={{ margin: 0, color: COLORS.text }}>Settings</h2>}
 
-            <div
-                style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    background: "rgba(0, 0, 0, 0.3)",
-                    border: `1px solid ${COLORS.border}`,
-                    borderRadius: 12,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    color: COLORS.text,
-                    fontSize: 14,
-                    fontWeight: 500,
-                }}
-            >
-                <span>What-If Mode</span>
-                <button
-                    onClick={onToggleWhatIfMode}
+            {showWhatIfToggle && (
+                <div
                     style={{
-                        position: "relative",
-                        width: 51,
-                        height: 31,
-                        background: hypotheticalSettingsEnabled ? accentColour : "rgba(120, 120, 128, 0.32)",
-                        borderRadius: 15.5,
-                        border: "none",
-                        cursor: "pointer",
-                        transition: "background-color 0.3s ease",
-                        outline: "none",
-                        padding: 0,
+                        width: "100%",
+                        padding: "12px 16px",
+                        background: "rgba(0, 0, 0, 0.3)",
+                        border: `1px solid ${COLORS.border}`,
+                        borderRadius: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        color: COLORS.text,
+                        fontSize: 14,
+                        fontWeight: 500,
                     }}
                 >
-                    <div
+                    <span>What-If Mode</span>
+                    <button
+                        onClick={onToggleWhatIfMode}
                         style={{
-                            position: "absolute",
-                            top: 2,
-                            left: hypotheticalSettingsEnabled ? 22 : 2,
-                            width: 27,
-                            height: 27,
-                            background: "#fff",
-                            borderRadius: "50%",
-                            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
-                            transition: "left 0.3s ease",
+                            position: "relative",
+                            width: 51,
+                            height: 31,
+                            background: hypotheticalSettingsEnabled ? accentColour : "rgba(120, 120, 128, 0.32)",
+                            borderRadius: 15.5,
+                            border: "none",
+                            cursor: "pointer",
+                            transition: "background-color 0.3s ease",
+                            outline: "none",
+                            padding: 0,
                         }}
-                    />
-                </button>
-            </div>
+                    >
+                        <div
+                            style={{
+                                position: "absolute",
+                                top: 2,
+                                left: hypotheticalSettingsEnabled ? 22 : 2,
+                                width: 27,
+                                height: 27,
+                                background: "#fff",
+                                borderRadius: "50%",
+                                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
+                                transition: "left 0.3s ease",
+                            }}
+                        />
+                    </button>
+                </div>
+            )}
 
             {showInteractionModeToggle && hypotheticalSettingsEnabled && (
                 <InteractionModeToggle

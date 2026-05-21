@@ -51,6 +51,74 @@ const COLORS = {
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
 const LIVE_CLOSURE_POLL_MS = 60_000;
 
+function MainScreenWhatIfToggle({
+    COLORS,
+    hypotheticalSettingsEnabled,
+    accentColor: accentColour,
+    onToggleWhatIfMode,
+    layout,
+}) {
+    const top = layout?.top ?? 20;
+    const right = layout?.right ?? 70;
+    return (
+        <div
+            style={{
+                position: "fixed",
+                top,
+                right,
+                minWidth: 220,
+                padding: "12px 16px",
+                background: COLORS.card,
+                backdropFilter: "blur(10px)",
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 16,
+                color: COLORS.text,
+                fontSize: 14,
+                fontWeight: 500,
+                boxShadow: "0 12px 36px rgba(0, 0, 0, 0.28)",
+                zIndex: 1001,
+            }}
+        >
+            <span>What-If Mode</span>
+            <button
+                onClick={onToggleWhatIfMode}
+                style={{
+                    position: "relative",
+                    width: 51,
+                    height: 31,
+                    background: hypotheticalSettingsEnabled ? accentColour : "rgba(120, 120, 128, 0.32)",
+                    borderRadius: 15.5,
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "background-color 0.3s ease",
+                    outline: "none",
+                    padding: 0,
+                    flex: "0 0 auto",
+                }}
+                aria-label="Toggle What-If Mode"
+            >
+                <div
+                    style={{
+                        position: "absolute",
+                        top: 2,
+                        left: hypotheticalSettingsEnabled ? 22 : 2,
+                        width: 27,
+                        height: 27,
+                        background: "#fff",
+                        borderRadius: "50%",
+                        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
+                        transition: "left 0.3s ease",
+                    }}
+                />
+            </button>
+        </div>
+    );
+}
+
 /**
  * MapCanvas
  * 
@@ -111,6 +179,9 @@ export function MapCanvas() {
     const sidebarOffset = isSidebarOpen && !isMobilePortrait ? sidebarWidth + 85 : null;
     const showMobileModeBar = isMobilePortrait && hypotheticalSettingsEnabled;
     const interactionMode = showMobileModeBar ? mobileInteractionMode : "route";
+    const desktopFloatingRight = hypotheticalSettingsEnabled ? 40 : 70;
+    const whatIfToggleTop = hypotheticalSettingsEnabled ? 150 : 20;
+    const stationSearchTop = hypotheticalSettingsEnabled ? 222 : 92;
 
     const liveClosedStations = useLiveStationClosures({
         enabled: !hypotheticalSettingsEnabled,
@@ -207,14 +278,6 @@ export function MapCanvas() {
         clearClosedLines();
         setIsSidebarOpen(false);
     }, [clearClosedLines]);
-
-    const handleOpenWhatIfMode = useCallback(() => {
-        setHypotheticalSettingsEnabled(true);
-        setMobileInteractionMode("closures");
-        setIsSidebarOpen(true);
-        clearRoutePanel();
-        setSelectedTrainId(null);
-    }, [clearRoutePanel]);
 
     const handleLoadScenario = useCallback((scenarioId) => {
         const loadedScenario = loadScenario(scenarioId);
@@ -342,67 +405,20 @@ export function MapCanvas() {
                 titleShadow={titleShadow}
             />
 
-            {!hypotheticalSettingsEnabled && !isMobilePortrait && (
-                <button
-                    onClick={handleOpenWhatIfMode}
-                    type="button"
-                    style={{
-                        position: "fixed",
-                        top: 96,
-                        right: 70,
-                        width: 320,
-                        padding: "14px 16px",
-                        background: "rgba(251, 191, 36, 0.16)",
-                        backdropFilter: "blur(10px)",
-                        border: "1px solid rgba(251, 191, 36, 0.65)",
-                        borderRadius: 18,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        cursor: "pointer",
-                        zIndex: 999,
-                        color: "#fef3c7",
-                        boxShadow: "0 16px 42px rgba(0, 0, 0, 0.32)",
-                    }}
-                    title="Open the What-If Simulator"
-                >
-                    <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
-                        <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: "#fbbf24", fontWeight: 900 }}>
-                            What-If Simulator
-                        </span>
-                        <span style={{ fontSize: 15, fontWeight: 900, color: "#fff7ed" }}>
-                            Try What-If Mode
-                        </span>
-                        <span style={{ fontSize: 12, color: "rgba(254, 243, 199, 0.78)", textAlign: "left" }}>
-                            Simulate station or line closures.
-                        </span>
-                    </span>
-                    <span
-                        aria-hidden="true"
-                        style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 999,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "rgba(251, 191, 36, 0.22)",
-                            color: "#fbbf24",
-                            fontSize: 18,
-                            fontWeight: 900,
-                            flex: "0 0 auto",
-                        }}
-                    >
-                        ⚡
-                    </span>
-                </button>
+            {!isMobilePortrait && (
+                <MainScreenWhatIfToggle
+                    COLORS={COLORS}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    accentColor={accentColour}
+                    onToggleWhatIfMode={handleToggleWhatIfMode}
+                    layout={{ top: whatIfToggleTop, right: desktopFloatingRight }}
+                />
             )}
 
             <MapSearchBox
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 isSidebarOpen={isSidebarOpen}
-                layout={{ isMobilePortrait }}
+                layout={{ isMobilePortrait, desktopTop: stationSearchTop, desktopRight: desktopFloatingRight }}
                 COLORS={COLORS}
                 accentColor={accentColour}
                 stationQuery={stationQuery}

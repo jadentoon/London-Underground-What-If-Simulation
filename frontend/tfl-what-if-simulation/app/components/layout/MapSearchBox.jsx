@@ -36,8 +36,8 @@ export function MapSearchBox({
     onSearchInputFocus,
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
-    const desktopTop = hypotheticalSettingsEnabled ? 148 : 20;
-    const desktopRight = 70;
+    const desktopTop = layout?.desktopTop ?? 92;
+    const desktopRight = layout?.desktopRight ?? 70;
     const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
     const [isOpen, setIsOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -63,7 +63,6 @@ export function MapSearchBox({
     useEffect(() => {
         setSelectedIndex(0);
     }, [stationQuery, stationMatches.length]);
-
 
     useEffect(() => {
         if (isMobilePortrait) return;

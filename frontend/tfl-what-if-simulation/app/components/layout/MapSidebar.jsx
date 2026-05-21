@@ -89,6 +89,7 @@ export function MapSidebar({
                 onToggleShowTrains={onToggleShowTrains}
                 onTrainFilterModeChange={onTrainFilterModeChange}
                 onToggleVisibleTrainLine={onToggleVisibleTrainLine}
+                showWhatIfToggle={false}
             />
         </div>
     );
