@@ -116,9 +116,6 @@ export function MapControlPanelContent({
     const trainFeedLabel = isLiveTrainFeed ? "Live TfL arrivals" : "Schedule fallback";
     const showFeedStatusBlocks = !hypotheticalSettingsEnabled;
 
-    const { theme, setTheme } = useTheme();
-    const isLightTheme = theme === "light";
-
     const [expandedLineId, setExpandedLineId] = useState(null);
     const [selectedScenarioId, setSelectedScenarioId] = useState("");
     const [scenarioName, setScenarioName] = useState("");
@@ -129,6 +126,9 @@ export function MapControlPanelContent({
     useEffect(() => {
         setHasMounted(true);
     }, []);
+
+    const { resolvedTheme, setTheme } = useTheme();
+    const isLightTheme = hasMounted && resolvedTheme === "light";
 
     const handleMouseEnter = (lineId, hasDelay) => {
         if (isTouchLayout || !hasDelay) return;
