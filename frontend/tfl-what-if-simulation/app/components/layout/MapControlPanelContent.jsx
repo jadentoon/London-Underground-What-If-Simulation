@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getDelaySeverityColor as getDelaySeverityColour } from "../mapComponents/delayUtils";
 
 function InteractionModeToggle({
@@ -119,6 +119,12 @@ export function MapControlPanelContent({
     const [selectedScenarioId, setSelectedScenarioId] = useState("");
     const [scenarioName, setScenarioName] = useState("");
     const hoverTimeoutRef = useRef(null);
+
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     const handleMouseEnter = (lineId, hasDelay) => {
         if (isTouchLayout || !hasDelay) return;
@@ -589,6 +595,7 @@ export function MapControlPanelContent({
                             )
                             : "rgba(0,0,0,0.3)";
                         const isExpanded = expandedLineId === line.id;
+                        const isLineButtonDisabled = hasMounted && !canToggleLine && !canInspectDelay;
 
                         return (
                             <div
@@ -610,7 +617,7 @@ export function MapControlPanelContent({
                             >
                                 <button
                                     onClick={() => handleLineAction(line.id, showDelay)}
-                                    disabled={!canToggleLine && !canInspectDelay}
+                                    disabled={isLineButtonDisabled}
                                     style={{
                                         display: "flex",
                                         alignItems: "center",
@@ -620,7 +627,9 @@ export function MapControlPanelContent({
                                         background: "transparent",
                                         border: "none",
                                         color: COLORS.text,
-                                        cursor: canToggleLine || canInspectDelay ? "pointer" : (showDelay ? "help" : "default"),
+                                        cursor: isLineButtonDisabled
+                                            ? "default"
+                                            : (canToggleLine || canInspectDelay ? "pointer" : "help"),
                                         transition: "background-color 0.2s ease",
                                     }}
                                 >
