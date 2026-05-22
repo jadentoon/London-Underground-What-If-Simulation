@@ -164,6 +164,16 @@ export function MapControlPanelContent({
         }
     };
 
+    const formatScenarioOptionLabel = (scenario) => {
+        const maxNameLength = 24;
+        const name =
+            scenario.name.length > maxNameLength
+                ? `${scenario.name.slice(0, maxNameLength - 1)}...`
+                : scenario.name;
+
+        return `${name} (${scenario.closedStations.length}s, ${scenario.closedLines.length}l)`;
+    };
+
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {showHeading && <h2 style={{ margin: 0, color: COLORS.text }}>Settings</h2>}
@@ -302,41 +312,31 @@ export function MapControlPanelContent({
                             display: "flex",
                             flexDirection: "column",
                             gap: 10,
-                            padding: "12px",
+                            padding: "10px 12px",
+                            background: COLORS.soft,
                             border: `1px solid ${COLORS.border}`,
-                            borderRadius: 12,
-                            background: "rgba(0, 0, 0, 0.3)",
+                            borderRadius: 10,
                         }}
                     >
-                        <div>
-                            <h3 style={{ margin: "0 0 4px", color: COLORS.text }}>Saved Scenarios</h3>
-                            <div style={{ fontSize: 12, lineHeight: 1.4, color: COLORS.textMuted }}>
-                                Save the current closed stations and lines, then load them again later from this browser.
-                            </div>
+                        <h3 style={{ margin: "0", color: COLORS.text }}>Saved Scenarios</h3>
+
+                        <div style={{ fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
+                            Save the current closed stations and lines, then load them again later from this browser.
                         </div>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8 }}>
+                        <div style={{ display: "flex", gap: 8 }}>
                             <input
-                                type="text"
                                 value={scenarioName}
                                 onChange={(event) => setScenarioName(event.target.value)}
-                                onKeyDown={(event) => {
-                                    if (event.key !== "Enter") return;
-
-                                    const savedScenario = onSaveScenario?.(scenarioName);
-                                    if (savedScenario?.id) {
-                                        setSelectedScenarioId(savedScenario.id);
-                                        setScenarioName("");
-                                    }
-                                }}
                                 placeholder="Scenario name"
                                 style={{
+                                    flex: 1,
                                     minWidth: 0,
-                                    padding: "10px 12px",
-                                    background: "rgba(15, 23, 42, 0.85)",
-                                    color: COLORS.text,
+                                    padding: "8px 10px",
+                                    borderRadius: 8,
                                     border: `1px solid ${COLORS.border}`,
-                                    borderRadius: 10,
+                                    background: COLORS.control,
+                                    color: COLORS.text,
                                     outline: "none",
                                 }}
                             />
@@ -349,50 +349,60 @@ export function MapControlPanelContent({
                                     }
                                 }}
                                 style={{
-                                    padding: "10px 12px",
+                                    padding: "8px 12px",
                                     background: accentColour,
-                                    color: "#0f172a",
-                                    border: "none",
-                                    borderRadius: 10,
+                                    color: COLORS.textOnAccent,
+                                    border: `1px solid ${accentColour}`,
+                                    borderRadius: 8,
                                     cursor: "pointer",
-                                    fontWeight: 800,
+                                    fontWeight: 700,
                                 }}
                             >
                                 Save
                             </button>
                         </div>
 
-                        <select
-                            value={selectedScenarioId}
-                            onChange={(event) => setSelectedScenarioId(event.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: "10px 12px",
-                                background: "rgba(15, 23, 42, 0.85)",
-                                color: COLORS.text,
-                                border: `1px solid ${COLORS.border}`,
-                                borderRadius: 10,
-                                outline: "none",
-                            }}
-                        >
-                            <option value="">{savedScenarios.length ? "Choose saved scenario" : "No saved scenarios yet"}</option>
-                            {savedScenarios.map((scenario) => (
-                                <option key={scenario.id} value={scenario.id}>
-                                    {scenario.name} ({scenario.closedStations.length} stations, {scenario.closedLines.length} lines)
+                        <div style={{ width: "100%", boxSizing: "border-box" }}>
+                            <select
+                                value={selectedScenarioId}
+                                onChange={(event) => setSelectedScenarioId(event.target.value)}
+                                style={{
+                                    display: "block",
+                                    width: "calc(100% - 2px)",
+                                    maxWidth: "100%",
+                                    boxSizing: "border-box",
+                                    padding: "8px 10px",
+                                    background: COLORS.control,
+                                    color: COLORS.text,
+                                    border: `1px solid ${COLORS.border}`,
+                                    borderRadius: 8,
+                                    outline: "none",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                <option value="">
+                                    {savedScenarios.length ? "Choose saved scenario" : "No saved scenarios yet"}
                                 </option>
-                            ))}
-                        </select>
+                                {savedScenarios.map((scenario) => (
+                                    <option key={scenario.id} value={scenario.id}>
+                                        {formatScenarioOptionLabel(scenario)}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
                         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                             <button
                                 onClick={() => selectedScenarioId && onLoadScenario?.(selectedScenarioId)}
                                 disabled={!selectedScenarioId}
                                 style={{
-                                    padding: "9px 10px",
-                                    background: selectedScenarioId ? "rgba(34, 197, 94, 0.18)" : "rgba(148, 163, 184, 0.12)",
-                                    color: selectedScenarioId ? "#86efac" : COLORS.textMuted,
+                                    padding: "8px 10px",
+                                    background: selectedScenarioId ? COLORS.selectedControl : COLORS.subtle,
+                                    color: selectedScenarioId ? "#22c55e" : COLORS.textMuted,
                                     border: `1px solid ${selectedScenarioId ? "#22c55e" : COLORS.border}`,
-                                    borderRadius: 10,
+                                    borderRadius: 8,
                                     cursor: selectedScenarioId ? "pointer" : "not-allowed",
                                     fontWeight: 700,
                                 }}
@@ -407,11 +417,11 @@ export function MapControlPanelContent({
                                 }}
                                 disabled={!selectedScenarioId}
                                 style={{
-                                    padding: "9px 10px",
-                                    background: selectedScenarioId ? "rgba(239, 68, 68, 0.16)" : "rgba(148, 163, 184, 0.12)",
-                                    color: selectedScenarioId ? "#fca5a5" : COLORS.textMuted,
+                                    padding: "8px 10px",
+                                    background: selectedScenarioId ? "rgba(239, 68, 68, 0.16)" : COLORS.subtle,
+                                    color: selectedScenarioId ? "#ef4444" : COLORS.textMuted,
                                     border: `1px solid ${selectedScenarioId ? "#ef4444" : COLORS.border}`,
-                                    borderRadius: 10,
+                                    borderRadius: 8,
                                     cursor: selectedScenarioId ? "pointer" : "not-allowed",
                                     fontWeight: 700,
                                 }}
