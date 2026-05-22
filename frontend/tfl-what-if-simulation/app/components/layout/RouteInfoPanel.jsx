@@ -67,11 +67,11 @@ export function RouteInfoPanel({
                         background: COLORS.card,
                         color: COLORS.text,
                         backdropFilter: "blur(10px)",
-                        boxShadow: isMobilePortrait ? "0 12px 30px rgba(0,0,0,0.28)" : "none",
+                        boxShadow: isMobilePortrait ? COLORS.shadow : "none",
                     }}
                 >
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <div style={{ fontWeight: 700, color: "#e2e8f0" }}>
+                        <div style={{ fontWeight: 700, color: COLORS.textStrong }}>
                             {isMobilePortrait ? "Route Planner" : "Route"}
                         </div>
                         <div style={{ fontSize: 12, color: COLORS.textMuted }}>
@@ -98,7 +98,7 @@ export function RouteInfoPanel({
                                     padding: "8px 10px",
                                     borderRadius: 999,
                                     border: `1px solid ${COLORS.border}`,
-                                    background: "rgba(0, 0, 0, 0.18)",
+                                    background: COLORS.subtle,
                                     color: COLORS.text,
                                     fontWeight: 700,
                                     fontSize: 12,
@@ -134,7 +134,7 @@ export function RouteInfoPanel({
                         background: COLORS.card,
                         color: COLORS.text,
                         backdropFilter: "blur(10px)",
-                        boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+                        boxShadow: COLORS.shadowStrong,
                         overflow: "hidden",
                         borderRadius: isMobilePortrait ? 22 : 16,
                     }}
@@ -148,7 +148,7 @@ export function RouteInfoPanel({
                             borderBottom: `1px solid ${COLORS.border}`,
                         }}>
                         <div style={{ display: "flex", flexDirection: "column" }}>
-                            <div style={{ fontWeight: 800, color: "#e2e8f0" }}>
+                            <div style={{ fontWeight: 800, color: COLORS.textStrong }}>
                                 Route Details
                             </div>
                             <div style={{ fontSize: 12, color: COLORS.textMuted }}>
@@ -164,7 +164,7 @@ export function RouteInfoPanel({
                             style={{
                                 borderRadius: 12,
                                 border: `1px solid ${COLORS.border}`,
-                                background: "rgba(0,0,0,0.15)",
+                                background: COLORS.subtle,
                                 color: COLORS.text,
                                 padding: "6px 10px",
                                 cursor: "pointer",
@@ -191,11 +191,11 @@ export function RouteInfoPanel({
                                                     padding: "10px 12px",
                                                     borderRadius: 14,
                                                     border: `1px solid ${COLORS.border}`,
-                                                    background: "rgba(0, 0, 0, 0.14)",
+                                                    background: COLORS.subtle,
                                                 }}
                                             >
                                                 <div style={{ fontSize: 11, color: COLORS.textMuted }}>Duration</div>
-                                                <div style={{ marginTop: 4, fontWeight: 800, color: "#e2e8f0" }}>
+                                                <div style={{ marginTop: 4, fontWeight: 800, color: COLORS.textStrong }}>
                                                     {formatDuration(totalTravelSeconds)}
                                                 </div>
                                             </div>
@@ -204,11 +204,11 @@ export function RouteInfoPanel({
                                                     padding: "10px 12px",
                                                     borderRadius: 14,
                                                     border: `1px solid ${COLORS.border}`,
-                                                    background: "rgba(0, 0, 0, 0.14)",
+                                                    background: COLORS.subtle,
                                                 }}
                                             >
                                                 <div style={{ fontSize: 11, color: COLORS.textMuted }}>Changes</div>
-                                                <div style={{ marginTop: 4, fontWeight: 800, color: "#e2e8f0" }}>
+                                                <div style={{ marginTop: 4, fontWeight: 800, color: COLORS.textStrong }}>
                                                     {changes}
                                                 </div>
                                             </div>
@@ -217,11 +217,11 @@ export function RouteInfoPanel({
                                                     padding: "10px 12px",
                                                     borderRadius: 14,
                                                     border: `1px solid ${COLORS.border}`,
-                                                    background: "rgba(0, 0, 0, 0.14)",
+                                                    background: COLORS.subtle,
                                                 }}
                                             >
                                                 <div style={{ fontSize: 11, color: COLORS.textMuted }}>Stops</div>
-                                                <div style={{ marginTop: 4, fontWeight: 800, color: "#e2e8f0" }}>
+                                                <div style={{ marginTop: 4, fontWeight: 800, color: COLORS.textStrong }}>
                                                     {stopCount}
                                                 </div>
                                             </div>
@@ -232,7 +232,7 @@ export function RouteInfoPanel({
                                                 padding: "12px 14px",
                                                 borderRadius: 14,
                                                 border: `1px solid ${COLORS.border}`,
-                                                background: "rgba(0, 0, 0, 0.14)",
+                                                background: COLORS.subtle,
                                                 color: COLORS.textMuted,
                                                 fontSize: 13,
                                                 lineHeight: 1.45,
@@ -296,7 +296,7 @@ export function RouteInfoPanel({
                                                     padding: "10px 10px",
                                                     borderRadius: 12,
                                                     border: `1px solid ${COLORS.border}`,
-                                                    background: "rgba(0,0,0,0.12)",
+                                                    background: COLORS.subtle,
                                                 }}
                                             >
                                                 <div style={{ display: "flex", gap: 10, minWidth: 0 }}>
@@ -308,7 +308,7 @@ export function RouteInfoPanel({
                                                             marginTop: 4,
                                                             borderRadius: 999,
                                                             background: colour,
-                                                            boxShadow: "0 0 0 2px rgba(0,0,0,0.25)",
+                                                            boxShadow: `0 0 0 2px ${COLORS.border}`,
                                                             flex: "0 0 auto",
                                                         }}
                                                         title={label}
@@ -316,7 +316,7 @@ export function RouteInfoPanel({
 
                                                     {/* text */}
                                                     <div style={{ minWidth: 0 }}>
-                                                        <div style={{ fontWeight: 750, color: "#e2e8f0", fontSize: 13 }}>
+                                                        <div style={{ fontWeight: 750, color: COLORS.textStrong, fontSize: 13 }}>
                                                             {label}
                                                         </div>
                                                         <div style={{ fontSize: 12, color: COLORS.textMuted }}>
@@ -326,7 +326,7 @@ export function RouteInfoPanel({
                                                 </div>
 
                                                 {/* time */}
-                                                <div style={{ whiteSpace: "nowrap", fontWeight: 800, color: "#e2e8f0" }}>
+                                                <div style={{ whiteSpace: "nowrap", fontWeight: 800, color: COLORS.textStrong }}>
                                                     {formatDuration(g.travelTimeSeconds)}
                                                 </div>
                                             </div>

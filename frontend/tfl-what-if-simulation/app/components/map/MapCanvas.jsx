@@ -40,12 +40,25 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 
 // Theme colours used throughout the component.
 const COLORS = {
-    bg: "var(--map-bg)",                  // Background colour for map container.
-    card: "var(--panel-bg)",  // HUD and control backgrounds.
-    border: "var(--panel-border)",              // Border for HUD / UI panels.
-    accent: "#3b82f6",              // Highlight colour for HUD labels.
-    text: "#94a3b8",                // Primary text colour.
-    textMuted: "#64748b",           // Secondary / muted text.
+    bg: "var(--map-bg)",
+    card: "var(--panel-bg)",
+    border: "var(--panel-border)",
+    accent: "var(--accent)",
+    text: "var(--panel-text)",
+    textStrong: "var(--panel-text-strong)",
+    textMuted: "var(--panel-text-muted)",
+    soft: "var(--panel-bg-soft)",
+    subtle: "var(--panel-bg-subtle)",
+    strong: "var(--panel-bg-strong)",
+    control: "var(--panel-control-bg)",
+    selectedControl: "var(--panel-control-bg-selected)",
+    hover: "var(--panel-hover-bg)",
+    shadow: "var(--panel-shadow)",
+    shadowStrong: "var(--panel-shadow-strong)",
+    textOnAccent: "var(--text-on-accent)",
+    overlay: "var(--overlay-bg)",
+    titleShadow: "var(--title-shadow)",
+    whatIfAccent: "var(--what-if-accent)",
 };
 
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
@@ -97,8 +110,8 @@ export function MapCanvas() {
     const stationActionSequenceRef = useRef(0);
 
     // Dynamic accent colour based on hypothetical mode
-    const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
-    const titleShadow = "0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000";
+    const accentColour = hypotheticalSettingsEnabled ? COLORS.whatIfAccent : COLORS.accent;
+    const titleShadow = COLORS.titleShadow;
 
     const {
         hudState,
@@ -285,6 +298,7 @@ export function MapCanvas() {
 
             <LeafletMap
                 onMapChange={handleMapChange}
+                COLORS={COLORS}
                 hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                 closedStations={closedStations}
                 onToggleStationClosed={toggleClosedStation}
@@ -445,6 +459,7 @@ export function MapCanvas() {
             {hypotheticalSettingsEnabled && !isMobilePortrait && (
                 <MapWhatIfOverlay
                     isSidebarOpen={isSidebarOpen}
+                    COLORS={COLORS}
                     accentColor={accentColour}
                 />
             )}

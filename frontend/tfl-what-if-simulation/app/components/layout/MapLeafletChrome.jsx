@@ -38,7 +38,7 @@ export function MapLeafletChrome({ COLORS, accentColor, hypotheticalSettingsEnab
             }
             
             .leaflet-control-zoom a:hover {
-                background: ${hypotheticalSettingsEnabled ? 'rgba(251, 191, 36, 0.2)' : 'rgba(59, 130, 246, 0.2)'} !important;
+                background: ${COLORS.hover} !important;
                 color: ${accentColor} !important;
             }
             

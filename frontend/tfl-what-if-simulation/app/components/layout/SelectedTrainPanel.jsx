@@ -8,17 +8,27 @@ function formatArrivalTime(isoTimestamp) {
     return timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-function DetailRow({ label, value }) {
+const FALLBACK_COLORS = {
+    card: "rgba(15, 23, 42, 0.94)",
+    border: "rgba(148, 163, 184, 0.28)",
+    text: "#f8fafc",
+    textStrong: "#ffffff",
+    textMuted: "#94a3b8",
+    control: "rgba(15, 23, 42, 0.8)",
+    shadowStrong: "0 18px 45px rgba(0, 0, 0, 0.38)",
+};
+
+function DetailRow({ label, value, COLORS }) {
     if (!value) return null;
     return (
         <div style={{ display: "grid", gap: 2 }}>
-            <span style={{ color: "#94a3b8", fontSize: 11, textTransform: "uppercase" }}>{label}</span>
-            <span style={{ color: "#f8fafc", fontSize: 13 }}>{value}</span>
+            <span style={{ color: COLORS.textMuted, fontSize: 11, textTransform: "uppercase" }}>{label}</span>
+            <span style={{ color: COLORS.textStrong, fontSize: 13 }}>{value}</span>
         </div>
     );
 }
 
-export function SelectedTrainPanel({ train, layout, onClose }) {
+export function SelectedTrainPanel({ train, layout, COLORS = FALLBACK_COLORS, onClose }) {
     if (!train) return null;
 
     const lineId = String(train.lineId || "");
@@ -45,13 +55,13 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
                 width: isMobilePortrait ? "calc(100% - 24px)" : 320,
                 maxWidth: "calc(100% - 24px)",
                 zIndex: 1200,
-                border: "1px solid rgba(148, 163, 184, 0.28)",
+                border: `1px solid ${COLORS.border}`,
                 borderLeft: `4px solid ${lineColour}`,
                 borderRadius: 8,
-                background: "rgba(15, 23, 42, 0.94)",
-                boxShadow: "0 18px 45px rgba(0, 0, 0, 0.38)",
+                background: COLORS.strong ?? COLORS.card,
+                boxShadow: COLORS.shadowStrong,
                 backdropFilter: "blur(12px)",
-                color: "#f8fafc",
+                color: COLORS.text,
                 overflow: "hidden",
             }}
         >
@@ -62,16 +72,16 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
                     justifyContent: "space-between",
                     gap: 12,
                     padding: "14px 14px 10px 14px",
-                    borderBottom: "1px solid rgba(148, 163, 184, 0.18)",
+                    borderBottom: `1px solid ${COLORS.border}`,
                 }}
             >
                 <div style={{ minWidth: 0 }}>
-                    <div style={{ color: "#cbd5e1", fontSize: 12 }}>{train.isLive ? "Live train" : "Schedule estimate"}</div>
+                    <div style={{ color: COLORS.textMuted, fontSize: 12 }}>{train.isLive ? "Live train" : "Schedule estimate"}</div>
                     <h2
                         style={{
                             margin: 0,
                             marginTop: 2,
-                            color: "#ffffff",
+                            color: COLORS.textStrong,
                             fontSize: 16,
                             fontWeight: 800,
                             lineHeight: 1.25,
@@ -91,10 +101,10 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
                         display: "inline-flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        border: "1px solid rgba(148, 163, 184, 0.28)",
+                        border: `1px solid ${COLORS.border}`,
                         borderRadius: 6,
-                        background: "rgba(15, 23, 42, 0.8)",
-                        color: "#f8fafc",
+                        background: COLORS.control,
+                        color: COLORS.text,
                         cursor: "pointer",
                         flex: "0 0 auto",
                     }}
@@ -104,7 +114,7 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
             </div>
 
             <div style={{ display: "grid", gap: 12, padding: 14 }}>
-                <DetailRow label="Route" value={routeLabel} />
+                <DetailRow label="Route" value={routeLabel} COLORS={COLORS} />
                 <div
                     style={{
                         display: "grid",
@@ -112,12 +122,12 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
                         gap: 12,
                     }}
                 >
-                    <DetailRow label="Next station" value={train.toName || "Unknown"} />
-                    <DetailRow label="ETA" value={train.etaLabel || "Unknown"} />
+                    <DetailRow label="Next station" value={train.toName || "Unknown"} COLORS={COLORS} />
+                    <DetailRow label="ETA" value={train.etaLabel || "Unknown"} COLORS={COLORS} />
                 </div>
                 {train.punctualityLabel && (
                     <div style={{ display: "grid", gap: 2 }}>
-                        <span style={{ color: "#94a3b8", fontSize: 11, textTransform: "uppercase" }}>Status</span>
+                        <span style={{ color: COLORS.textMuted, fontSize: 11, textTransform: "uppercase" }}>Status</span>
                         <span style={{ color: statusColour, fontSize: 13, fontWeight: 800 }}>{train.punctualityLabel}</span>
                     </div>
                 )}
@@ -128,11 +138,11 @@ export function SelectedTrainPanel({ train, layout, onClose }) {
                         gap: 12,
                     }}
                 >
-                    <DetailRow label="Arrives at" value={arrivalLabel} />
-                    <DetailRow label="Platform" value={train.platformName} />
+                    <DetailRow label="Arrives at" value={arrivalLabel} COLORS={COLORS} />
+                    <DetailRow label="Platform" value={train.platformName} COLORS={COLORS} />
                 </div>
-                <DetailRow label="Towards" value={train.towards} />
-                <DetailRow label="Location" value={train.currentLocation} />
+                <DetailRow label="Towards" value={train.towards} COLORS={COLORS} />
+                <DetailRow label="Location" value={train.currentLocation} COLORS={COLORS} />
             </div>
         </section>
     );

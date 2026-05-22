@@ -46,14 +46,14 @@ export function MapHud({
                     marginBottom: showControls ? 12 : 10,
                 }}
             >
-                <div style={{ color: "#e2e8f0", fontWeight: 700 }}>Map Controls</div>
+                <div style={{ color: COLORS.textStrong, fontWeight: 700 }}>Map Controls</div>
                 <button
                     onClick={() => setShowControls((value) => !value)}
                     style={{
                         padding: "6px 10px",
                         borderRadius: 999,
                         border: `1px solid ${COLORS.border}`,
-                        background: "rgba(0, 0, 0, 0.18)",
+                        background: COLORS.subtle,
                         color: COLORS.text,
                         cursor: "pointer",
                         fontWeight: 700,
@@ -129,7 +129,7 @@ export function MapHud({
                     width: "100%",
                     padding: "8px 10px",
                     background: accentColor,
-                    color: "#0a0f1a",
+                    color: COLORS.textOnAccent,
                     border: "none",
                     borderRadius: 8,
                     cursor: "pointer",

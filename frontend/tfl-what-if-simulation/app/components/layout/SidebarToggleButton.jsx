@@ -45,12 +45,10 @@ export function SidebarToggleButton({
                 zIndex: 1001,
                 transition: isMobilePortrait ? "background-color 0.2s ease" : "left 0.3s ease",
                 outline: "none",
-                boxShadow: isMobilePortrait ? "0 10px 28px rgba(0, 0, 0, 0.24)" : "none",
+                boxShadow: isMobilePortrait ? COLORS.shadow : "none",
             }}
             onMouseEnter={(e) => {
-                e.currentTarget.style.background = hypotheticalSettingsEnabled
-                    ? "rgba(251, 191, 36, 0.2)"
-                    : "rgba(59, 130, 246, 0.2)";
+                e.currentTarget.style.background = COLORS.hover;
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.background = COLORS.card;

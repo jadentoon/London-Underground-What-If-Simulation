@@ -25,9 +25,9 @@ export function MapTitleOverlay({ hypotheticalSettingsEnabled, isSidebarOpen, la
                         padding: "10px 14px",
                         borderRadius: 18,
                         border: `1px solid ${COLORS.border}`,
-                        background: "rgba(15, 23, 42, 0.76)",
+                        background: COLORS.card,
                         backdropFilter: "blur(10px)",
-                        boxShadow: "0 10px 28px rgba(0, 0, 0, 0.22)",
+                        boxShadow: COLORS.shadow,
                     }}
                 >
                     <span style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.textMuted }}>
@@ -37,7 +37,7 @@ export function MapTitleOverlay({ hypotheticalSettingsEnabled, isSidebarOpen, la
                         style={{
                             fontSize: 15,
                             fontWeight: 800,
-                            color: "#e2e8f0",
+                            color: COLORS.textStrong,
                             textShadow: titleShadow,
                             whiteSpace: "nowrap",
                             overflow: "hidden",

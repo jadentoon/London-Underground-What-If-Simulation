@@ -123,6 +123,7 @@ function ClearOnMapClick({ enabled, onClear }) {
  */
 const LeafletMap = ({
     onMapChange,
+    COLORS,
     hypotheticalSettingsEnabled = false,
     closedStations = new Set(),
     closedLines = new Set(),
@@ -703,6 +704,7 @@ const LeafletMap = ({
             <SelectedTrainPanel
                 train={selectedTrain}
                 layout={{ isMobilePortrait }}
+                COLORS={COLORS}
                 onClose={() => onSelectedTrainIdChange?.(null)}
             />
         </>

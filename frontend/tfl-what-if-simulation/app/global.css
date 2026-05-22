@@ -48,6 +48,18 @@
     --panel-text: #94a3ba;
     --panel-text-strong: #e2e8f0;
     --panel-text-muted: #64748b;
+    --panel-bg-soft: rgba(0, 0, 0, 0.3);
+    --panel-bg-subtle: rgba(0, 0, 0, 0.18);
+    --panel-bg-strong: rgba(15, 23, 42, 0.92);
+    --panel-control-bg: rgba(15, 23, 42, 0.65);
+    --panel-control-bg-selected: rgba(34, 197, 94, 0.14);
+    --panel-hover-bg: rgba(59, 130, 246, 0.2);
+    --panel-shadow: 0 16px 42px rgba(0, 0, 0, 0.3);
+    --panel-shadow-strong: 0 18px 45px rgba(0, 0, 0, 0.45);
+    --text-on-accent: #0f172a;
+    --overlay-bg: rgba(2, 6, 23, 0.5);
+    --title-shadow: 0 0 4px #000, 0 0 8px #000, 0 0 12px #000, 0 0 18px #000, 0 0 24px #000;
+    --what-if-accent: #fbbf24;
     --map-grid: oklch(0.3 0.08 250);
     --map-grid-major: oklch(0.4 0.12 250);
     --map-label: oklch(0.55 0.05 250);
@@ -108,6 +120,18 @@
     --panel-text: #334155;
     --panel-text-strong: #0f172a;
     --panel-text-muted: #64748b;
+    --panel-bg-soft: rgba(241, 245, 249, 0.86);
+    --panel-bg-subtle: rgba(226, 232, 240, 0.72);
+    --panel-bg-strong: rgba(255, 255, 255, 0.94);
+    --panel-control-bg: rgba(248, 250, 252, 0.94);
+    --panel-control-bg-selected: rgba(34, 197, 94, 0.12);
+    --panel-hover-bg: rgba(37, 99, 235, 0.12);
+    --panel-shadow: 0 16px 42px rgba(15, 23, 42, 0.16);
+    --panel-shadow-strong: 0 18px 45px rgba(15, 23, 42, 0.18);
+    --text-on-accent: #ffffff;
+    --overlay-bg: rgba(15, 23, 42, 0.28);
+    --title-shadow: 0 1px 2px rgba(255, 255, 255, 0.9);
+    --what-if-accent: #b7791f;
 }
 
 @theme inline {
@@ -185,12 +209,12 @@ body {
 }
 
 body {
-    background-color: #000;
-    /* keep the background black so that it doesnt flash when zooming */
+    background-color: var(--map-bg);
+    /* keep the background aligned with the selected map theme so it doesnt flash when zooming */
 }
 
 .leaflet-container {
-    background-color: #000 !important;
+    background-color: var(--map-bg) !important;
 }
 
 .leaflet-tile {

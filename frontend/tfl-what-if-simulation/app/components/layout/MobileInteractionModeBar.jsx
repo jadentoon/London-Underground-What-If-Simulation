@@ -32,9 +32,9 @@ export function MobileInteractionModeBar({
                     padding: 8,
                     borderRadius: 18,
                     border: `1px solid ${COLORS.border}`,
-                    background: "rgba(15, 23, 42, 0.92)",
+                    background: COLORS.strong,
                     backdropFilter: "blur(12px)",
-                    boxShadow: "0 14px 30px rgba(0, 0, 0, 0.32)",
+                    boxShadow: COLORS.shadow,
                 }}
             >
                 {[
@@ -51,8 +51,8 @@ export function MobileInteractionModeBar({
                                 padding: "10px 12px",
                                 borderRadius: 12,
                                 border: `1px solid ${active ? accentColour : COLORS.border}`,
-                                background: active ? accentColour : "rgba(0, 0, 0, 0.15)",
-                                color: active ? "#0f172a" : COLORS.text,
+                                background: active ? accentColour : COLORS.subtle,
+                                color: active ? COLORS.textOnAccent : COLORS.text,
                                 fontWeight: 800,
                                 fontSize: 13,
                                 cursor: "pointer",
