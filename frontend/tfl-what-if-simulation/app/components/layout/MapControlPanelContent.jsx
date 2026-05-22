@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useTheme } from "next-themes";
 import { getDelaySeverityColor as getDelaySeverityColour } from "../mapComponents/delayUtils";
 
 function InteractionModeToggle({
@@ -110,6 +111,9 @@ export function MapControlPanelContent({
     const trainFeedLabel = isLiveTrainFeed ? "Live TfL arrivals" : "Schedule fallback";
     const showFeedStatusBlocks = !hypotheticalSettingsEnabled;
 
+    const { theme, setTheme } = useTheme();
+    const isLightTheme = theme === "light";
+
     const [expandedLineId, setExpandedLineId] = useState(null);
     const hoverTimeoutRef = useRef(null);
 
@@ -187,6 +191,55 @@ export function MapControlPanelContent({
                             position: "absolute",
                             top: 2,
                             left: hypotheticalSettingsEnabled ? 22 : 2,
+                            width: 27,
+                            height: 27,
+                            background: "#fff",
+                            borderRadius: "50%",
+                            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
+                            transition: "left 0.3s ease",
+                        }}
+                    />
+                </button>
+            </div>
+
+            <div
+                style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: COLORS.soft,
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    color: COLORS.text,
+                    fontSize: 14,
+                    fontWeight: 500,
+                }}
+            >
+                <span>Light Mode</span>
+                <button
+                    onClick={() => setTheme(isLightTheme ? "dark" : "light")}
+                    aria-label="Toggle Light Mode"
+                    aria-pressed={isLightTheme}
+                    style={{
+                        position: "relative",
+                        width: 51,
+                        height: 31,
+                        background: isLightTheme ? accentColour : "rgba(120, 120, 128, 0.32)",
+                        borderRadius: 15.5,
+                        border: "none",
+                        cursor: "pointer",
+                        transition: "background-color 0.3s ease",
+                        outline: "none",
+                        padding: 0,
+                    }}
+                >
+                    <div
+                        style={{
+                            position: "absolute",
+                            top: 2,
+                            left: isLightTheme ? 22 : 2,
                             width: 27,
                             height: 27,
                             background: "#fff",
