@@ -3,7 +3,7 @@
  * does also include the flashing dot next to the label for extra emphasis
  */
 
-export function MapWhatIfOverlay({ isSidebarOpen, accentColor }) {
+export function MapWhatIfOverlay({ isSidebarOpen, COLORS, accentColor }) {
     return (
         <>
             <div
@@ -79,9 +79,9 @@ export function MapWhatIfOverlay({ isSidebarOpen, accentColor }) {
                     fontFamily: "monospace",
                     fontSize: 40,
                     fontWeight: 700,
-                    color: "#fff",
+                    color: COLORS?.textStrong ?? "#fff",
                     zIndex: 999,
-                    textShadow: "0 0 10px rgba(255, 255, 255, 0.5)",
+                    textShadow: COLORS?.titleShadow ?? "0 0 10px rgba(255, 255, 255, 0.5)",
                 }}
             >
                 <span>WHAT-IF</span>

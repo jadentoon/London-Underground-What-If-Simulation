@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
 import { getDelaySeverityColor as getDelaySeverityColour } from "../mapComponents/delayUtils";
 
 function InteractionModeToggle({
@@ -16,7 +17,7 @@ function InteractionModeToggle({
                     gridTemplateColumns: "1fr 1fr",
                     gap: 8,
                     padding: 8,
-                    background: "rgba(0, 0, 0, 0.3)",
+                    background: COLORS.soft,
                     border: `1px solid ${COLORS.border}`,
                     borderRadius: 12,
                 }}
@@ -45,10 +46,10 @@ function InteractionModeToggle({
                                 alignItems: "flex-start",
                                 gap: 4,
                                 padding: "10px 12px",
-                                background: active ? accentColour : "rgba(15, 23, 42, 0.72)",
+                                background: active ? accentColour : COLORS.control,
                                 border: `1px solid ${active ? accentColour : COLORS.border}`,
                                 borderRadius: 10,
-                                color: active ? "#0f172a" : COLORS.text,
+                                color: active ? COLORS.textOnAccent : COLORS.text,
                                 cursor: "pointer",
                                 textAlign: "left",
                             }}
@@ -58,7 +59,7 @@ function InteractionModeToggle({
                                 style={{
                                     fontSize: 11,
                                     lineHeight: 1.35,
-                                    color: active ? "rgba(15, 23, 42, 0.78)" : COLORS.textMuted,
+                                    color: active ? COLORS.textOnAccent : COLORS.textMuted,
                                 }}
                             >
                                 {option.help}
@@ -115,6 +116,9 @@ export function MapControlPanelContent({
     const trainFeedLabel = isLiveTrainFeed ? "Live TfL arrivals" : "Schedule fallback";
     const showFeedStatusBlocks = !hypotheticalSettingsEnabled;
 
+    const { theme, setTheme } = useTheme();
+    const isLightTheme = theme === "light";
+
     const [expandedLineId, setExpandedLineId] = useState(null);
     const [selectedScenarioId, setSelectedScenarioId] = useState("");
     const [scenarioName, setScenarioName] = useState("");
@@ -169,7 +173,7 @@ export function MapControlPanelContent({
                     style={{
                         width: "100%",
                         padding: "12px 16px",
-                        background: "rgba(0, 0, 0, 0.3)",
+                        background: COLORS.soft,
                         border: `1px solid ${COLORS.border}`,
                         borderRadius: 12,
                         display: "flex",
@@ -212,6 +216,55 @@ export function MapControlPanelContent({
                     </button>
                 </div>
             )}
+
+            <div
+                style={{
+                    width: "100%",
+                    padding: "12px 16px",
+                    background: COLORS.soft,
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 12,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    color: COLORS.text,
+                    fontSize: 14,
+                    fontWeight: 500,
+                }}
+            >
+                <span>Light Mode</span>
+                <button
+                    onClick={() => setTheme(isLightTheme ? "dark" : "light")}
+                    aria-label="Toggle Light Mode"
+                    aria-pressed={isLightTheme}
+                    style={{
+                        position: "relative",
+                        width: 51,
+                        height: 31,
+                        background: isLightTheme ? accentColour : "rgba(120, 120, 128, 0.32)",
+                        borderRadius: 15.5,
+                        border: "none",
+                        cursor: "pointer",
+                        transition: "background-color 0.3s ease",
+                        outline: "none",
+                        padding: 0,
+                    }}
+                >
+                    <div
+                        style={{
+                            position: "absolute",
+                            top: 2,
+                            left: isLightTheme ? 22 : 2,
+                            width: 27,
+                            height: 27,
+                            background: "#fff",
+                            borderRadius: "50%",
+                            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
+                            transition: "left 0.3s ease",
+                        }}
+                    />
+                </button>
+            </div>
 
             {showInteractionModeToggle && hypotheticalSettingsEnabled && (
                 <InteractionModeToggle
@@ -450,7 +503,7 @@ export function MapControlPanelContent({
                                     color: COLORS.textMuted,
                                     fontSize: 11,
                                     lineHeight: 1.35,
-                                    background: "rgba(0, 0, 0, 0.2)",
+                                    background: COLORS.subtle,
                                 }}
                             >
                                 {trainFeedReason}
@@ -468,7 +521,7 @@ export function MapControlPanelContent({
                                 flexDirection: "column",
                                 gap: 8,
                                 padding: "10px 12px",
-                                background: "rgba(0, 0, 0, 0.3)",
+                                background: COLORS.soft,
                                 border: `1px solid ${COLORS.border}`,
                                 borderRadius: 10,
                             }}
@@ -481,7 +534,7 @@ export function MapControlPanelContent({
                                     justifyContent: "space-between",
                                     width: "100%",
                                     padding: "8px 10px",
-                                    background: "rgba(15, 23, 42, 0.65)",
+                                    background: COLORS.control,
                                     border: `1px solid ${COLORS.border}`,
                                     borderRadius: 8,
                                     color: COLORS.text,
@@ -510,10 +563,10 @@ export function MapControlPanelContent({
                                                     style={{
                                                         flex: 1,
                                                         padding: "8px 10px",
-                                                        background: active ? accentColour : "rgba(15, 23, 42, 0.65)",
+                                                        background: active ? accentColour : COLORS.control,
                                                         border: `1px solid ${active ? accentColour : COLORS.border}`,
                                                         borderRadius: 8,
-                                                        color: active ? "#0f172a" : COLORS.text,
+                                                        color: active ? COLORS.textOnAccent : COLORS.text,
                                                         cursor: "pointer",
                                                         fontWeight: active ? 700 : 500,
                                                     }}
@@ -539,7 +592,7 @@ export function MapControlPanelContent({
                                                             justifyContent: "space-between",
                                                             width: "100%",
                                                             padding: "8px 10px",
-                                                            background: selected ? "rgba(34, 197, 94, 0.14)" : "rgba(15, 23, 42, 0.65)",
+                                                            background: selected ? COLORS.selectedControl : COLORS.control,
                                                             border: `1px solid ${selected ? "#22c55e" : COLORS.border}`,
                                                             borderRadius: 8,
                                                             color: COLORS.text,
@@ -593,7 +646,7 @@ export function MapControlPanelContent({
                                     ? "rgba(239, 68, 68, 0.18)"
                                     : (isPartlyClosed ? "rgba(245, 158, 11, 0.18)" : "rgba(100, 116, 139, 0.2)")
                             )
-                            : "rgba(0,0,0,0.3)";
+                            : COLORS.soft;
                         const isExpanded = expandedLineId === line.id;
                         const isLineButtonDisabled = hasMounted && !canToggleLine && !canInspectDelay;
 
@@ -699,15 +752,15 @@ export function MapControlPanelContent({
 
                                         {delay.reason && (
                                             <div style={{ marginBottom: 8 }}>
-                                                <strong style={{ color: "#94a3b8" }}>Reason:</strong>
-                                                <div style={{ marginTop: 4, color: "#cbd5e1" }}>{delay.reason}</div>
+                                                <strong style={{ color: COLORS.text }}>Reason:</strong>
+                                                <div style={{ marginTop: 4, color: COLORS.textStrong }}>{delay.reason}</div>
                                             </div>
                                         )}
 
                                         {delay.additionalInfo && (
                                             <div>
-                                                <strong style={{ color: "#94a3b8" }}>Additional Info:</strong>
-                                                <div style={{ marginTop: 4, color: "#cbd5e1" }}>{delay.additionalInfo}</div>
+                                                <strong style={{ color: COLORS.text }}>Additional Info:</strong>
+                                                <div style={{ marginTop: 4, color: COLORS.textStrong }}>{delay.additionalInfo}</div>
                                             </div>
                                         )}
                                     </div>

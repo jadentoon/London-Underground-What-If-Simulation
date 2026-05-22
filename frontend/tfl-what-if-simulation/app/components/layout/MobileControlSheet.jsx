@@ -45,7 +45,7 @@ export function MobileControlSheet({
                     position: "fixed",
                     inset: 0,
                     border: "none",
-                    background: "rgba(2, 6, 23, 0.5)",
+                    background: COLORS.overlay,
                     opacity: isOpen ? 1 : 0,
                     pointerEvents: isOpen ? "auto" : "none",
                     transition: "opacity 0.22s ease",
@@ -61,12 +61,12 @@ export function MobileControlSheet({
                     bottom: 0,
                     maxHeight: "78vh",
                     padding: "14px 16px calc(18px + env(safe-area-inset-bottom, 0px))",
-                    background: "rgba(15, 23, 42, 0.94)",
+                    background: COLORS.strong,
                     backdropFilter: "blur(14px)",
                     borderTop: `1px solid ${COLORS.border}`,
                     borderTopLeftRadius: 24,
                     borderTopRightRadius: 24,
-                    boxShadow: "0 -18px 45px rgba(0, 0, 0, 0.45)",
+                    boxShadow: COLORS.shadowStrong,
                     transform: isOpen ? "translateY(0)" : "translateY(calc(100% + 12px))",
                     transition: "transform 0.24s ease",
                     pointerEvents: isOpen ? "auto" : "none",
@@ -90,7 +90,7 @@ export function MobileControlSheet({
                         <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
                             Map Controls
                         </div>
-                        <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color: "#e2e8f0" }}>
+                        <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color: COLORS.textStrong }}>
                             {hypotheticalSettingsEnabled ? "What-if controls" : "Live network status"}
                         </div>
                     </div>
@@ -102,7 +102,7 @@ export function MobileControlSheet({
                             height: 42,
                             borderRadius: 14,
                             border: `1px solid ${COLORS.border}`,
-                            background: "rgba(0, 0, 0, 0.22)",
+                            background: COLORS.subtle,
                             color: COLORS.text,
                             cursor: "pointer",
                             fontSize: 20,

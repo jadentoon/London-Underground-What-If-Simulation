@@ -58,7 +58,7 @@ export function MapSearchBox({
     const isStartActionDisabled = isFocusedStationUnavailableForRouting && !isFocusedStationCurrentStart;
     const isDestinationActionDisabled = (!canSetFocusedStationAsDestination && !isFocusedStationCurrentDestination)
         || (isFocusedStationUnavailableForRouting && !isFocusedStationCurrentDestination);
-    const activeSelectionBg = hypotheticalSettingsEnabled ? "rgba(251, 191, 36, 0.16)" : "rgba(59, 130, 246, 0.16)";
+    const activeSelectionBg = hypotheticalSettingsEnabled ? "rgba(251, 191, 36, 0.16)" : COLORS.hover;
 
     useEffect(() => {
         setSelectedIndex(0);
@@ -177,7 +177,7 @@ export function MapSearchBox({
                         background: COLORS.card,
                         backdropFilter: "blur(10px)",
                         border: `1px solid ${COLORS.border}`,
-                        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.28)",
+                        boxShadow: COLORS.shadow,
                     }}
                 >
                     <span style={{ fontSize: 16, color: accentColour }}>⌕</span>
@@ -206,7 +206,7 @@ export function MapSearchBox({
                                 height: 28,
                                 borderRadius: 999,
                                 border: "none",
-                                background: "rgba(0, 0, 0, 0.2)",
+                                background: COLORS.subtle,
                                 color: COLORS.textMuted,
                                 cursor: "pointer",
                             }}
@@ -227,10 +227,10 @@ export function MapSearchBox({
                             overflowY: "auto",
                             padding: 8,
                             borderRadius: 18,
-                            background: "rgba(15, 23, 42, 0.92)",
+                            background: COLORS.strong,
                             backdropFilter: "blur(12px)",
                             border: `1px solid ${COLORS.border}`,
-                            boxShadow: "0 14px 34px rgba(0, 0, 0, 0.34)",
+                            boxShadow: COLORS.shadow,
                         }}
                     >
                         {stationMatches.map((s, index) => (
@@ -244,7 +244,7 @@ export function MapSearchBox({
                                     padding: "10px 12px",
                                     borderRadius: 12,
                                     border: `1px solid ${COLORS.border}`,
-                                    background: "rgba(0, 0, 0, 0.22)",
+                                    background: COLORS.subtle,
                                     color: COLORS.text,
                                     cursor: "pointer",
                                     fontSize: 13,
@@ -281,7 +281,7 @@ export function MapSearchBox({
                         cursor: "pointer",
                         zIndex: 1001,
                         color: COLORS.text,
-                        boxShadow: "0 12px 36px rgba(0, 0, 0, 0.28)",
+                        boxShadow: COLORS.shadow,
                     }}
                     title="Open station search"
                 >
@@ -293,7 +293,7 @@ export function MapSearchBox({
                             display: "inline-flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            background: "rgba(59, 130, 246, 0.16)",
+                            background: COLORS.hover,
                             color: accentColour,
                             fontSize: 16,
                             flex: "0 0 auto",
@@ -302,7 +302,7 @@ export function MapSearchBox({
                         ⌕
                     </span>
                     <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#e2e8f0" }}>Search stations</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: COLORS.textStrong }}>Search stations</span>
                         <span style={{ fontSize: 12, color: COLORS.textMuted }}>Jump straight to a station on the map</span>
                     </span>
                 </button>
@@ -321,7 +321,7 @@ export function MapSearchBox({
                         borderRadius: 18,
                         padding: 14,
                         zIndex: 1000,
-                        boxShadow: "0 16px 42px rgba(0, 0, 0, 0.3)",
+                        boxShadow: COLORS.shadow,
                     }}
                 >
                     <div
@@ -337,7 +337,7 @@ export function MapSearchBox({
                             <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
                                 Search
                             </span>
-                            <span style={{ fontSize: 18, fontWeight: 800, color: "#e2e8f0" }}>
+                            <span style={{ fontSize: 18, fontWeight: 800, color: COLORS.textStrong }}>
                                 Search stations
                             </span>
                             <span style={{ fontSize: 12, lineHeight: 1.4, color: COLORS.textMuted }}>
@@ -352,7 +352,7 @@ export function MapSearchBox({
                                 padding: "7px 10px",
                                 borderRadius: 999,
                                 border: `1px solid ${COLORS.border}`,
-                                background: "rgba(0, 0, 0, 0.18)",
+                                background: COLORS.subtle,
                                 color: COLORS.text,
                                 cursor: "pointer",
                                 fontSize: 12,
@@ -390,7 +390,7 @@ export function MapSearchBox({
                                 padding: "11px 40px 11px 34px",
                                 borderRadius: 12,
                                 border: `1px solid ${COLORS.border}`,
-                                background: "rgba(0, 0, 0, 0.3)",
+                                background: COLORS.soft,
                                 color: COLORS.text,
                                 outline: "none",
                                 fontSize: 14,
@@ -412,7 +412,7 @@ export function MapSearchBox({
                                     height: 28,
                                     borderRadius: 999,
                                     border: "none",
-                                    background: "rgba(0, 0, 0, 0.2)",
+                                    background: COLORS.subtle,
                                     color: COLORS.textMuted,
                                     cursor: "pointer",
                                 }}
@@ -439,7 +439,7 @@ export function MapSearchBox({
                                             padding: "10px 12px",
                                             borderRadius: 12,
                                             border: `1px solid ${isSelected ? accentColour : COLORS.border}`,
-                                            background: isSelected ? "rgba(59, 130, 246, 0.16)" : "rgba(0, 0, 0, 0.22)",
+                                            background: isSelected ? COLORS.hover : COLORS.subtle,
                                             color: COLORS.text,
                                             cursor: "pointer",
                                             fontSize: 13,
@@ -464,7 +464,7 @@ export function MapSearchBox({
                                 padding: 12,
                                 borderRadius: 16,
                                 border: `1px solid ${COLORS.border}`,
-                                background: "rgba(2, 6, 23, 0.48)",
+                                background: COLORS.soft,
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: 10,
@@ -474,7 +474,7 @@ export function MapSearchBox({
                                 <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
                                     Current station
                                 </span>
-                                <span style={{ fontSize: 16, fontWeight: 800, color: "#e2e8f0" }}>
+                                <span style={{ fontSize: 16, fontWeight: 800, color: COLORS.textStrong }}>
                                     {focusedStation.name}
                                 </span>
                                 <span style={{ fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
@@ -490,13 +490,13 @@ export function MapSearchBox({
                                         padding: "9px 10px",
                                         borderRadius: 12,
                                         border: `1px solid ${isFocusedStationCurrentStart ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentStart ? activeSelectionBg : "rgba(15, 23, 42, 0.4)",
+                                        background: isFocusedStationCurrentStart ? activeSelectionBg : COLORS.control,
                                     }}
                                 >
                                     <div style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.textMuted }}>
                                         Start
                                     </div>
-                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentStart ? "#e2e8f0" : COLORS.text }}>
+                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentStart ? COLORS.textStrong : COLORS.text }}>
                                         {currentRouteStartName ?? "Not selected"}
                                     </div>
                                 </div>
@@ -506,13 +506,13 @@ export function MapSearchBox({
                                         padding: "9px 10px",
                                         borderRadius: 12,
                                         border: `1px solid ${isFocusedStationCurrentDestination ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentDestination ? activeSelectionBg : "rgba(15, 23, 42, 0.4)",
+                                        background: isFocusedStationCurrentDestination ? activeSelectionBg : COLORS.control,
                                     }}
                                 >
                                     <div style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.textMuted }}>
                                         Destination
                                     </div>
-                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentDestination ? "#e2e8f0" : COLORS.text }}>
+                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentDestination ? COLORS.textStrong : COLORS.text }}>
                                         {currentRouteEndName ?? "Not selected"}
                                     </div>
                                 </div>
@@ -527,8 +527,8 @@ export function MapSearchBox({
                                         padding: "10px 12px",
                                         borderRadius: 12,
                                         border: `1px solid ${isFocusedStationCurrentStart ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentStart ? accentColour : "rgba(15, 23, 42, 0.4)",
-                                        color: isFocusedStationCurrentStart ? "#0f172a" : (isStartActionDisabled ? COLORS.textMuted : COLORS.text),
+                                        background: isFocusedStationCurrentStart ? accentColour : COLORS.control,
+                                        color: isFocusedStationCurrentStart ? COLORS.textOnAccent : (isStartActionDisabled ? COLORS.textMuted : COLORS.text),
                                         fontWeight: 800,
                                         cursor: isStartActionDisabled ? "not-allowed" : "pointer",
                                         opacity: isStartActionDisabled && !isFocusedStationCurrentStart ? 0.55 : 1,
@@ -545,8 +545,8 @@ export function MapSearchBox({
                                         padding: "10px 12px",
                                         borderRadius: 12,
                                         border: `1px solid ${isFocusedStationCurrentDestination ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentDestination ? accentColour : "rgba(15, 23, 42, 0.4)",
-                                        color: isFocusedStationCurrentDestination ? "#0f172a" : (isDestinationActionDisabled ? COLORS.textMuted : COLORS.text),
+                                        background: isFocusedStationCurrentDestination ? accentColour : COLORS.control,
+                                        color: isFocusedStationCurrentDestination ? COLORS.textOnAccent : (isDestinationActionDisabled ? COLORS.textMuted : COLORS.text),
                                         fontWeight: 800,
                                         cursor: isDestinationActionDisabled ? "not-allowed" : "pointer",
                                         opacity: isDestinationActionDisabled && !isFocusedStationCurrentDestination ? 0.6 : 1,

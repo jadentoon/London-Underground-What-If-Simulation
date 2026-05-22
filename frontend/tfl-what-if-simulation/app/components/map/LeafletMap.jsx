@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, useMapEvents, useMap, Pane } from "react-leaflet";
+import { useTheme } from "next-themes";
 import L from "leaflet";
 
 // Debounce utility for map events
@@ -155,6 +156,7 @@ function RouteFitController({ pathPositions, hasPath }) {
  */
 const LeafletMap = ({
     onMapChange,
+    COLORS,
     hypotheticalSettingsEnabled = false,
     closedStations = new Set(),
     closedLines = new Set(),
@@ -186,12 +188,14 @@ const LeafletMap = ({
         [51.72, 0.35],
     ]), []);
 
+    const { resolvedTheme } = useTheme();
+    const isLightTheme = resolvedTheme === "light";
+
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
 
     const [start, setStart] = useState(null);
     const [end, setEnd] = useState(null);
-
 
     const [path, setPath] = useState([]);
 
@@ -673,7 +677,7 @@ const LeafletMap = ({
                 }}
             >
                 <TileLayer 
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                    url={`https://{s}.basemaps.cartocdn.com/${isLightTheme ? "light_all" : "dark_all"}/{z}/{x}/{y}{r}.png`}
                     bounds={LONDON_MAX_BOUNDS}
                     noWrap
                     keepBuffer={7}
@@ -736,6 +740,7 @@ const LeafletMap = ({
             <SelectedTrainPanel
                 train={selectedTrain}
                 layout={{ isMobilePortrait }}
+                COLORS={COLORS}
                 onClose={() => onSelectedTrainIdChange?.(null)}
             />
         </>
