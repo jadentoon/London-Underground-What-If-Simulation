@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
-import { getDelaySeverityColor as getDelaySeverityColour } from "../mapComponents/delayUtils";
+import { getDelaySeverityColor as getDelaySeverityColour } from "../mapShared/delayUtils";
 
 function InteractionModeToggle({
     COLORS,

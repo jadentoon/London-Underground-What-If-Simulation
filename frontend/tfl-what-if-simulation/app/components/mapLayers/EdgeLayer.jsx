@@ -1,8 +1,8 @@
 import { Fragment } from "react";
 import React from "react";
 import { Polyline, Tooltip } from "react-leaflet";
-import { offsetSegment, buildUndirectedLineEdgeKey } from "../mapComponents/utils.js";
-import { LINE_COLOURS, LINE_LABELS, LINE_STYLE } from "../mapComponents/constants.js";
+import { offsetSegment, buildUndirectedLineEdgeKey } from "../mapShared/utils.js";
+import { LINE_COLOURS, LINE_LABELS, LINE_STYLE } from "../mapShared/constants.js";
 
 const DISRUPTED_LINE_OUTLINE_COLOUR = "#f59e0b";
 const DISRUPTED_LINE_CORE_COLOUR = "#000000";

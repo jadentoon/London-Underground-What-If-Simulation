@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { MapSearchBox } from "../app/components/layout/MapSearchBox";
+import { MapSearchBox } from "../app/components/search/MapSearchBox";
 
 describe("MapSearchBox", () => {
   test("pressing Enter triggers the first match handler when matches exist", () => {

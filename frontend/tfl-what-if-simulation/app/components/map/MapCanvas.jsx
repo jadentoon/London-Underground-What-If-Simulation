@@ -13,17 +13,17 @@
 
 import { useRef, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "../mapComponents/constants";
+import { LONDON_CENTER, LINE_COLOURS, LINE_LABELS } from "../mapShared/constants";
 import { useLineStatus } from "../../hooks/useLineStatus";
 import { MapLeafletChrome } from "../layout/MapLeafletChrome";
 import { MapTitleOverlay } from "../layout/MapTitleOverlay";
-import { MapSearchBox } from "../layout/MapSearchBox";
+import { MapSearchBox } from "../search/MapSearchBox";
 import { MapHud } from "../layout/MapHud";
 import { MapSidebar } from "../layout/MapSidebar";
 import { SidebarToggleButton } from "../layout/SidebarToggleButton";
 import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
-import { RoutingErrorBox } from "../layout/RoutingErrorBox";
-import { RouteInfoPanel } from "../layout/RouteInfoPanel";
+import { RoutingErrorBox } from "../route/RoutingErrorBox";
+import { RouteInfoPanel } from "../route/RouteInfoPanel";
 import { MobileControlSheet } from "../layout/MobileControlSheet";
 import { MobileInteractionModeBar } from "../layout/MobileInteractionModeBar";
 import { useLiveStationClosures } from "../../hooks/map/useLiveStationClosures";

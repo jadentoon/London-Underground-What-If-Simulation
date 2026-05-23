@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { LINE_COLOURS } from "../mapComponents/constants";
+import { LINE_COLOURS } from "../mapShared/constants";
 
 function formatArrivalTime(isoTimestamp) {
     if (!isoTimestamp) return "";

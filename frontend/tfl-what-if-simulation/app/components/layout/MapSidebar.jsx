@@ -2,7 +2,7 @@
  * sidebar component for the map view, showing settings and line status information
  */
 
-import { MapControlPanelContent } from "./MapControlPanelContent";
+import { MapControlPanelContent } from "../controls/MapControlPanelContent";
 
 export function MapSidebar({
     isSidebarOpen,

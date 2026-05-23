@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
-import { TRAIN_COLOURS } from "../mapComponents/constants.js";
-import { getStationOcclusionRadius } from "../mapComponents/stationMarkerSizing.js";
+import { TRAIN_COLOURS } from "../mapShared/constants.js";
+import { getStationOcclusionRadius } from "../mapShared/stationMarkerSizing.js";
 
 const MIN_TRAIN_ZOOM = 12;
 const MAX_TRAIN_ZOOM = 16;

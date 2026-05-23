@@ -3,7 +3,7 @@ import { CircleMarker, Tooltip, Marker } from "react-leaflet";
 import {
     getStationMarkerRadius,
     getStationMarkerStrokeWeight,
-} from "../mapComponents/stationMarkerSizing.js";
+} from "../mapShared/stationMarkerSizing.js";
 
 function StationLayerComponent({
     nodes,

@@ -1,4 +1,4 @@
-import { LINE_COLOURS, LINE_LABELS } from "../../components/mapComponents/constants.js";
+import { LINE_COLOURS, LINE_LABELS } from "../../components/mapShared/constants.js";
 import {
     FALLBACK_TRAINS_PER_LINE,
     MIN_EDGE_TRAVEL_TIME_SECONDS,

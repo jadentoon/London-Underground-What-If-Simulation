@@ -2,7 +2,7 @@ import {
   getStationMarkerRadius,
   getStationMarkerStrokeWeight,
   getStationOcclusionRadius,
-} from "../app/components/mapComponents/stationMarkerSizing";
+} from "../app/components/mapShared/stationMarkerSizing";
 
 describe("stationMarkerSizing", () => {
   test("matches the base zoom radius scale", () => {

@@ -20,16 +20,16 @@ function useDebounce(callback, delay) {
 import { dijkstra } from "../../lib/pathfinding.js";
 import { buildGraph } from "../../lib/graph.js";
 
-import { LONDON_CENTER } from "../mapComponents/constants.js";
-import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey, buildUndirectedLineEdgeKey } from "../mapComponents/utils.js";
-import { setupLeafletDefaultIcons, createRedXIcon } from "../mapComponents/icons.js";
+import { LONDON_CENTER } from "../mapShared/constants.js";
+import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey, buildUndirectedLineEdgeKey } from "../mapShared/utils.js";
+import { setupLeafletDefaultIcons, createRedXIcon } from "../mapShared/icons.js";
 import { useTrainMovements } from "../../hooks/useTrainMovements.js";
 
 import RouteLayer from "../mapLayers/RouteLayer.jsx";
 import EdgeLayer from "../mapLayers/EdgeLayer.jsx";
 import StationLayer from "../mapLayers/StationLayer.jsx";
 import CanvasTrainLayer from "../mapLayers/CanvasTrainLayer.jsx";
-import { SelectedTrainPanel } from "../layout/SelectedTrainPanel.jsx";
+import { SelectedTrainPanel } from "../trains/SelectedTrainPanel.jsx";
 
 setupLeafletDefaultIcons();
 

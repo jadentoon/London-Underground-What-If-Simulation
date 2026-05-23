@@ -1,4 +1,4 @@
-import { LINE_COLOURS } from "../../components/mapComponents/constants.js";
+import { LINE_COLOURS } from "../../components/mapShared/constants.js";
 import { normaliseTflStopId, parseTimestampMs } from "./trainIdUtils.js";
 import { chooseFromStop } from "./trainGraphUtils.js";
 import {

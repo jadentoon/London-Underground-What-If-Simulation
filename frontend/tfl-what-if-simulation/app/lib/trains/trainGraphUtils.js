@@ -1,4 +1,4 @@
-import { dedupeEdges } from "../../components/mapComponents/utils.js";
+import { dedupeEdges } from "../../components/mapShared/utils.js";
 import { normaliseStationName } from "./trainIdUtils.js";
 
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;

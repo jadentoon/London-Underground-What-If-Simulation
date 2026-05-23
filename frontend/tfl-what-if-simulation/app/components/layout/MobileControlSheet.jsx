@@ -1,4 +1,4 @@
-import { MapControlPanelContent } from "./MapControlPanelContent";
+import { MapControlPanelContent } from "../controls/MapControlPanelContent";
 
 export function MobileControlSheet({
     isOpen,

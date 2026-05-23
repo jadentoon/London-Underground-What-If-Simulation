@@ -1,6 +1,6 @@
 import { Popup, Marker } from "react-leaflet";
 import L from "leaflet";
-import { TRAIN_COLOURS } from "../mapComponents/constants.js";
+import { TRAIN_COLOURS } from "../mapShared/constants.js";
 
 
 function formatArrivalTime(isoTimestamp) {

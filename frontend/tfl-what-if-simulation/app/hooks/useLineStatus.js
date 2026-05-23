@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
-import { LINE_COLOURS, LINE_LABELS } from "../components/mapComponents/constants";
+import { LINE_COLOURS, LINE_LABELS } from "../components/mapShared/constants";
 
 const EMPTY_LINE_SET = new Set();
 const EMPTY_LINE_MAP = new Map();
