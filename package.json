@@ -1,7 +1,8 @@
 {
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
+    "test:all": "docker compose -f docker-compose.test.yml run --rm all-tests"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
