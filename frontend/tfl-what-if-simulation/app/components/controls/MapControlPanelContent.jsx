@@ -1,76 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import { getDelaySeverityColor as getDelaySeverityColour } from "../mapShared/delayUtils";
-
-function InteractionModeToggle({
-    COLORS,
-    accentColor: accentColour,
-    interactionMode,
-    onInteractionModeChange,
-}) {
-    return (
-        <div style={{ marginBottom: 16 }}>
-            <h3 style={{ margin: "0 0 8px", color: COLORS.text }}>Map Mode</h3>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                    padding: 8,
-                    background: COLORS.soft,
-                    border: `1px solid ${COLORS.border}`,
-                    borderRadius: 12,
-                }}
-            >
-                {[
-                    {
-                        id: "route",
-                        label: "Plan Routes",
-                        help: "Choose a start point and destination on the map.",
-                    },
-                    {
-                        id: "closures",
-                        label: "Edit Closures",
-                        help: "Open or close stations and lines on the map.",
-                    },
-                ].map((option) => {
-                    const active = interactionMode === option.id;
-
-                    return (
-                        <button
-                            key={option.id}
-                            onClick={() => onInteractionModeChange?.(option.id)}
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                alignItems: "flex-start",
-                                gap: 4,
-                                padding: "10px 12px",
-                                background: active ? accentColour : COLORS.control,
-                                border: `1px solid ${active ? accentColour : COLORS.border}`,
-                                borderRadius: 10,
-                                color: active ? COLORS.textOnAccent : COLORS.text,
-                                cursor: "pointer",
-                                textAlign: "left",
-                            }}
-                        >
-                            <span style={{ fontWeight: 800 }}>{option.label}</span>
-                            <span
-                                style={{
-                                    fontSize: 11,
-                                    lineHeight: 1.35,
-                                    color: active ? COLORS.textOnAccent : COLORS.textMuted,
-                                }}
-                            >
-                                {option.help}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
+import { ToggleRow } from "./ToggleRow";
+import { InteractionModeToggle } from "./InteractionModeToggle";
 
 export function MapControlPanelContent({
     COLORS,
@@ -179,102 +111,23 @@ export function MapControlPanelContent({
             {showHeading && <h2 style={{ margin: 0, color: COLORS.text }}>Settings</h2>}
 
             {showWhatIfToggle && (
-                <div
-                    style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        background: COLORS.soft,
-                        border: `1px solid ${COLORS.border}`,
-                        borderRadius: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        color: COLORS.text,
-                        fontSize: 14,
-                        fontWeight: 500,
-                    }}
-                >
-                    <span>What-If Mode</span>
-                    <button
-                        onClick={onToggleWhatIfMode}
-                        style={{
-                            position: "relative",
-                            width: 51,
-                            height: 31,
-                            background: hypotheticalSettingsEnabled ? accentColour : "rgba(120, 120, 128, 0.32)",
-                            borderRadius: 15.5,
-                            border: "none",
-                            cursor: "pointer",
-                            transition: "background-color 0.3s ease",
-                            outline: "none",
-                            padding: 0,
-                        }}
-                    >
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: 2,
-                                left: hypotheticalSettingsEnabled ? 22 : 2,
-                                width: 27,
-                                height: 27,
-                                background: "#fff",
-                                borderRadius: "50%",
-                                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
-                                transition: "left 0.3s ease",
-                            }}
-                        />
-                    </button>
-                </div>
+                <ToggleRow
+                    label="What-If Mode"
+                    enabled={hypotheticalSettingsEnabled}
+                    onToggle={onToggleWhatIfMode}
+                    COLORS={COLORS}
+                    accentColor={accentColour}
+                />
             )}
 
-            <div
-                style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    background: COLORS.soft,
-                    border: `1px solid ${COLORS.border}`,
-                    borderRadius: 12,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    color: COLORS.text,
-                    fontSize: 14,
-                    fontWeight: 500,
-                }}
-            >
-                <span>Light Mode</span>
-                <button
-                    onClick={() => setTheme(isLightTheme ? "dark" : "light")}
-                    aria-label="Toggle Light Mode"
-                    aria-pressed={isLightTheme}
-                    style={{
-                        position: "relative",
-                        width: 51,
-                        height: 31,
-                        background: isLightTheme ? accentColour : "rgba(120, 120, 128, 0.32)",
-                        borderRadius: 15.5,
-                        border: "none",
-                        cursor: "pointer",
-                        transition: "background-color 0.3s ease",
-                        outline: "none",
-                        padding: 0,
-                    }}
-                >
-                    <div
-                        style={{
-                            position: "absolute",
-                            top: 2,
-                            left: isLightTheme ? 22 : 2,
-                            width: 27,
-                            height: 27,
-                            background: "#fff",
-                            borderRadius: "50%",
-                            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1)",
-                            transition: "left 0.3s ease",
-                        }}
-                    />
-                </button>
-            </div>
+            <ToggleRow 
+                label="Light Mode"
+                enabled={isLightTheme}
+                onToggle={() => setTheme(isLightTheme ? "dark" : "light")}
+                COLORS={COLORS}
+                accentColor={accentColour}
+                ariaLabel={"Toggle Light"}
+            />
 
             {showInteractionModeToggle && hypotheticalSettingsEnabled && (
                 <InteractionModeToggle
