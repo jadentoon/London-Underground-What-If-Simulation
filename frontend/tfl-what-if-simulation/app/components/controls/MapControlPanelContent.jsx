@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 
-import { getDelaySeverityColor as getDelaySeverityColour } from "../mapShared/delayUtils";
 import { ToggleRow } from "./ToggleRow";
 import { InteractionModeToggle } from "./InteractionModeToggle";
 import { SavedScenariosPanel } from "./SavedScenariosPanel";
 import { TrainDisplayControls } from "./TrainDisplayControls";
+import { LineStatusList } from "./LineStatusList";
 
 export function MapControlPanelContent({
     COLORS,
@@ -111,13 +111,13 @@ export function MapControlPanelContent({
                 />
             )}
 
-            <ToggleRow 
+            <ToggleRow
                 label="Light Mode"
                 enabled={isLightTheme}
                 onToggle={() => setTheme(isLightTheme ? "dark" : "light")}
                 COLORS={COLORS}
                 accentColor={accentColour}
-                ariaLabel={"Toggle Light"}
+                ariaLabel={"Toggle Light Mode"}
             />
 
             {showInteractionModeToggle && hypotheticalSettingsEnabled && (
@@ -151,7 +151,7 @@ export function MapControlPanelContent({
                 )}
 
                 {hypotheticalSettingsEnabled && (
-                    <SavedScenariosPanel 
+                    <SavedScenariosPanel
                         COLORS={COLORS}
                         accentColor={accentColour}
                         savedScenarios={savedScenarios}
@@ -252,7 +252,7 @@ export function MapControlPanelContent({
                 )}
 
                 {!hypotheticalSettingsEnabled && (
-                    <TrainDisplayControls 
+                    <TrainDisplayControls
                         COLORS={COLORS}
                         accentColor={accentColour}
                         effectiveLines={effectiveLines}
@@ -265,150 +265,22 @@ export function MapControlPanelContent({
                     />
                 )}
 
-                <h3 style={{ margin: "0 0 8px", color: COLORS.text }}>Line Status</h3>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {effectiveLines.map((line) => {
-                        const isClosed = closedLines.has(line.id);
-                        const isPartlyClosed = !isClosed && partlyClosedLines.has(line.id);
-                        const delay = lineDelays.get(line.id);
-                        const showDelay = !hypotheticalSettingsEnabled && isLiveLines && delay;
-                        const canToggleLine = hypotheticalSettingsEnabled;
-                        const canInspectDelay = isTouchLayout && showDelay;
-                        const statusLabel = showDelay
-                            ? (delay.description === "Good Service" ? "Open" : delay.description)
-                            : (isClosed ? "Closed" : (isPartlyClosed ? "Partly Closed" : "Open"));
-                        const statusColour = showDelay
-                            ? getDelaySeverityColour(delay.severity)
-                            : (isClosed ? "#f87171" : (isPartlyClosed ? "#f59e0b" : "#22c55e"));
-                        const buttonBackground = !canToggleLine
-                            ? (
-                                isClosed
-                                    ? "rgba(239, 68, 68, 0.18)"
-                                    : (isPartlyClosed ? "rgba(245, 158, 11, 0.18)" : "rgba(100, 116, 139, 0.2)")
-                            )
-                            : COLORS.soft;
-                        const isExpanded = expandedLineId === line.id;
-                        const isLineButtonDisabled = hasMounted && !canToggleLine && !canInspectDelay;
+                <LineStatusList
+                    COLORS={COLORS}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    effectiveLines={effectiveLines}
+                    closedLines={closedLines}
+                    partialLines={partlyClosedLines}
+                    lineDelays={lineDelays}
+                    isLiveLines={isLiveLines}
+                    isTouchLayout={isTouchLayout}
+                    expandedLineId={expandedLineId}
+                    hasMounted={hasMounted}
+                    onLineMouseEnter={handleMouseEnter}
+                    onLineMouseLeave={handleMouseLeave}
+                    onLineAction={handleLineAction}
+                />
 
-                        return (
-                            <div
-                                key={line.id}
-                                onMouseEnter={() => handleMouseEnter(line.id, showDelay)}
-                                onMouseLeave={handleMouseLeave}
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    width: "100%",
-                                    background: buttonBackground,
-                                    border: `1px solid ${COLORS.border}`,
-                                    borderRadius: 8,
-                                    color: COLORS.text,
-                                    opacity: isClosed ? 0.6 : (isPartlyClosed ? 0.9 : 1),
-                                    transition: "all 0.3s ease",
-                                    overflow: "hidden",
-                                }}
-                            >
-                                <button
-                                    onClick={() => handleLineAction(line.id, showDelay)}
-                                    disabled={isLineButtonDisabled}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "space-between",
-                                        width: "100%",
-                                        padding: "10px 12px",
-                                        background: "transparent",
-                                        border: "none",
-                                        color: COLORS.text,
-                                        cursor: isLineButtonDisabled
-                                            ? "default"
-                                            : (canToggleLine || canInspectDelay ? "pointer" : "help"),
-                                        transition: "background-color 0.2s ease",
-                                    }}
-                                >
-                                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span
-                                            style={{
-                                                width: 14,
-                                                height: 14,
-                                                borderRadius: 999,
-                                                backgroundColor: line.color,
-                                                border: "1px solid #fff",
-                                                boxShadow: isClosed ? "none" : (isPartlyClosed ? "0 0 8px #f59e0b80" : `0 0 8px ${line.color}80`),
-                                            }}
-                                        />
-                                        {line.label}
-                                    </span>
-                                    <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        {showDelay && (
-                                            <span
-                                                style={{
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: "50%",
-                                                    backgroundColor: getDelaySeverityColour(delay.severity),
-                                                    boxShadow: `0 0 6px ${getDelaySeverityColour(delay.severity)}`,
-                                                }}
-                                            />
-                                        )}
-                                        <span style={{ fontSize: 12, color: statusColour }}>
-                                            {statusLabel}
-                                        </span>
-                                    </span>
-                                </button>
-
-                                {isExpanded && showDelay && (
-                                    <div
-                                        style={{
-                                            padding: "0 12px 12px 12px",
-                                            fontSize: 12,
-                                            borderTop: `1px solid ${COLORS.border}`,
-                                            animation: "expandDown 0.3s ease",
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                marginTop: 8,
-                                                marginBottom: 8,
-                                                paddingBottom: 8,
-                                                borderBottom: `1px solid ${COLORS.border}`,
-                                            }}
-                                        >
-                                            <span
-                                                style={{
-                                                    width: 8,
-                                                    height: 8,
-                                                    borderRadius: "50%",
-                                                    backgroundColor: getDelaySeverityColour(delay.severity),
-                                                }}
-                                            />
-                                            <span style={{ fontWeight: 700, color: getDelaySeverityColour(delay.severity) }}>
-                                                {delay.description}
-                                            </span>
-                                        </div>
-
-                                        {delay.reason && (
-                                            <div style={{ marginBottom: 8 }}>
-                                                <strong style={{ color: COLORS.text }}>Reason:</strong>
-                                                <div style={{ marginTop: 4, color: COLORS.textStrong }}>{delay.reason}</div>
-                                            </div>
-                                        )}
-
-                                        {delay.additionalInfo && (
-                                            <div>
-                                                <strong style={{ color: COLORS.text }}>Additional Info:</strong>
-                                                <div style={{ marginTop: 4, color: COLORS.textStrong }}>{delay.additionalInfo}</div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
             </div>
         </div>
     );
