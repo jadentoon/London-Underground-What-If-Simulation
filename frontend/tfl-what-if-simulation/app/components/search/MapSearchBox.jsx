@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { SearchInput } from "./SearchInput";
+import { SearchResultsList } from "./SearchResultsList";
 
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
@@ -168,7 +169,7 @@ export function MapSearchBox({
                     transition: "opacity 180ms ease, transform 180ms ease",
                 }}
             >
-                <SearchInput 
+                <SearchInput
                     COLORS={COLORS}
                     accentColour={accentColour}
                     value={stationQuery}
@@ -179,45 +180,15 @@ export function MapSearchBox({
                     compact
                 />
 
-                {stationMatches.length > 0 && (
-                    <div
-                        style={{
-                            marginTop: 10,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 6,
-                            maxHeight: "36vh",
-                            overflowY: "auto",
-                            padding: 8,
-                            borderRadius: 18,
-                            background: COLORS.strong,
-                            backdropFilter: "blur(12px)",
-                            border: `1px solid ${COLORS.border}`,
-                            boxShadow: COLORS.shadow,
-                        }}
-                    >
-                        {stationMatches.map((s, index) => (
-                            <button
-                                key={s.id}
-                                onClick={() => handleSelectStation(s)}
-                                onMouseEnter={() => setSelectedIndex(index)}
-                                type="button"
-                                style={{
-                                    textAlign: "left",
-                                    padding: "10px 12px",
-                                    borderRadius: 12,
-                                    border: `1px solid ${COLORS.border}`,
-                                    background: COLORS.subtle,
-                                    color: COLORS.text,
-                                    cursor: "pointer",
-                                    fontSize: 13,
-                                }}
-                            >
-                                <span style={{ color: accentColour, fontWeight: 700 }}>{s.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                )}
+                <SearchResultsList
+                    COLORS={COLORS}
+                    accentColour={accentColour}
+                    stationMatches={stationMatches}
+                    selectedIndex={selectedIndex}
+                    onSelectStation={handleSelectStation}
+                    onSelectIndex={setSelectedIndex}
+                    compact
+                />
             </div>
         );
     }
@@ -328,7 +299,7 @@ export function MapSearchBox({
                         </button>
                     </div>
 
-                    <SearchInput 
+                    <SearchInput
                         COLORS={COLORS}
                         accentColour={accentColour}
                         value={stationQuery}
@@ -339,33 +310,14 @@ export function MapSearchBox({
                     />
 
                     {stationMatches.length > 0 ? (
-                        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
-                            {stationMatches.map((s, index) => {
-                                const isSelected = index === selectedIndex;
-
-                                return (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => handleSelectStation(s)}
-                                        onMouseEnter={() => setSelectedIndex(index)}
-                                        type="button"
-                                        style={{
-                                            textAlign: "left",
-                                            padding: "10px 12px",
-                                            borderRadius: 12,
-                                            border: `1px solid ${isSelected ? accentColour : COLORS.border}`,
-                                            background: isSelected ? COLORS.hover : COLORS.subtle,
-                                            color: COLORS.text,
-                                            cursor: "pointer",
-                                            fontSize: 13,
-                                            transition: "background-color 0.15s ease, border-color 0.15s ease",
-                                        }}
-                                    >
-                                        <span style={{ color: accentColour, fontWeight: 700 }}>{s.name}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        <SearchResultsList
+                            COLORS={COLORS}
+                            accentColour={accentColour}
+                            stationMatches={stationMatches}
+                            selectedIndex={selectedIndex}
+                            onSelectStation={handleSelectStation}
+                            onSelectIndex={setSelectedIndex}
+                        />
                     ) : !focusedStation ? (
                         <div style={{ marginTop: 10, fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
                             Use the search box to jump straight to a station on the map.

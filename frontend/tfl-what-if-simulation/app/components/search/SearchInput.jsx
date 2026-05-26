@@ -23,7 +23,7 @@ export function SearchInput({
     onClear,
     onFocus,
     onKeyDown,
-    compact
+    compact = false,
 }) {
     const hasQuery = value.trim().length > 0;
 
