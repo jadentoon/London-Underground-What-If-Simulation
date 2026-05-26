@@ -77,6 +77,7 @@ function MainScreenWhatIfToggle({
     const right = layout?.right ?? 70;
     return (
         <div
+            data-tour="what-if-toggle-container"
             style={{
                 position: "fixed",
                 top,

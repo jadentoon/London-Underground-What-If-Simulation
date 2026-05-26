@@ -96,6 +96,7 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
                 title: "Search",
                 description: "Search for stations here.",
                 targetSelector: "[data-tour='station-search-trigger']",
+                undimSelector: "[data-tour='station-search-container']",
                 completion: {
                     type: "event",
                     selector: "[data-tour='station-search-trigger']",
@@ -117,12 +118,42 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
                 title: "What-If Mode",
                 description: "Toggle What-If mode to start simulating closures.",
                 targetSelector: "button[aria-label='Toggle What-If Mode']",
+                undimSelector: "[data-tour='what-if-toggle-container']",
                 completion: {
                     type: "attribute",
                     selector: "button[aria-label='Toggle What-If Mode']",
                     attribute: "aria-pressed",
                     equals: "true",
                     interaction: { type: "click", selector: "button[aria-label='Toggle What-If Mode']" },
+                },
+                boxNudgeX: 0,
+                boxNudgeY: 0,
+            },
+            {
+                id: "map-controls",
+                title: "Map Controls",
+                description: "Expand this box to see more information about how to interact with the map.",
+                targetSelector: "[data-tour='map-controls-show-button']",
+                undimSelector: "[data-tour='map-controls-box']",
+                completion: {
+                    type: "event",
+                    selector: "[data-tour='map-controls-show-button']",
+                    event: "click",
+                },
+                advanceDelayMs: 1500,
+                boxNudgeX: 0,
+                boxNudgeY: 0,
+            },
+            {
+                id: "tour-complete",
+                title: "Tour Complete!",
+                description: "You've learned the basics. Explore the app to discover more features.",
+                targetSelector: "[data-tour='map-controls-box']",
+                undimSelector: "[data-tour='map-controls-box']",
+                completion: {
+                    type: "event",
+                    selector: "body",
+                    event: "keydown",
                 },
                 boxNudgeX: 0,
                 boxNudgeY: 0,
@@ -367,18 +398,60 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
         <>
             {/*dimming overlay */}
             {undimRect ? (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: Math.max(0, undimRect.right),
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: "rgba(0, 0, 0, 0.5)",
-                        zIndex: 1200,
-                        pointerEvents: "none",
-                    }}
-                />
+                <>
+                    {/*dim left side */}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            width: Math.max(0, undimRect.left),
+                            bottom: 0,
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            zIndex: 1200,
+                            pointerEvents: "none",
+                        }}
+                    />
+                    {/*dim right side*/}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 0,
+                            left: Math.max(0, undimRect.right),
+                            right: 0,
+                            bottom: 0,
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            zIndex: 1200,
+                            pointerEvents: "none",
+                        }}
+                    />
+                    {/*dim top side*/}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: 0,
+                            left: Math.max(0, undimRect.left),
+                            right: Math.max(0, window.innerWidth - undimRect.right),
+                            height: Math.max(0, undimRect.top),
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            zIndex: 1200,
+                            pointerEvents: "none",
+                        }}
+                    />
+                    {/*dim bottom side*/}
+                    <div
+                        style={{
+                            position: "fixed",
+                            top: Math.max(0, undimRect.bottom),
+                            left: Math.max(0, undimRect.left),
+                            right: Math.max(0, window.innerWidth - undimRect.right),
+                            bottom: 0,
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            zIndex: 1200,
+                            pointerEvents: "none",
+                        }}
+                    />
+                </>
             ) : (
                 <div
                     style={{
@@ -465,9 +538,9 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
                         onClick={handleSkip}
                         style={{
                             padding: "6px 12px",
-                            backgroundColor: "transparent",
-                            color: COLORS?.text || "#94a3ba",
-                            border: `1px solid ${COLORS?.border || "#1e3a5f"}`,
+                            backgroundColor: currentStep === steps.length - 1 ? (COLORS?.accent || "#60a5fa") : "transparent",
+                            color: currentStep === steps.length - 1 ? (COLORS?.textOnAccent || "#fff") : (COLORS?.text || "#94a3ba"),
+                            border: currentStep === steps.length - 1 ? "none" : `1px solid ${COLORS?.border || "#1e3a5f"}`,
                             borderRadius: 6,
                             fontSize: 11,
                             fontWeight: 600,
@@ -476,15 +549,23 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
                             outline: "none",
                         }}
                         onMouseEnter={(e) => {
-                            e.target.style.color = COLORS?.textStrong || "#e2e8f0";
-                            e.target.style.borderColor = COLORS?.textStrong || "#e2e8f0";
+                            if (currentStep === steps.length - 1) {
+                                e.target.style.opacity = "0.9";
+                            } else {
+                                e.target.style.color = COLORS?.textStrong || "#e2e8f0";
+                                e.target.style.borderColor = COLORS?.textStrong || "#e2e8f0";
+                            }
                         }}
                         onMouseLeave={(e) => {
-                            e.target.style.color = COLORS?.text || "#94a3ba";
-                            e.target.style.borderColor = COLORS?.border || "#1e3a5f";
+                            if (currentStep === steps.length - 1) {
+                                e.target.style.opacity = "1";
+                            } else {
+                                e.target.style.color = COLORS?.text || "#94a3ba";
+                                e.target.style.borderColor = COLORS?.border || "#1e3a5f";
+                            }
                         }}
                     >
-                        Skip
+                        {currentStep === steps.length - 1 ? "Done" : "Skip"}
                     </button>
                     {currentStep < steps.length - 1 && (
                         <button

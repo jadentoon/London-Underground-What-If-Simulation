@@ -21,6 +21,7 @@ export function MapHud({
 
     return (
         <div
+            data-tour="map-controls-box"
             style={{
                 position: "fixed",
                 bottom: hypotheticalSettingsEnabled ? 85 : 16,
@@ -49,6 +50,7 @@ export function MapHud({
                 <div style={{ color: COLORS.textStrong, fontWeight: 700 }}>Map Controls</div>
                 <button
                     onClick={() => setShowControls((value) => !value)}
+                    data-tour="map-controls-show-button"
                     style={{
                         padding: "6px 10px",
                         borderRadius: 999,
