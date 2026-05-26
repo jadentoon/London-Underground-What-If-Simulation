@@ -8,6 +8,7 @@
  * @param {Object} props.COLORS - Theme colour tokens for the search surface.
  * @param {string} props.accentColour - Colour used for station names and selected borders.
  * @param {Array<{id: string, name: string}>} props.stationMatches - Stations matching the current query.
+ * @param {number} props.setSelectedIndex - Index currently selected by keyboard navigation.
  * @param {(station: Object) => void} props.onSelectStation - Called when a station is selected.
  * @param {(index: number) => void} props.onSelectIndex - Called when a result is hovered.
  * @param {boolean} [props.compact=false] - Whether to render the mobile compact layout.
@@ -55,8 +56,8 @@ export function SearchResultsList({
                     <button
                         type="button"
                         key={station.id}
-                        onClick={() => handleSelectStation(station)}
-                        onMouseEnter={() => setSelectedIndex(index)}
+                        onClick={() => onSelectStation(station)}
+                        onMouseEnter={() => onSelectIndex(index)}
                         style={{
                             textAlign: "left",
                             padding: "10px 12px",

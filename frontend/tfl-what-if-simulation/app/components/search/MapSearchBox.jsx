@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef } from "react";
 import { SearchInput } from "./SearchInput";
 import { SearchResultsList } from "./SearchResultsList";
+import { FocusedStationPanel } from "./FocusedStationPanel";
 
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
@@ -60,7 +61,6 @@ export function MapSearchBox({
     const isStartActionDisabled = isFocusedStationUnavailableForRouting && !isFocusedStationCurrentStart;
     const isDestinationActionDisabled = (!canSetFocusedStationAsDestination && !isFocusedStationCurrentDestination)
         || (isFocusedStationUnavailableForRouting && !isFocusedStationCurrentDestination);
-    const activeSelectionBg = hypotheticalSettingsEnabled ? "rgba(251, 191, 36, 0.16)" : COLORS.hover;
 
     useEffect(() => {
         setSelectedIndex(0);
@@ -325,139 +325,23 @@ export function MapSearchBox({
                     ) : null}
 
                     {focusedStation && (
-                        <div
-                            style={{
-                                marginTop: 12,
-                                padding: 12,
-                                borderRadius: 16,
-                                border: `1px solid ${COLORS.border}`,
-                                background: COLORS.soft,
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 10,
-                            }}
-                        >
-                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                                <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                    Current station
-                                </span>
-                                <span style={{ fontSize: 16, fontWeight: 800, color: COLORS.textStrong }}>
-                                    {focusedStation.name}
-                                </span>
-                                <span style={{ fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
-                                    {hypotheticalSettingsEnabled
-                                        ? "Use this station for route planning or update its what-if closure state."
-                                        : "Use this station as the start or destination for route planning."}
-                                </span>
-                            </div>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                                <div
-                                    style={{
-                                        padding: "9px 10px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationCurrentStart ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentStart ? activeSelectionBg : COLORS.control,
-                                    }}
-                                >
-                                    <div style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                        Start
-                                    </div>
-                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentStart ? COLORS.textStrong : COLORS.text }}>
-                                        {currentRouteStartName ?? "Not selected"}
-                                    </div>
-                                </div>
-
-                                <div
-                                    style={{
-                                        padding: "9px 10px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationCurrentDestination ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentDestination ? activeSelectionBg : COLORS.control,
-                                    }}
-                                >
-                                    <div style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                        Destination
-                                    </div>
-                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentDestination ? COLORS.textStrong : COLORS.text }}>
-                                        {currentRouteEndName ?? "Not selected"}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                                <button
-                                    onClick={onSetFocusedStationAsStart}
-                                    type="button"
-                                    disabled={isStartActionDisabled}
-                                    style={{
-                                        padding: "10px 12px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationCurrentStart ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentStart ? accentColour : COLORS.control,
-                                        color: isFocusedStationCurrentStart ? COLORS.textOnAccent : (isStartActionDisabled ? COLORS.textMuted : COLORS.text),
-                                        fontWeight: 800,
-                                        cursor: isStartActionDisabled ? "not-allowed" : "pointer",
-                                        opacity: isStartActionDisabled && !isFocusedStationCurrentStart ? 0.55 : 1,
-                                    }}
-                                >
-                                    {isFocusedStationCurrentStart ? "Selected as start" : "Set as start"}
-                                </button>
-
-                                <button
-                                    onClick={onSetFocusedStationAsDestination}
-                                    type="button"
-                                    disabled={isDestinationActionDisabled}
-                                    style={{
-                                        padding: "10px 12px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationCurrentDestination ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentDestination ? accentColour : COLORS.control,
-                                        color: isFocusedStationCurrentDestination ? COLORS.textOnAccent : (isDestinationActionDisabled ? COLORS.textMuted : COLORS.text),
-                                        fontWeight: 800,
-                                        cursor: isDestinationActionDisabled ? "not-allowed" : "pointer",
-                                        opacity: isDestinationActionDisabled && !isFocusedStationCurrentDestination ? 0.6 : 1,
-                                    }}
-                                >
-                                    {isFocusedStationCurrentDestination ? "Selected as destination" : "Set as destination"}
-                                </button>
-                            </div>
-
-                            {hypotheticalSettingsEnabled && (
-                                <button
-                                    onClick={onToggleFocusedStationClosure}
-                                    type="button"
-                                    style={{
-                                        width: "100%",
-                                        padding: "10px 12px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationHypotheticallyClosed ? "#22c55e" : "#ef4444"}`,
-                                        background: isFocusedStationHypotheticallyClosed
-                                            ? "rgba(34, 197, 94, 0.16)"
-                                            : "rgba(239, 68, 68, 0.16)",
-                                        color: isFocusedStationHypotheticallyClosed ? "#86efac" : "#fecaca",
-                                        fontWeight: 800,
-                                        cursor: "pointer",
-                                    }}
-                                >
-                                    {isFocusedStationHypotheticallyClosed ? "Reopen station" : "Close station"}
-                                </button>
-                            )}
-
-                            <div style={{ fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
-                                {isFocusedStationUnavailableForRouting ? (
-                                    hypotheticalSettingsEnabled
-                                        ? "Closed stations cannot be used for route planning until they are reopened."
-                                        : "This station is currently unavailable for route planning."
-                                ) : isFocusedStationCurrentStart ? (
-                                    "This station is already the current starting station."
-                                ) : currentRouteStartName ? (
-                                    `Current starting station: ${currentRouteStartName}.`
-                                ) : (
-                                    "Choose a starting station first, then set a destination."
-                                )}
-                            </div>
-                        </div>
+                        <FocusedStationPanel 
+                            COLORS={COLORS}
+                            accentColour={accentColour}
+                            focusedStation={focusedStation}
+                            hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                            currentRouteStartName={currentRouteStartName}
+                            currentRouteEndName={currentRouteEndName}
+                            isFocusedStationCurrentStart={isFocusedStationCurrentStart}
+                            isFocusedStationCurrentDestination={isFocusedStationCurrentDestination}
+                            isStartActionDisabled={isStartActionDisabled}
+                            isDestinationActionDisabled={isDestinationActionDisabled}
+                            isFocusedStationUnavailableForRouting={isFocusedStationUnavailableForRouting}
+                            isFocusedStationHypotheticallyClosed={isFocusedStationHypotheticallyClosed}
+                            onSetFocusedStationAsStart={onSetFocusedStationAsStart}
+                            onSetFocusedStationAsDestination={onSetFocusedStationAsDestination}
+                            onToggleFocusedStationClosure={onToggleFocusedStationClosure}
+                        />
                     )}
                 </div>
             )}
