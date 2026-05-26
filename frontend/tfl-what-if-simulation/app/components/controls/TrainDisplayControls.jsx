@@ -11,7 +11,8 @@
  * @param {boolean} props.showTrains - Whether train markers are currently visible.
  * @param {"all" | "selected"} props.trainFilterMode - Current train line filtering mode.
  * @param {Set<string>} props.visibleTrainLines - Line ids currently selected for train visibility.
- * @param {(mode: "all" | "selected") => void)} props.onTrainFilterModeChange - Called when the filter mode changes.
+ * @param {() => void} props.onToggleShowTrains - Called when train visibility is toggled.
+ * @param {(mode: "all" | "selected") => void} props.onTrainFilterModeChange - Called when the filter mode changes.
  * @param {(lineId: string) => void} props.onToggleVisibleTrainLine - Called when a line is shown or hidden.
  */
 export function TrainDisplayControls({
@@ -40,6 +41,7 @@ export function TrainDisplayControls({
                 }}
             >
                 <button
+                    type="button"
                     onClick={onToggleShowTrains}
                     style={{
                         display: "flex",
@@ -71,6 +73,7 @@ export function TrainDisplayControls({
 
                                 return (
                                     <button
+                                        type="button"
                                         key={option.id}
                                         onClick={() => onTrainFilterModeChange(option.id)}
                                         style={{
@@ -97,6 +100,7 @@ export function TrainDisplayControls({
 
                                     return (
                                         <button
+                                            type="button"
                                             key={`train-line-${line.id}`}
                                             onClick={() => onToggleVisibleTrainLine(line.id)}
                                             style={{

@@ -17,12 +17,12 @@ const INTERACTION_MODE_OPTIONS = [
  * In route mode, map selections are used for journey planning. In closure mode,
  * map selections are used to open or close parts of the network. This is most
  * useful on touch devices, where the same map tap can be ambiguous.
- * The component is presentational: paren components own the selected mode.
+ * The component is presentational: parent components own the selected mode.
  * 
  * @param {Object} props 
  * @param {Object} props.COLORS - Theme colour tokens for the control panel.
  * @param {string} props.accentColor - Colour used for the active option.
- * @param {"route | "closures"} props.interactionMode - Currently selected map interaction mode.
+ * @param {"route" | "closures"} props.interactionMode - Currently selected map interaction mode.
  * @param {(mode: "route" | "closures") => void} props.onInteractionModeChange - Called when on mobile.
  * @returns {JSX.Element}
  */
@@ -51,6 +51,7 @@ export function InteractionModeToggle({
 
                     return (
                         <button
+                            type="button"
                             key={option.id}
                             onClick={() => onInteractionModeChange?.(option.id)}
                             style={{

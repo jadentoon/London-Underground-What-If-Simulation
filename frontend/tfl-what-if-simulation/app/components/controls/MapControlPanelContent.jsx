@@ -3,10 +3,58 @@ import { useTheme } from "next-themes";
 
 import { ToggleRow } from "./ToggleRow";
 import { InteractionModeToggle } from "./InteractionModeToggle";
+import { NetworkStatusSummary } from "./NetworkStatusSummary";
 import { SavedScenariosPanel } from "./SavedScenariosPanel";
 import { TrainDisplayControls } from "./TrainDisplayControls";
 import { LineStatusList } from "./LineStatusList";
 
+
+/**
+ * Composes the main map settings and status controls.
+ *
+ * This component wires together the control panel sections used by the sidebar
+ * and mobile sheet. It owns cross-section UI state such as the active theme,
+ * expanded line status row, and hover timing for live delay details. Individual
+ * sections are delegated to smaller presentational components.
+ *
+ * @param {Object} props
+ * @param {Object} props.COLORS - Theme colour tokens for the control panel.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is currently active.
+ * @param {string} props.accentColor - Accent colour used for active controls.
+ * @param {() => void} props.onToggleWhatIfMode - Called when What-If mode is toggled.
+ * @param {() => void} props.onResetClosures - Called when all What-If closures should be cleared.
+ * @param {Array<Object>} props.savedScenarios - Saved What-If scenarios available to load.
+ * @param {(name: string) => Object | undefined} props.onSaveScenario - Saves the current What-If scenario.
+ * @param {(scenarioId: string) => void} props.onLoadScenario - Loads a saved What-If scenario.
+ * @param {(scenarioId: string) => void} props.onDeleteScenario - Deletes a saved What-If scenario.
+ * @param {Array<{id: string, label: string, color: string}>} props.effectiveLines - Lines available in the current map state.
+ * @param {Set<string>} props.closedLines - Line ids closed in What-If mode.
+ * @param {Set<string>} props.partialLines - Line ids with partial station closures.
+ * @param {(lineId: string) => void} props.onLineToggle - Toggles a line closure in What-If mode.
+ * @param {string} props.lineStatusLabel - Label describing the current line status source.
+ * @param {string} props.lineStatusColor - Colour used for the line status indicator.
+ * @param {string} props.lineStatusBg - Background colour used for the line status summary.
+ * @param {boolean} props.isLiveLines - Whether live line status data is available.
+ * @param {Date | null} props.linesUpdatedAt - Last time live line status was updated.
+ * @param {Map<string, Object>} props.lineDelays - Live delay details keyed by line id.
+ * @param {"live" | string} props.trainFeedSource - Source currently used for train data.
+ * @param {Date | string | number | null} props.trainFeedUpdatedAt - Last time train data was updated.
+ * @param {string | null} props.trainFeedReason - Explanation shown when live train data is unavailable.
+ * @param {number} props.trainFeedCount - Number of train markers currently visible.
+ * @param {boolean} props.showTrains - Whether train markers are visible.
+ * @param {"all" | "selected"} props.trainFilterMode - Current train line filter mode.
+ * @param {Set<string>} props.visibleTrainLines - Line ids selected for train visibility.
+ * @param {() => void} props.onToggleShowTrains - Toggles train marker visibility.
+ * @param {(mode: "all" | "selected") => void} props.onTrainFilterModeChange - Updates the train filter mode.
+ * @param {(lineId: string) => void} props.onToggleVisibleTrainLine - Toggles train visibility for a line.
+ * @param {boolean} [props.showHeading=true] - Whether to show the Settings heading.
+ * @param {boolean} [props.isTouchLayout=false] - Whether the current layout is touch-oriented.
+ * @param {boolean} [props.showInteractionModeToggle=false] - Whether to show the mobile interaction mode selector.
+ * @param {boolean} [props.showWhatIfToggle=true] - Whether to show the What-If toggle row.
+ * @param {"route" | "closures"} [props.interactionMode="route"] - Current mobile map interaction mode.
+ * @param {(mode: "route" | "closures") => void} props.onInteractionModeChange - Updates the mobile interaction mode.
+ * @returns {JSX.Element}
+ */
 export function MapControlPanelContent({
     COLORS,
     hypotheticalSettingsEnabled,
@@ -44,12 +92,7 @@ export function MapControlPanelContent({
     interactionMode = "route",
     onInteractionModeChange,
 }) {
-    const partlyClosedLines = partialLines || new Set();
-    const isLiveTrainFeed = trainFeedSource === "live";
-    const trainFeedColour = isLiveTrainFeed ? "#22c55e" : "#f59e0b";
-    const trainFeedBg = isLiveTrainFeed ? "rgba(34, 197, 94, 0.12)" : "rgba(245, 158, 11, 0.12)";
-    const trainFeedLabel = isLiveTrainFeed ? "Live TfL arrivals" : "Schedule fallback";
-    const showFeedStatusBlocks = !hypotheticalSettingsEnabled;
+    const safePartialLines = partialLines || new Set();
 
     const [expandedLineId, setExpandedLineId] = useState(null);
     const hoverTimeoutRef = useRef(null);
@@ -129,9 +172,11 @@ export function MapControlPanelContent({
                 />
             )}
 
+
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {hypotheticalSettingsEnabled && (
                     <button
+                        type="button"
                         onClick={onResetClosures}
                         style={{
                             width: "100%",
@@ -161,96 +206,6 @@ export function MapControlPanelContent({
                     />
                 )}
 
-                <h3 style={{ margin: "0 0 4px", color: COLORS.text }}>Lines</h3>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 8px",
-                        borderRadius: 8,
-                        background: lineStatusBg,
-                        color: lineStatusColour,
-                        fontSize: 12,
-                    }}
-                >
-                    <span
-                        style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 999,
-                            background: lineStatusColour,
-                            boxShadow: `0 0 8px ${lineStatusColour}80`,
-                        }}
-                    />
-                    <span>
-                        {lineStatusLabel}
-                        {isLiveLines && linesUpdatedAt ? ` · ${linesUpdatedAt.toLocaleTimeString()}` : ""}
-                    </span>
-                </div>
-
-                {hypotheticalSettingsEnabled && (
-                    <div
-                        style={{
-                            marginTop: -2,
-                            fontSize: 12,
-                            lineHeight: 1.45,
-                            color: COLORS.textMuted,
-                        }}
-                    >
-                        Use the line list below to close or reopen lines from the sidebar.
-                    </div>
-                )}
-
-                {showFeedStatusBlocks && (
-                    <>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 8,
-                                padding: "6px 8px",
-                                borderRadius: 8,
-                                background: trainFeedBg,
-                                color: trainFeedColour,
-                                fontSize: 12,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: 999,
-                                    background: trainFeedColour,
-                                    boxShadow: `0 0 8px ${trainFeedColour}80`,
-                                }}
-                            />
-                            <span>
-                                {`Train feed: ${trainFeedLabel}`}
-                                {trainFeedCount > 0 ? ` · ${trainFeedCount} trains visible right now` : ""}
-                                {trainFeedUpdatedAt ? ` · ${new Date(trainFeedUpdatedAt).toLocaleTimeString()}` : ""}
-                            </span>
-                        </div>
-
-                        {!isLiveTrainFeed && trainFeedReason && (
-                            <div
-                                style={{
-                                    marginTop: -2,
-                                    padding: "6px 8px",
-                                    borderRadius: 8,
-                                    border: `1px solid ${COLORS.border}`,
-                                    color: COLORS.textMuted,
-                                    fontSize: 11,
-                                    lineHeight: 1.35,
-                                    background: COLORS.subtle,
-                                }}
-                            >
-                                {trainFeedReason}
-                            </div>
-                        )}
-                    </>
-                )}
-
                 {!hypotheticalSettingsEnabled && (
                     <TrainDisplayControls
                         COLORS={COLORS}
@@ -265,12 +220,26 @@ export function MapControlPanelContent({
                     />
                 )}
 
+                <NetworkStatusSummary
+                    COLORS={COLORS}
+                    hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                    lineStatusLabel={lineStatusLabel}
+                    lineStatusColour={lineStatusColour}
+                    lineStatusBg={lineStatusBg}
+                    isLiveLines={isLiveLines}
+                    linesUpdatedAt={linesUpdatedAt}
+                    trainFeedSource={trainFeedSource}
+                    trainFeedUpdatedAt={trainFeedUpdatedAt}
+                    trainFeedReason={trainFeedReason}
+                    trainFeedCount={trainFeedCount}
+                />
+
                 <LineStatusList
                     COLORS={COLORS}
                     hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                     effectiveLines={effectiveLines}
                     closedLines={closedLines}
-                    partialLines={partlyClosedLines}
+                    partialLines={safePartialLines}
                     lineDelays={lineDelays}
                     isLiveLines={isLiveLines}
                     isTouchLayout={isTouchLayout}

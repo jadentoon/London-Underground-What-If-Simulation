@@ -12,7 +12,8 @@ import { useState } from "react";
  * @param {Object} props.COLORS - Theme colour tokens for the control panel.
  * @param {string} props.accentColor - Colour used for the primary save action.
  * @param {Array<Object>} props.savedScenarios - Saved closure scenarios available to load.
- * @param {(name: string) => Object | undefined} props.onLoadScenario - Loads a saved scenario by id.
+ * @param {(name: string) => Object | undefined} props.onSaveScenario - Saves the current scenario and returns it.
+ * @param {(scenarioId: string) => void} props.onLoadScenario - Loads a saved scenario by id.
  * @param {(scenarioId: string) => void} props.onDeleteScenario - Deletes a saved scenario by id.
  * @returns {JSX.Element}
  */
@@ -72,6 +73,7 @@ export function SavedScenariosPanel({
                     }}
                 />
                 <button
+                    type="button"
                     onClick={() => {
                         const savedScenario = onSaveScenario?.(scenarioName);
                         if (savedScenario?.id) {
@@ -126,6 +128,7 @@ export function SavedScenariosPanel({
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 <button
+                    type="button"
                     onClick={() => selectedScenarioId && onLoadScenario?.(selectedScenarioId)}
                     disabled={!selectedScenarioId}
                     style={{
@@ -141,6 +144,7 @@ export function SavedScenariosPanel({
                     Load
                 </button>
                 <button
+                    type="button"
                     onClick={() => {
                         if (!selectedScenarioId) return;
                         onDeleteScenario?.(selectedScenarioId);

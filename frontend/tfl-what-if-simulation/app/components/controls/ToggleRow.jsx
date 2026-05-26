@@ -40,6 +40,7 @@ export function ToggleRow({
         >
             <span>{label}</span>
             <button
+                type="button"
                 onClick={onToggle}
                 aria-label={ariaLabel ?? label}
                 aria-pressed={enabled}

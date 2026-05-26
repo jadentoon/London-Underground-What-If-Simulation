@@ -47,7 +47,7 @@ export function LineStatusList({
                     const isClosed = closedLines.has(line.id);
                     const isPartlyClosed = !isClosed && partialLines.has(line.id);
                     const delay = lineDelays.get(line.id);
-                    const showDelay = !hypotheticalSettingsEnabled && isLiveLines && delay;
+                    const showDelay = Boolean(!hypotheticalSettingsEnabled && isLiveLines && delay);
                     const canToggleLine = hypotheticalSettingsEnabled;
                     const canInspectDelay = isTouchLayout && showDelay;
                     const statusLabel = showDelay

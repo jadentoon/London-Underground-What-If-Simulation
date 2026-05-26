@@ -61,6 +61,7 @@ export function LineStatusItem({
             }}
         >
             <button
+                type="button"
                 onClick={onAction}
                 disabled={isLineButtonDisabled}
                 style={{
