@@ -265,6 +265,7 @@ export function MapSearchBox({
                 <button
                     onClick={handleOpenSearch}
                     type="button"
+                    data-tour="station-search-trigger"
                     style={{
                         position: "fixed",
                         top: desktopTop,
@@ -284,6 +285,7 @@ export function MapSearchBox({
                         boxShadow: COLORS.shadow,
                     }}
                     title="Open station search"
+                    aria-label="Open station search"
                 >
                     <span
                         style={{
@@ -348,6 +350,7 @@ export function MapSearchBox({
                         <button
                             onClick={() => setIsOpen(false)}
                             type="button"
+                            data-tour="station-search-hide"
                             style={{
                                 padding: "7px 10px",
                                 borderRadius: 999,
@@ -360,6 +363,7 @@ export function MapSearchBox({
                                 flex: "0 0 auto",
                             }}
                             title="Hide station search"
+                            aria-label="Hide station search"
                         >
                             Hide
                         </button>
@@ -385,6 +389,7 @@ export function MapSearchBox({
                             onChange={(e) => handleQueryChange(e.target.value)}
                             onFocus={onSearchInputFocus}
                             placeholder="Search stations"
+                            data-tour="station-search-input"
                             style={{
                                 width: "100%",
                                 padding: "11px 40px 11px 34px",

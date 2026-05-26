@@ -15,7 +15,7 @@ export function MapHud({
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const sidebarOffset = layout?.sidebarOffset ?? null;
     const leftOffset = hypotheticalSettingsEnabled ? 85 : 16;
-    const [showControls, setShowControls] = useState(true);
+    const [showControls, setShowControls] = useState(false);
 
     if (isMobilePortrait) return null;
 

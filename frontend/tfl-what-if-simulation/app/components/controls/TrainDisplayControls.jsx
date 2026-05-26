@@ -41,6 +41,9 @@ export function TrainDisplayControls({
             >
                 <button
                     onClick={onToggleShowTrains}
+                    data-tour="show-trains-toggle"
+                    aria-label="Toggle show trains"
+                    aria-pressed={showTrains}
                     style={{
                         display: "flex",
                         alignItems: "center",
