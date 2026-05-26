@@ -148,7 +148,6 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
                 id: "tour-complete",
                 title: "Tour Complete!",
                 description: "You've learned the basics. Explore the app to discover more features.",
-                targetSelector: "[data-tour='map-controls-box']",
                 undimSelector: "[data-tour='map-controls-box']",
                 completion: {
                     type: "event",
@@ -596,45 +595,47 @@ export function GuidedTourOverlay({ onSkipTour, COLORS }) {
             </div>
 
             {/* Arrow from the box to the target */}
-            <svg
-                style={{
-                    position: "fixed",
-                    inset: 0,
-                    width: "100vw",
-                    height: "100vh",
-                    zIndex: 1202,
-                    pointerEvents: "none",
-                }}
-                viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}
-                preserveAspectRatio="none"
-            >
-                <defs>
-                    <marker
-                        id="guided-tour-arrowhead"
-                        markerWidth="10"
-                        markerHeight="10"
-                        refX="8"
-                        refY="5"
-                        orient="auto"
-                    >
-                        <polygon
-                            points="0 0, 10 5, 0 10"
-                            fill={COLORS?.accent || "#60a5fa"}
-                        />
-                    </marker>
-                </defs>
+            {currentStep !== steps.length - 1 && (
+                <svg
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        zIndex: 1202,
+                        pointerEvents: "none",
+                    }}
+                    viewBox={`0 0 ${window.innerWidth} ${window.innerHeight}`}
+                    preserveAspectRatio="none"
+                >
+                    <defs>
+                        <marker
+                            id="guided-tour-arrowhead"
+                            markerWidth="10"
+                            markerHeight="10"
+                            refX="8"
+                            refY="5"
+                            orient="auto"
+                        >
+                            <polygon
+                                points="0 0, 10 5, 0 10"
+                                fill={COLORS?.accent || "#60a5fa"}
+                            />
+                        </marker>
+                    </defs>
 
-                <path
-                    d={`M ${arrowStartX} ${arrowStartY} Q ${arrowCtrlX} ${arrowCtrlY} ${arrowEndX} ${arrowEndY}`}
-                    stroke={COLORS?.accent || "#60a5fa"}
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    fill="none"
-                    markerEnd="url(#guided-tour-arrowhead)"
-                    opacity="0.95"
-                    style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.35))" }}
-                />
-            </svg>
+                    <path
+                        d={`M ${arrowStartX} ${arrowStartY} Q ${arrowCtrlX} ${arrowCtrlY} ${arrowEndX} ${arrowEndY}`}
+                        stroke={COLORS?.accent || "#60a5fa"}
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        fill="none"
+                        markerEnd="url(#guided-tour-arrowhead)"
+                        opacity="0.95"
+                        style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.35))" }}
+                    />
+                </svg>
+            )}
 
             <style jsx global>{`
                 @keyframes pulse {
