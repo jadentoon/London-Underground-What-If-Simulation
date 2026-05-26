@@ -22,6 +22,7 @@ import { MapHud } from "../layout/MapHud";
 import { MapSidebar } from "../layout/MapSidebar";
 import { SidebarToggleButton } from "../layout/SidebarToggleButton";
 import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
+import { GuidedTourPrompt } from "../layout/GuidedTourPrompt"; //import for guided tours 
 import { RoutingErrorBox } from "../route/RoutingErrorBox";
 import { RouteInfoPanel } from "../route/RouteInfoPanel";
 import { MobileControlSheet } from "../layout/MobileControlSheet";
@@ -168,6 +169,7 @@ export function MapCanvas() {
     const isTrainPanelOpen = Boolean(selectedTrainId);
     const [resetRouteSequence, setResetRouteSequence] = useState(0);
     const [stationActionRequest, setStationActionRequest] = useState(null);
+    const [showGuidedTourPrompt, setShowGuidedTourPrompt] = useState(true);
     const [routeSelection, setRouteSelection] = useState({
         startId: null,
         startName: null,
@@ -590,6 +592,17 @@ export function MapCanvas() {
                 layout={{ isMobilePortrait, hasMobileModeBar: showMobileModeBar }}
                 onClose={() => setRoutingError(null)}
             />
+            {/* Guided Tour Prompt */}
+            {showGuidedTourPrompt && (
+                <GuidedTourPrompt
+                    onStartTour={() => {
+                        setShowGuidedTourPrompt(false);
+                        // Add guided tour logic here
+                    }}
+                    onDismiss={() => setShowGuidedTourPrompt(false)}
+                    COLORS={COLORS}
+                />
+            )}
         </div>
     )
 }
