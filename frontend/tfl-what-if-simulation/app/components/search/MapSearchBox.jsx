@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { SearchInput } from "./SearchInput";
 
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
@@ -167,54 +168,16 @@ export function MapSearchBox({
                     transition: "opacity 180ms ease, transform 180ms ease",
                 }}
             >
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "12px 14px",
-                        borderRadius: 18,
-                        background: COLORS.card,
-                        backdropFilter: "blur(10px)",
-                        border: `1px solid ${COLORS.border}`,
-                        boxShadow: COLORS.shadow,
-                    }}
-                >
-                    <span style={{ fontSize: 16, color: accentColour }}>⌕</span>
-                    <input
-                        value={stationQuery}
-                        onChange={(e) => handleQueryChange(e.target.value)}
-                        onFocus={onSearchInputFocus}
-                        placeholder="Search stations"
-                        style={{
-                            flex: 1,
-                            border: "none",
-                            background: "transparent",
-                            color: COLORS.text,
-                            outline: "none",
-                            fontSize: 14,
-                        }}
-                        aria-label="Search stations"
-                        onKeyDown={handleKeyDown}
-                    />
-                    {stationQuery.trim().length > 0 && (
-                        <button
-                            onClick={handleClearSearch}
-                            type="button"
-                            style={{
-                                width: 28,
-                                height: 28,
-                                borderRadius: 999,
-                                border: "none",
-                                background: COLORS.subtle,
-                                color: COLORS.textMuted,
-                                cursor: "pointer",
-                            }}
-                        >
-                            x
-                        </button>
-                    )}
-                </div>
+                <SearchInput 
+                    COLORS={COLORS}
+                    accentColour={accentColour}
+                    value={stationQuery}
+                    onChange={handleQueryChange}
+                    onClear={handleClearSearch}
+                    onFocus={onSearchInputFocus}
+                    onKeyDown={handleKeyDown}
+                    compact
+                />
 
                 {stationMatches.length > 0 && (
                     <div
@@ -365,63 +328,15 @@ export function MapSearchBox({
                         </button>
                     </div>
 
-                    <div style={{ position: "relative" }}>
-                        <span
-                            style={{
-                                position: "absolute",
-                                left: 12,
-                                top: "50%",
-                                transform: "translateY(-50%)",
-                                color: accentColour,
-                                fontSize: 15,
-                                pointerEvents: "none",
-                            }}
-                        >
-                            ⌕
-                        </span>
-
-                        <input
-                            value={stationQuery}
-                            onChange={(e) => handleQueryChange(e.target.value)}
-                            onFocus={onSearchInputFocus}
-                            placeholder="Search stations"
-                            style={{
-                                width: "100%",
-                                padding: "11px 40px 11px 34px",
-                                borderRadius: 12,
-                                border: `1px solid ${COLORS.border}`,
-                                background: COLORS.soft,
-                                color: COLORS.text,
-                                outline: "none",
-                                fontSize: 14,
-                            }}
-                            aria-label="Search stations"
-                            onKeyDown={handleKeyDown}
-                        />
-
-                        {stationQuery.trim().length > 0 && (
-                            <button
-                                onClick={handleClearSearch}
-                                type="button"
-                                style={{
-                                    position: "absolute",
-                                    right: 8,
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    width: 28,
-                                    height: 28,
-                                    borderRadius: 999,
-                                    border: "none",
-                                    background: COLORS.subtle,
-                                    color: COLORS.textMuted,
-                                    cursor: "pointer",
-                                }}
-                                aria-label="Clear search"
-                            >
-                                x
-                            </button>
-                        )}
-                    </div>
+                    <SearchInput 
+                        COLORS={COLORS}
+                        accentColour={accentColour}
+                        value={stationQuery}
+                        onChange={handleQueryChange}
+                        onClear={handleClearSearch}
+                        onFocus={onSearchInputFocus}
+                        onKeyDown={handleKeyDown}
+                    />
 
                     {stationMatches.length > 0 ? (
                         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
