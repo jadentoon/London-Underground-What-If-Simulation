@@ -22,7 +22,8 @@ import { MapHud } from "../layout/MapHud";
 import { MapSidebar } from "../layout/MapSidebar";
 import { SidebarToggleButton } from "../layout/SidebarToggleButton";
 import { MapWhatIfOverlay } from "../layout/MapWhatIfOverlay";
-import { GuidedTourPrompt } from "../layout/GuidedTourPrompt"; //import for guided tours 
+import { GuidedTourPrompt } from "../layout/GuidedTourPrompt";
+import { GuidedTourOverlay } from "../layout/GuidedTourOverlay";
 import { RoutingErrorBox } from "../route/RoutingErrorBox";
 import { RouteInfoPanel } from "../route/RouteInfoPanel";
 import { MobileControlSheet } from "../layout/MobileControlSheet";
@@ -76,6 +77,7 @@ function MainScreenWhatIfToggle({
     const right = layout?.right ?? 70;
     return (
         <div
+            data-tour="what-if-toggle-container"
             style={{
                 position: "fixed",
                 top,
@@ -114,6 +116,7 @@ function MainScreenWhatIfToggle({
                     flex: "0 0 auto",
                 }}
                 aria-label="Toggle What-If Mode"
+                aria-pressed={hypotheticalSettingsEnabled}
             >
                 <div
                     style={{
@@ -170,6 +173,7 @@ export function MapCanvas() {
     const [resetRouteSequence, setResetRouteSequence] = useState(0);
     const [stationActionRequest, setStationActionRequest] = useState(null);
     const [showGuidedTourPrompt, setShowGuidedTourPrompt] = useState(true);
+    const [isGuidedTourActive, setIsGuidedTourActive] = useState(false);
     const [routeSelection, setRouteSelection] = useState({
         startId: null,
         startName: null,
@@ -597,9 +601,16 @@ export function MapCanvas() {
                 <GuidedTourPrompt
                     onStartTour={() => {
                         setShowGuidedTourPrompt(false);
-                        // Add guided tour logic here
+                        setIsGuidedTourActive(true);
                     }}
                     onDismiss={() => setShowGuidedTourPrompt(false)}
+                    COLORS={COLORS}
+                />
+            )}
+
+            {isGuidedTourActive && (
+                <GuidedTourOverlay
+                    onSkipTour={() => setIsGuidedTourActive(false)}
                     COLORS={COLORS}
                 />
             )}

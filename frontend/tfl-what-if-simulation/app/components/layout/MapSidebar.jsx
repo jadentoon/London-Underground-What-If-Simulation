@@ -41,6 +41,7 @@ export function MapSidebar({
 
     return (
         <div
+            data-tour="sidebar"
             style={{
                 position: "fixed",
                 top: 0,

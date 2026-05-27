@@ -45,6 +45,7 @@ export function LineStatusItem({
 }) {
     return (
         <div
+            data-tour="line-status-item"
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             style={{
@@ -63,6 +64,7 @@ export function LineStatusItem({
             <button
                 type="button"
                 onClick={onAction}
+                data-tour="line-status-button"
                 disabled={isLineButtonDisabled}
                 style={{
                     display: "flex",

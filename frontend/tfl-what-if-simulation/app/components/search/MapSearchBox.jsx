@@ -196,119 +196,176 @@ export function MapSearchBox({
 
     return (
         <>
-            {!isOpen && (
-                <CollapsedSearchButton 
-                    COLORS={COLORS}
-                    accentColour={accentColour}
-                    top={desktopTop}
-                    right={desktopRight}
-                    onOpen={handleOpenSearch}
-                />
-            )}
-
-            {isOpen && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: desktopTop,
-                        right: desktopRight,
-                        width: 320,
-                        background: COLORS.card,
-                        backdropFilter: "blur(10px)",
-                        border: `1px solid ${COLORS.border}`,
-                        borderRadius: 18,
-                        padding: 14,
-                        zIndex: 1000,
-                        boxShadow: COLORS.shadow,
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "flex-start",
-                            justifyContent: "space-between",
-                            gap: 12,
-                            marginBottom: 12,
-                        }}
-                    >
-                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                            <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                Search
-                            </span>
-                            <span style={{ fontSize: 18, fontWeight: 800, color: COLORS.textStrong }}>
-                                Search stations
-                            </span>
-                            <span style={{ fontSize: 12, lineHeight: 1.4, color: COLORS.textMuted }}>
-                                Type a station name to find it on the map.
-                            </span>
-                        </div>
-
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            type="button"
-                            style={{
-                                padding: "7px 10px",
-                                borderRadius: 999,
-                                border: `1px solid ${COLORS.border}`,
-                                background: COLORS.subtle,
-                                color: COLORS.text,
-                                cursor: "pointer",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                flex: "0 0 auto",
-                            }}
-                            title="Hide station search"
-                        >
-                            Hide
-                        </button>
-                    </div>
-
-                    <SearchInput
+            <div
+                data-tour="station-search-container"
+                style={{
+                    position: "fixed",
+                    top: desktopTop,
+                    right: desktopRight,
+                    zIndex: isOpen ? 1000 : 1001,
+                }}
+            >
+                {!isOpen && (
+                    <CollapsedSearchButton 
                         COLORS={COLORS}
                         accentColour={accentColour}
-                        value={stationQuery}
-                        onChange={handleQueryChange}
-                        onClear={handleClearSearch}
-                        onFocus={onSearchInputFocus}
-                        onKeyDown={handleKeyDown}
+                        onOpen={handleOpenSearch}
                     />
+                )}
 
-                    {stationMatches.length > 0 ? (
-                        <SearchResultsList
-                            COLORS={COLORS}
-                            accentColour={accentColour}
-                            stationMatches={stationMatches}
-                            selectedIndex={selectedIndex}
-                            onSelectStation={handleSelectStation}
-                            onSelectIndex={setSelectedIndex}
-                        />
-                    ) : !focusedStation ? (
-                        <div style={{ marginTop: 10, fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
-                            Use the search box to jump straight to a station on the map.
+                {isOpen && (
+                    <div
+                        data-tour="station-search-box"
+                        style={{
+                            position: "relative",
+                            width: 320,
+                            background: COLORS.card,
+                            backdropFilter: "blur(10px)",
+                            border: `1px solid ${COLORS.border}`,
+                            borderRadius: 18,
+                            padding: 14,
+                            boxShadow: COLORS.shadow,
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "flex-start",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                marginBottom: 12,
+                            }}
+                        >
+                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                <span style={{ fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: COLORS.textMuted }}>
+                                    Search
+                                </span>
+                                <span style={{ fontSize: 18, fontWeight: 800, color: COLORS.textStrong }}>
+                                    Search stations
+                                </span>
+                                <span style={{ fontSize: 12, lineHeight: 1.4, color: COLORS.textMuted }}>
+                                    Type a station name to find it on the map.
+                                </span>
+                            </div>
+
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                type="button"
+                                data-tour="station-search-hide"
+                                style={{
+                                    padding: "7px 10px",
+                                    borderRadius: 999,
+                                    border: `1px solid ${COLORS.border}`,
+                                    background: COLORS.subtle,
+                                    color: COLORS.text,
+                                    cursor: "pointer",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    flex: "0 0 auto",
+                                }}
+                                title="Hide station search"
+                                aria-label="Hide station search"
+                            >
+                                Hide
+                            </button>
                         </div>
-                    ) : null}
 
-                    {focusedStation && (
-                        <FocusedStationPanel 
-                            COLORS={COLORS}
-                            accentColour={accentColour}
-                            focusedStation={focusedStation}
-                            hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
-                            currentRouteStartName={currentRouteStartName}
-                            currentRouteEndName={currentRouteEndName}
-                            isFocusedStationCurrentStart={isFocusedStationCurrentStart}
-                            isFocusedStationCurrentDestination={isFocusedStationCurrentDestination}
-                            isStartActionDisabled={isStartActionDisabled}
-                            isDestinationActionDisabled={isDestinationActionDisabled}
-                            isFocusedStationUnavailableForRouting={isFocusedStationUnavailableForRouting}
-                            isFocusedStationHypotheticallyClosed={isFocusedStationHypotheticallyClosed}
-                            onSetFocusedStationAsStart={onSetFocusedStationAsStart}
-                            onSetFocusedStationAsDestination={onSetFocusedStationAsDestination}
-                            onToggleFocusedStationClosure={onToggleFocusedStationClosure}
-                        />
-                    )}
-                </div>
-            )}
+                        <div style={{ position: "relative" }}>
+                            <span
+                                style={{
+                                    position: "absolute",
+                                    left: 12,
+                                    top: "50%",
+                                    transform: "translateY(-50%)",
+                                    color: accentColour,
+                                    fontSize: 15,
+                                    pointerEvents: "none",
+                                }}
+                            >
+                                ⌕
+                            </span>
+
+                            <input
+                                value={stationQuery}
+                                onChange={(e) => handleQueryChange(e.target.value)}
+                                onFocus={onSearchInputFocus}
+                                placeholder="Search stations"
+                                data-tour="station-search-input"
+                                style={{
+                                    width: "100%",
+                                    padding: "11px 40px 11px 34px",
+                                    borderRadius: 12,
+                                    border: `1px solid ${COLORS.border}`,
+                                    background: COLORS.soft,
+                                    color: COLORS.text,
+                                    outline: "none",
+                                    fontSize: 14,
+                                }}
+                                aria-label="Search stations"
+                                onKeyDown={handleKeyDown}
+                            />
+
+                            {stationQuery.trim().length > 0 && (
+                                <button
+                                    onClick={handleClearSearch}
+                                    type="button"
+                                    style={{
+                                        position: "absolute",
+                                        right: 8,
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        width: 28,
+                                        height: 28,
+                                        borderRadius: 999,
+                                        border: "none",
+                                        background: COLORS.subtle,
+                                        color: COLORS.textMuted,
+                                        cursor: "pointer",
+                                    }}
+                                    aria-label="Clear search"
+                                >
+                                    x
+                                </button>
+                            )}
+                        </div>
+
+                        {stationMatches.length > 0 ? (
+                            <SearchResultsList
+                                COLORS={COLORS}
+                                accentColour={accentColour}
+                                stationMatches={stationMatches}
+                                selectedIndex={selectedIndex}
+                                onSelectStation={handleSelectStation}
+                                onSelectIndex={setSelectedIndex}
+                            />
+                        ) : !focusedStation ? (
+                            <div style={{ marginTop: 10, fontSize: 12, lineHeight: 1.45, color: COLORS.textMuted }}>
+                                Use the search box to jump straight to a station on the map.
+                            </div>
+                        ) : null}
+
+                        {focusedStation && (
+                            <FocusedStationPanel
+                                COLORS={COLORS}
+                                accentColour={accentColour}
+                                focusedStation={focusedStation}
+                                hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
+                                currentRouteStartName={currentRouteStartName}
+                                currentRouteEndName={currentRouteEndName}
+                                isFocusedStationCurrentStart={isFocusedStationCurrentStart}
+                                isFocusedStationCurrentDestination={isFocusedStationCurrentDestination}
+                                isStartActionDisabled={isStartActionDisabled}
+                                isDestinationActionDisabled={isDestinationActionDisabled}
+                                isFocusedStationUnavailableForRouting={isFocusedStationUnavailableForRouting}
+                                isFocusedStationHypotheticallyClosed={isFocusedStationHypotheticallyClosed}
+                                onSetFocusedStationAsStart={onSetFocusedStationAsStart}
+                                onSetFocusedStationAsDestination={onSetFocusedStationAsDestination}
+                                onToggleFocusedStationClosure={onToggleFocusedStationClosure}
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
         </>
     );
 }

@@ -8,25 +8,21 @@
  * @param {Object} props
  * @param {Object} props.COLORS - Theme colour tokens for the search surface.
  * @param {string} props.accentColour - Colour used for the search icon.
- * @param {number} props.top - Fixed top offset for the button.`
  * @param {() => void} props.onOpen - Called when the button is clicked. 
  * @returns {JSX.Element}
  */
 export function CollapsedSearchButton({
     COLORS,
     accentColour,
-    top,
-    right,
     onOpen,
 }) {
     return (
         <button
             type="button"
+            data-tour="station-search-trigger"
             onClick={onOpen}
             style={{
-                position: "fixed",
-                top: top,
-                right: right,
+                position: "relative",
                 minWidth: 220,
                 padding: "12px 14px",
                 background: COLORS.card,
@@ -42,6 +38,7 @@ export function CollapsedSearchButton({
                 boxShadow: COLORS.shadow,
             }}
             title="Open station search"
+            aria-label="Open Station Search"
         >
             <span
                 style={{

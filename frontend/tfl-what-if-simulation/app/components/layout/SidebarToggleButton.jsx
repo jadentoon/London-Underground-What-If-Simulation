@@ -24,6 +24,8 @@ export function SidebarToggleButton({
     return (
         <button
             onClick={onToggle}
+            aria-label="Toggle sidebar"
+            aria-expanded={isSidebarOpen}
             style={{
                 position: "fixed",
                 top: isMobilePortrait ? 12 : "50%",
