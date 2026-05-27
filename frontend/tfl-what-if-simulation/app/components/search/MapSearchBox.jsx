@@ -10,6 +10,7 @@ import { useState, useEffect, useRef } from "react";
 import { SearchInput } from "./SearchInput";
 import { SearchResultsList } from "./SearchResultsList";
 import { FocusedStationPanel } from "./FocusedStationPanel";
+import { CollapsedSearchButton } from "./CollapsedSearchButton";
 
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
@@ -196,50 +197,13 @@ export function MapSearchBox({
     return (
         <>
             {!isOpen && (
-                <button
-                    onClick={handleOpenSearch}
-                    type="button"
-                    style={{
-                        position: "fixed",
-                        top: desktopTop,
-                        right: desktopRight,
-                        minWidth: 220,
-                        padding: "12px 14px",
-                        background: COLORS.card,
-                        backdropFilter: "blur(10px)",
-                        border: `1px solid ${COLORS.border}`,
-                        borderRadius: 16,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 12,
-                        cursor: "pointer",
-                        zIndex: 1001,
-                        color: COLORS.text,
-                        boxShadow: COLORS.shadow,
-                    }}
-                    title="Open station search"
-                >
-                    <span
-                        style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 999,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: COLORS.hover,
-                            color: accentColour,
-                            fontSize: 16,
-                            flex: "0 0 auto",
-                        }}
-                    >
-                        ⌕
-                    </span>
-                    <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: COLORS.textStrong }}>Search stations</span>
-                        <span style={{ fontSize: 12, color: COLORS.textMuted }}>Jump straight to a station on the map</span>
-                    </span>
-                </button>
+                <CollapsedSearchButton 
+                    COLORS={COLORS}
+                    accentColour={accentColour}
+                    top={desktopTop}
+                    right={desktopRight}
+                    onOpen={handleOpenSearch}
+                />
             )}
 
             {isOpen && (
