@@ -24,6 +24,7 @@ export function SearchInput({
     onFocus,
     onKeyDown,
     compact = false,
+    inputTourId,
 }) {
     const hasQuery = value.trim().length > 0;
 
@@ -48,6 +49,7 @@ export function SearchInput({
                     onChange={(event) => onChange(event.target.value)}
                     onFocus={onFocus}
                     placeholder="Search stations"
+                    data-tour={inputTourId}
                     style={{
                         flex: 1,
                         border: "none",
@@ -101,6 +103,7 @@ export function SearchInput({
                 onChange={(event) => onChange(event.target.value)}
                 onFocus={onFocus}
                 placeholder="Search stations"
+                data-tour={inputTourId}
                 style={{
                     width: "100%",
                     padding: "11px 40px 11px 34px",

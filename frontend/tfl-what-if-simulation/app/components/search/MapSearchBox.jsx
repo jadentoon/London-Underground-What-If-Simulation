@@ -1,17 +1,51 @@
-/**
- * Searchbox that was made by Saf. 
- * Updated with:
- * - keyboard navigation (↑ ↓ Enter)
- * - selected station highlighting support
- * - clear search button
- */
-
 import { useState, useEffect, useRef } from "react";
 import { SearchInput } from "./SearchInput";
 import { SearchResultsList } from "./SearchResultsList";
 import { FocusedStationPanel } from "./FocusedStationPanel";
 import { CollapsedSearchButton } from "./CollapsedSearchButton";
 
+/**
+ * Station search controller for the map interface.
+ *
+ * Manages the search panel open state, keyboard navigation through station
+ * matches, station selection, and the focused-station route actions. The
+ * visual search controls are delegated to smaller components so this component
+ * can focus on state and interaction flow.
+ *
+ * On mobile, the search input is always rendered as a compact floating control.
+ * On desktop, a collapsed search button opens the full search panel.
+ *
+ * @param {Object} props
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is currently active.
+ * @param {boolean} [props.isSidebarOpen=false] - Whether the sidebar is open and should push mobile search offscreen.
+ * @param {Object} props.layout - Responsive layout values for positioning and mobile detection.
+ * @param {boolean} props.layout.isMobilePortrait - Whether the current layout is mobile portrait.
+ * @param {number} props.layout.desktopTop - Fixed top offset for desktop search.
+ * @param {number} props.layout.desktopRight - Fixed right offset for desktop search.
+ * @param {Object} props.COLORS - Theme colour tokens used by the search UI.
+ * @param {string} props.accentColor - Accent colour used for search highlights.
+ * @param {string} props.stationQuery - Current station search query.
+ * @param {(query: string) => void} props.onStationQueryChange - Updates the station search query.
+ * @param {Array<{id: string, name: string}>} props.stationMatches - Stations matching the current query.
+ * @param {(station: Object) => void} props.onSelectStation - Selects a station from the search results.
+ * @param {() => void} props.onEnterFirstMatch - Fallback callback for selecting the first result with Enter.
+ * @param {Object | null} props.focusedStation - Station currently focused by search or map interaction.
+ * @param {string | null} props.focusedStationSource - Source that last focused the station.
+ * @param {() => void} props.onClearFocusedStation - Clears the focused station.
+ * @param {string | null} props.currentRouteStartId - Current route start station id.
+ * @param {string | null} props.currentRouteStartName - Current route start station name.
+ * @param {string | null} props.currentRouteEndId - Current route destination station id.
+ * @param {string | null} props.currentRouteEndName - Current route destination station name.
+ * @param {boolean} [props.currentRouteHasPath=false] - Whether the selected route currently has a valid path.
+ * @param {boolean} [props.isFocusedStationUnavailableForRouting=false] - Whether the focused station can be used for routing.
+ * @param {boolean} [props.isFocusedStationHypotheticallyClosed=false] - Whether the focused station is closed in What-If mode.
+ * @param {() => void} props.onSetFocusedStationAsStart - Sets the focused station as the route start.
+ * @param {() => void} props.onSetFocusedStationAsDestination - Sets the focused station as the route destination.
+ * @param {() => void} props.onToggleFocusedStationClosure - Toggles the focused station closure in What-If mode.
+ * @param {() => void} props.onDesktopSearchOpen - Called when the desktop search panel is opened.
+ * @param {() => void} props.onSearchInputFocus - Called when the search input receives focus.
+ * @returns {JSX.Element}
+ */
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
     isSidebarOpen = false,
@@ -270,64 +304,16 @@ export function MapSearchBox({
                             </button>
                         </div>
 
-                        <div style={{ position: "relative" }}>
-                            <span
-                                style={{
-                                    position: "absolute",
-                                    left: 12,
-                                    top: "50%",
-                                    transform: "translateY(-50%)",
-                                    color: accentColour,
-                                    fontSize: 15,
-                                    pointerEvents: "none",
-                                }}
-                            >
-                                ⌕
-                            </span>
-
-                            <input
-                                value={stationQuery}
-                                onChange={(e) => handleQueryChange(e.target.value)}
-                                onFocus={onSearchInputFocus}
-                                placeholder="Search stations"
-                                data-tour="station-search-input"
-                                style={{
-                                    width: "100%",
-                                    padding: "11px 40px 11px 34px",
-                                    borderRadius: 12,
-                                    border: `1px solid ${COLORS.border}`,
-                                    background: COLORS.soft,
-                                    color: COLORS.text,
-                                    outline: "none",
-                                    fontSize: 14,
-                                }}
-                                aria-label="Search stations"
-                                onKeyDown={handleKeyDown}
-                            />
-
-                            {stationQuery.trim().length > 0 && (
-                                <button
-                                    onClick={handleClearSearch}
-                                    type="button"
-                                    style={{
-                                        position: "absolute",
-                                        right: 8,
-                                        top: "50%",
-                                        transform: "translateY(-50%)",
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: 999,
-                                        border: "none",
-                                        background: COLORS.subtle,
-                                        color: COLORS.textMuted,
-                                        cursor: "pointer",
-                                    }}
-                                    aria-label="Clear search"
-                                >
-                                    x
-                                </button>
-                            )}
-                        </div>
+                        <SearchInput 
+                            COLORS={COLORS}
+                            accentColour={accentColour}
+                            value={stationQuery}
+                            onChange={handleQueryChange}
+                            onClear={handleClearSearch}
+                            onFocus={onSearchInputFocus}
+                            onKeyDown={handleKeyDown}
+                            inputTourId="station-search-input"
+                        />
 
                         {stationMatches.length > 0 ? (
                             <SearchResultsList
