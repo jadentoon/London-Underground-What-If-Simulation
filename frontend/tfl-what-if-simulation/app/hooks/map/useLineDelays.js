@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const TFL_LINE_STATUS_URL = "https://api.tfl.gov.uk/Line/Mode/tube/Status";
+const TFL_LINE_STATUS_URL = "/api/tfl/line-status";
 
 export function useLineDelays({pollMs = 60_000} = {}) {
     //line delay/status data from TfL API

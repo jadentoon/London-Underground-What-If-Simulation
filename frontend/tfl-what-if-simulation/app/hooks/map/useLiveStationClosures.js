@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 const TFL_STATION_DISRUPTIONS_URL = 
-    "https://api.tfl.gov.uk/StopPoint/Mode/tube/Disruption";
+    "/api/tfl/station-disruptions";
 
 // Fetch live station closures from TfL StopPoint Disruption API
 export function useLiveStationClosures({

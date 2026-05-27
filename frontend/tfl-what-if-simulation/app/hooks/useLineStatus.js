@@ -143,7 +143,7 @@ export function useLineStatus({
 
         async function fetchLinesAndStatus() {
             try {
-                const res = await fetch("https://api.tfl.gov.uk/Line/Mode/tube/Status?detail=true");
+                const res = await fetch("/api/tfl/line-status?detail=true");
                 if (!res.ok) throw new Error(`TfL API ${res.status}`);
 
                 const data = await res.json();
