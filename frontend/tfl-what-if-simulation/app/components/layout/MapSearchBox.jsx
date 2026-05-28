@@ -8,6 +8,8 @@
 
 import { useState, useEffect, useRef } from "react";
 
+const DESKTOP_SEARCH_TRANSITION_MS = 240;
+
 export function MapSearchBox({
     hypotheticalSettingsEnabled,
     isSidebarOpen = false,
@@ -34,14 +36,20 @@ export function MapSearchBox({
     onToggleFocusedStationClosure,
     onDesktopSearchOpen,
     onSearchInputFocus,
+    onLayoutMetricsChange,
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const desktopTop = hypotheticalSettingsEnabled ? 148 : 20;
     const desktopRight = 70;
     const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
     const [isOpen, setIsOpen] = useState(!isMobilePortrait);
+    const [isDesktopCardMounted, setIsDesktopCardMounted] = useState(!isMobilePortrait);
+    const [isDesktopCardVisible, setIsDesktopCardVisible] = useState(!isMobilePortrait);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const routeResetSequenceRef = useRef(routeCompletionSequence);
+    const overlayRef = useRef(null);
+    const desktopCardAnimationFrameRef = useRef(null);
+    const desktopCardTimeoutRef = useRef(null);
     const focusedStationId = focusedStation?.id ? String(focusedStation.id) : null;
     const isFocusedStationCurrentStart = focusedStationId !== null
         && currentRouteStartId !== null
@@ -58,7 +66,24 @@ export function MapSearchBox({
     const isStartActionDisabled = isFocusedStationUnavailableForRouting && !isFocusedStationCurrentStart;
     const isDestinationActionDisabled = (!canSetFocusedStationAsDestination && !isFocusedStationCurrentDestination)
         || (isFocusedStationUnavailableForRouting && !isFocusedStationCurrentDestination);
-    const activeSelectionBg = hypotheticalSettingsEnabled ? "rgba(251, 191, 36, 0.16)" : "rgba(59, 130, 246, 0.16)";
+    const currentStartSummary = isFocusedStationCurrentStart
+        ? focusedStation?.name ?? currentRouteStartName ?? "Not selected"
+        : currentRouteStartName ?? "Not selected";
+    const currentDestinationSummary = isFocusedStationCurrentDestination
+        ? focusedStation?.name ?? currentRouteEndName ?? "Not selected"
+        : currentRouteEndName ?? "Not selected";
+    const startButtonHint = isFocusedStationCurrentStart
+        ? "Selected as start"
+        : (isStartActionDisabled ? "Unavailable for routing" : "Set this station as start");
+    const destinationButtonHint = isFocusedStationCurrentDestination
+        ? "Selected as destination"
+        : isFocusedStationUnavailableForRouting
+        ? "Unavailable for routing"
+        : !currentRouteStartId
+        ? "Choose a start first"
+        : isFocusedStationCurrentStart
+        ? "Choose a different station"
+        : "Set this station as destination";
 
     useEffect(() => {
         setSelectedIndex(0);
@@ -69,6 +94,50 @@ export function MapSearchBox({
             setIsOpen(true);
         }
     }, [isMobilePortrait]);
+
+    useEffect(() => {
+        if (desktopCardAnimationFrameRef.current) {
+            window.cancelAnimationFrame(desktopCardAnimationFrameRef.current);
+            desktopCardAnimationFrameRef.current = null;
+        }
+
+        if (desktopCardTimeoutRef.current) {
+            window.clearTimeout(desktopCardTimeoutRef.current);
+            desktopCardTimeoutRef.current = null;
+        }
+
+        if (isMobilePortrait) {
+            setIsDesktopCardMounted(false);
+            setIsDesktopCardVisible(false);
+            return undefined;
+        }
+
+        if (isOpen) {
+            setIsDesktopCardMounted(true);
+            desktopCardAnimationFrameRef.current = window.requestAnimationFrame(() => {
+                setIsDesktopCardVisible(true);
+            });
+            return () => {
+                if (desktopCardAnimationFrameRef.current) {
+                    window.cancelAnimationFrame(desktopCardAnimationFrameRef.current);
+                    desktopCardAnimationFrameRef.current = null;
+                }
+            };
+        }
+
+        setIsDesktopCardVisible(false);
+        desktopCardTimeoutRef.current = window.setTimeout(() => {
+            setIsDesktopCardMounted(false);
+            desktopCardTimeoutRef.current = null;
+        }, DESKTOP_SEARCH_TRANSITION_MS);
+
+        return () => {
+            if (desktopCardTimeoutRef.current) {
+                window.clearTimeout(desktopCardTimeoutRef.current);
+                desktopCardTimeoutRef.current = null;
+            }
+        };
+    }, [isMobilePortrait, isOpen]);
 
     useEffect(() => {
         if (isMobilePortrait) return;
@@ -86,6 +155,60 @@ export function MapSearchBox({
         onStationQueryChange,
         onClearFocusedStation,
         routeCompletionSequence,
+    ]);
+
+    useEffect(() => {
+        if (!onLayoutMetricsChange) return;
+
+        const shouldReserveSpace = isMobilePortrait ? !shouldSlideOffscreen : isDesktopCardMounted;
+        const element = overlayRef.current;
+
+        if (!shouldReserveSpace || !element) {
+            onLayoutMetricsChange({ reserveSpace: false, bottom: 0 });
+            return;
+        }
+
+        const updateLayoutMetrics = () => {
+            if (!overlayRef.current) return;
+
+            const bounds = overlayRef.current.getBoundingClientRect();
+            onLayoutMetricsChange({
+                reserveSpace: true,
+                bottom: Math.ceil(bounds.bottom),
+            });
+        };
+
+        updateLayoutMetrics();
+
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updateLayoutMetrics);
+
+            return () => {
+                window.removeEventListener("resize", updateLayoutMetrics);
+                onLayoutMetricsChange({ reserveSpace: false, bottom: 0 });
+            };
+        }
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateLayoutMetrics();
+        });
+
+        resizeObserver.observe(element);
+        window.addEventListener("resize", updateLayoutMetrics);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener("resize", updateLayoutMetrics);
+            onLayoutMetricsChange({ reserveSpace: false, bottom: 0 });
+        };
+    }, [
+        focusedStationId,
+        isDesktopCardMounted,
+        isDesktopCardVisible,
+        isMobilePortrait,
+        onLayoutMetricsChange,
+        shouldSlideOffscreen,
+        stationMatches.length,
     ]);
 
     const handleOpenSearch = () => {
@@ -152,6 +275,7 @@ export function MapSearchBox({
     if (isMobilePortrait) {
         return (
             <div
+                ref={overlayRef}
                 style={{
                     position: "fixed",
                     top: 84,
@@ -258,55 +382,58 @@ export function MapSearchBox({
 
     return (
         <>
-            {!isOpen && (
-                <button
-                    onClick={handleOpenSearch}
-                    type="button"
+            <button
+                onClick={handleOpenSearch}
+                type="button"
+                style={{
+                    position: "fixed",
+                    top: desktopTop,
+                    right: desktopRight,
+                    minWidth: 220,
+                    padding: "12px 14px",
+                    background: COLORS.card,
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 16,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    cursor: isDesktopCardMounted ? "default" : "pointer",
+                    zIndex: 1001,
+                    color: COLORS.text,
+                    boxShadow: "0 12px 36px rgba(0, 0, 0, 0.28)",
+                    opacity: isDesktopCardVisible ? 0 : 1,
+                    transform: isDesktopCardVisible ? "translateY(10px) scale(0.985)" : "translateY(0) scale(1)",
+                    pointerEvents: isDesktopCardMounted ? "none" : "auto",
+                    transition: `opacity ${DESKTOP_SEARCH_TRANSITION_MS}ms ease, transform ${DESKTOP_SEARCH_TRANSITION_MS}ms ease`,
+                }}
+                title="Open station search"
+            >
+                <span
                     style={{
-                        position: "fixed",
-                        top: desktopTop,
-                        right: desktopRight,
-                        minWidth: 220,
-                        padding: "12px 14px",
-                        background: COLORS.card,
-                        backdropFilter: "blur(10px)",
-                        border: `1px solid ${COLORS.border}`,
-                        borderRadius: 16,
-                        display: "flex",
+                        width: 34,
+                        height: 34,
+                        borderRadius: 999,
+                        display: "inline-flex",
                         alignItems: "center",
-                        gap: 12,
-                        cursor: "pointer",
-                        zIndex: 1001,
-                        color: COLORS.text,
-                        boxShadow: "0 12px 36px rgba(0, 0, 0, 0.28)",
+                        justifyContent: "center",
+                        background: "rgba(59, 130, 246, 0.16)",
+                        color: accentColour,
+                        fontSize: 16,
+                        flex: "0 0 auto",
                     }}
-                    title="Open station search"
                 >
-                    <span
-                        style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 999,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "rgba(59, 130, 246, 0.16)",
-                            color: accentColour,
-                            fontSize: 16,
-                            flex: "0 0 auto",
-                        }}
-                    >
-                        ⌕
-                    </span>
-                    <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#e2e8f0" }}>Search stations</span>
-                        <span style={{ fontSize: 12, color: COLORS.textMuted }}>Jump straight to a station on the map</span>
-                    </span>
-                </button>
-            )}
+                    ⌕
+                </span>
+                <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#e2e8f0" }}>Search stations</span>
+                    <span style={{ fontSize: 12, color: COLORS.textMuted }}>Jump straight to a station on the map</span>
+                </span>
+            </button>
 
-            {isOpen && (
+            {isDesktopCardMounted && (
                 <div
+                    ref={overlayRef}
                     style={{
                         position: "fixed",
                         top: desktopTop,
@@ -319,6 +446,12 @@ export function MapSearchBox({
                         padding: 14,
                         zIndex: 1000,
                         boxShadow: "0 16px 42px rgba(0, 0, 0, 0.3)",
+                        maxHeight: `calc(100vh - ${desktopTop + 24}px)`,
+                        overflowY: "auto",
+                        opacity: isDesktopCardVisible ? 1 : 0,
+                        transform: isDesktopCardVisible ? "translateY(0) scale(1)" : "translateY(-10px) scale(0.985)",
+                        pointerEvents: isDesktopCardVisible ? "auto" : "none",
+                        transition: `opacity ${DESKTOP_SEARCH_TRANSITION_MS}ms ease, transform ${DESKTOP_SEARCH_TRANSITION_MS}ms ease`,
                     }}
                 >
                     <div
@@ -482,56 +615,34 @@ export function MapSearchBox({
                             </div>
 
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                                <div
-                                    style={{
-                                        padding: "9px 10px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationCurrentStart ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentStart ? activeSelectionBg : "rgba(15, 23, 42, 0.4)",
-                                    }}
-                                >
-                                    <div style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                        Start
-                                    </div>
-                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentStart ? "#e2e8f0" : COLORS.text }}>
-                                        {currentRouteStartName ?? "Not selected"}
-                                    </div>
-                                </div>
-
-                                <div
-                                    style={{
-                                        padding: "9px 10px",
-                                        borderRadius: 12,
-                                        border: `1px solid ${isFocusedStationCurrentDestination ? accentColour : COLORS.border}`,
-                                        background: isFocusedStationCurrentDestination ? activeSelectionBg : "rgba(15, 23, 42, 0.4)",
-                                    }}
-                                >
-                                    <div style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: COLORS.textMuted }}>
-                                        Destination
-                                    </div>
-                                    <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentDestination ? "#e2e8f0" : COLORS.text }}>
-                                        {currentRouteEndName ?? "Not selected"}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                                 <button
                                     onClick={onSetFocusedStationAsStart}
                                     type="button"
                                     disabled={isStartActionDisabled}
                                     style={{
-                                        padding: "10px 12px",
+                                        padding: "11px 12px",
                                         borderRadius: 12,
                                         border: `1px solid ${isFocusedStationCurrentStart ? accentColour : COLORS.border}`,
                                         background: isFocusedStationCurrentStart ? accentColour : "rgba(15, 23, 42, 0.4)",
                                         color: isFocusedStationCurrentStart ? "#0f172a" : (isStartActionDisabled ? COLORS.textMuted : COLORS.text),
-                                        fontWeight: 800,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "flex-start",
+                                        gap: 4,
+                                        textAlign: "left",
                                         cursor: isStartActionDisabled ? "not-allowed" : "pointer",
                                         opacity: isStartActionDisabled && !isFocusedStationCurrentStart ? 0.55 : 1,
                                     }}
                                 >
-                                    {isFocusedStationCurrentStart ? "Selected as start" : "Set as start"}
+                                    <span style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: isFocusedStationCurrentStart ? "#0f172a" : COLORS.textMuted }}>
+                                        Start
+                                    </span>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentStart ? "#0f172a" : "#e2e8f0" }}>
+                                        {currentStartSummary}
+                                    </span>
+                                    <span style={{ fontSize: 11, lineHeight: 1.35, color: isFocusedStationCurrentStart ? "#0f172a" : (isStartActionDisabled ? COLORS.textMuted : accentColour) }}>
+                                        {startButtonHint}
+                                    </span>
                                 </button>
 
                                 <button
@@ -539,17 +650,29 @@ export function MapSearchBox({
                                     type="button"
                                     disabled={isDestinationActionDisabled}
                                     style={{
-                                        padding: "10px 12px",
+                                        padding: "11px 12px",
                                         borderRadius: 12,
                                         border: `1px solid ${isFocusedStationCurrentDestination ? accentColour : COLORS.border}`,
                                         background: isFocusedStationCurrentDestination ? accentColour : "rgba(15, 23, 42, 0.4)",
                                         color: isFocusedStationCurrentDestination ? "#0f172a" : (isDestinationActionDisabled ? COLORS.textMuted : COLORS.text),
-                                        fontWeight: 800,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "flex-start",
+                                        gap: 4,
+                                        textAlign: "left",
                                         cursor: isDestinationActionDisabled ? "not-allowed" : "pointer",
                                         opacity: isDestinationActionDisabled && !isFocusedStationCurrentDestination ? 0.6 : 1,
                                     }}
                                 >
-                                    {isFocusedStationCurrentDestination ? "Selected as destination" : "Set as destination"}
+                                    <span style={{ fontSize: 10, letterSpacing: "0.06em", textTransform: "uppercase", color: isFocusedStationCurrentDestination ? "#0f172a" : COLORS.textMuted }}>
+                                        Destination
+                                    </span>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: isFocusedStationCurrentDestination ? "#0f172a" : "#e2e8f0" }}>
+                                        {currentDestinationSummary}
+                                    </span>
+                                    <span style={{ fontSize: 11, lineHeight: 1.35, color: isFocusedStationCurrentDestination ? "#0f172a" : (isDestinationActionDisabled ? COLORS.textMuted : accentColour) }}>
+                                        {destinationButtonHint}
+                                    </span>
                                 </button>
                             </div>
 

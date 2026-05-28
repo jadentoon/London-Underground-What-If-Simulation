@@ -87,7 +87,9 @@ export function MapCanvas() {
     const isTrainPanelOpen = Boolean(selectedTrainId);
     const [resetRouteSequence, setResetRouteSequence] = useState(0);
     const [routeCompletionSequence, setRouteCompletionSequence] = useState(0);
+    const [searchPanelMetrics, setSearchPanelMetrics] = useState({ reserveSpace: false, bottom: 0 });
     const [stationActionRequest, setStationActionRequest] = useState(null);
+    const [lastClearedRoute, setLastClearedRoute] = useState(null);
     const [routeSelection, setRouteSelection] = useState({
         startId: null,
         startName: null,
@@ -97,6 +99,8 @@ export function MapCanvas() {
     });
     const stationActionSequenceRef = useRef(0);
     const lastCompletedRouteKeyRef = useRef("");
+    const lastActiveRouteSnapshotRef = useRef(null);
+    const hadActiveRouteRef = useRef(false);
 
     // Dynamic accent colour based on hypothetical mode
     const accentColour = hypotheticalSettingsEnabled ? "#fbbf24" : COLORS.accent;
@@ -274,6 +278,67 @@ export function MapCanvas() {
         collapseRoutePanel();
     }, [collapseRoutePanel]);
 
+    const handleSearchLayoutMetricsChange = useCallback((nextMetrics) => {
+        setSearchPanelMetrics((prev) => {
+            const reserveSpace = Boolean(nextMetrics?.reserveSpace);
+            const bottom = Number.isFinite(nextMetrics?.bottom) ? nextMetrics.bottom : 0;
+
+            if (prev.reserveSpace === reserveSpace && prev.bottom === bottom) {
+                return prev;
+            }
+
+            return { reserveSpace, bottom };
+        });
+    }, []);
+
+    const handleUndoClearRoute = useCallback(() => {
+        if (!lastClearedRoute?.startId || !lastClearedRoute?.endId) return;
+
+        setSelectedTrainId(null);
+        setStationQuery("");
+        clearFocusedStation();
+        setMobileInteractionMode("route");
+
+        stationActionSequenceRef.current += 1;
+
+        setStationActionRequest({
+            sequence: stationActionSequenceRef.current,
+            action: "restore-route",
+            startStationId: String(lastClearedRoute.startId),
+            endStationId: String(lastClearedRoute.endId),
+        });
+    }, [clearFocusedStation, lastClearedRoute, setStationQuery]);
+
+    useEffect(() => {
+        const hasRestorableRoute = Boolean(
+            routeInfo?.hasPath
+            && routeSelection.startId
+            && routeSelection.endId
+        );
+
+        if (hasRestorableRoute) {
+            lastActiveRouteSnapshotRef.current = {
+                startId: String(routeSelection.startId),
+                startName: routeSelection.startName ?? routeInfo?.startName ?? "Start",
+                endId: String(routeSelection.endId),
+                endName: routeSelection.endName ?? routeInfo?.endName ?? "End",
+            };
+        } else if (hadActiveRouteRef.current && lastActiveRouteSnapshotRef.current) {
+            const nextClearedRoute = lastActiveRouteSnapshotRef.current;
+
+            setLastClearedRoute((prev) => {
+                const isSameSnapshot = prev?.startId === nextClearedRoute.startId
+                    && prev?.endId === nextClearedRoute.endId
+                    && prev?.startName === nextClearedRoute.startName
+                    && prev?.endName === nextClearedRoute.endName;
+
+                return isSameSnapshot ? prev : nextClearedRoute;
+            });
+        }
+
+        hadActiveRouteRef.current = hasRestorableRoute;
+    }, [routeInfo, routeSelection]);
+
     useEffect(() => {
         const hasPath = Boolean(routeInfo?.hasPath);
 
@@ -305,6 +370,12 @@ export function MapCanvas() {
             liveClosedStations.has(focusedStationId)
             || (hypotheticalSettingsEnabled && closedStations.has(focusedStationId))
         );
+    const canUndoClearedRoute = Boolean(
+        lastClearedRoute
+        && !routeInfo?.hasPath
+        && !routeSelection.startId
+        && !routeSelection.endId
+    );
 
     return (
         <div
@@ -384,6 +455,7 @@ export function MapCanvas() {
                 onToggleFocusedStationClosure={() => handleStationAction("toggle-closure", focusedStation)}
                 onDesktopSearchOpen={collapseRoutePanel}
                 onSearchInputFocus={handleSearchInputFocus}
+                onLayoutMetricsChange={handleSearchLayoutMetricsChange}
             />
 
             <MapHud
@@ -492,16 +564,23 @@ export function MapCanvas() {
                     isOpen={isRoutePanelOpen}
                     onToggle={toggleRoutePanel}
                     routeInfo={routeInfo}
+                    onClearRoute={clearActiveRoute}
+                    lastClearedRoute={lastClearedRoute}
+                    onUndoClearRoute={canUndoClearedRoute ? handleUndoClearRoute : null}
                     isSidebarOpen={isSidebarOpen}
-                    layout={{ isMobilePortrait, hasMobileModeBar: showMobileModeBar }}
+                    layout={{
+                        isMobilePortrait,
+                        hasMobileModeBar: showMobileModeBar,
+                        searchReservedBottom: searchPanelMetrics.reserveSpace ? searchPanelMetrics.bottom : null,
+                    }}
                     COLORS={COLORS}
                     accentColor={accentColour}
                     hypotheticalSettingsEnabled={hypotheticalSettingsEnabled}
                     lineColours={LINE_COLOURS}
                     lineLabels={LINE_LABELS}
                     onResetView={handleResetView}
-                mobileInteractionMode={mobileInteractionMode}
-            />
+                    mobileInteractionMode={mobileInteractionMode}
+                />
             )}
 
             <RoutingErrorBox
