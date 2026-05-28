@@ -15,6 +15,12 @@
     "jest": "^29.7.0"
   },
   "jest": {
+    "moduleNameMapper": {
+      "^next/server$": "<rootDir>/__tests__/test-mocks/next-server.js"
+    },
+    "testMatch": [
+      "<rootDir>/__tests__/**/*.test.js"
+    ],
     "testEnvironment": "node",
     "transform": {}
   }

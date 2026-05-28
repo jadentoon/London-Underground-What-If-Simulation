@@ -314,32 +314,33 @@ const LeafletMap = ({
         return out;
     }, [edges, hypotheticalSettingsEnabled, partialStationIdsByLine]);
 
-    const selectRouteDestination = useCallback((destinationId) => {
-        const id = String(destinationId);
+    const buildRouteBetween = useCallback((originId, destinationId) => {
+        const startId = String(originId);
+        const endId = String(destinationId);
 
-        if (!start || !graph) return;
+        if (!startId || !endId || !graph) return;
 
         // pass all the closed stations to dijkstra's algorithm so it can avoid them when calculating the path
         const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
         const linesToAvoid = closedLineSet;
         const blockedEdges = partialEdgeKeys;
 
-        const result = dijkstra(graph, String(start), id, stationsToAvoid, linesToAvoid, blockedEdges);
+        const result = dijkstra(graph, startId, endId, stationsToAvoid, linesToAvoid, blockedEdges);
 
         const newPath = Array.isArray(result) ? result : (result?.path ?? []);
         const totalSeconds = Array.isArray(result) ? null : result?.totalSeconds;
         const changeCount = Array.isArray(result) ? null : result?.changeCount;
         const statePath = Array.isArray(result) ? [] : (result?.statePath ?? []);
 
-        if (newPath.length === 0 && String(start) !== id) {
-            const startStation = nodeById.get(String(start));
-            const endStation = nodeById.get(id);
+        if (newPath.length === 0 && startId !== endId) {
+            const startStation = nodeById.get(startId);
+            const endStation = nodeById.get(endId);
             const hasClosedStations = hypotheticalSettingsEnabled && closedSet.size > 0;
             const hasLineDisruptions = closedLineSet.size > 0 || partialEdgeKeys.size > 0;
 
             onRoutingError?.({
-                from: startStation?.name || start,
-                to: endStation?.name || id,
+                from: startStation?.name || startId,
+                to: endStation?.name || endId,
                 reason: hasClosedStations
                     ? "closed-stations"
                     : (hasLineDisruptions ? "closed-lines" : "no-connection")
@@ -357,9 +358,9 @@ const LeafletMap = ({
             });
         }
 
-        setEnd(id);
+        setStart(startId);
+        setEnd(endId);
     }, [
-        start,
         graph,
         nodeById,
         hypotheticalSettingsEnabled,
@@ -368,6 +369,14 @@ const LeafletMap = ({
         partialEdgeKeys,
         onRoutingError,
     ]);
+
+    const selectRouteDestination = useCallback((destinationId) => {
+        const id = String(destinationId);
+
+        if (!start || !graph) return;
+
+        buildRouteBetween(start, id);
+    }, [buildRouteBetween, graph, start]);
 
     const handleSingleClickStation = useCallback((stationId) => {
         const id = String(stationId);
@@ -547,11 +556,10 @@ const LeafletMap = ({
 
         lastStationActionSequenceRef.current = actionSequence;
 
-        const stationId = String(stationActionRequest?.stationId ?? "");
-
-        if (!stationId) return;
-
         if (stationActionRequest?.action === "set-start") {
+            const stationId = String(stationActionRequest?.stationId ?? "");
+
+            if (!stationId) return;
             if (isStationUnavailableForRouting(stationId)) return;
 
             setRouteStartSelection(stationId);
@@ -559,6 +567,9 @@ const LeafletMap = ({
         }
 
         if (stationActionRequest?.action === "set-destination") {
+            const stationId = String(stationActionRequest?.stationId ?? "");
+
+            if (!stationId) return;
             if (isStationUnavailableForRouting(stationId)) return;
             if (!start || String(start) === stationId) return;
 
@@ -566,10 +577,27 @@ const LeafletMap = ({
             return;
         }
 
+        if (stationActionRequest?.action === "restore-route") {
+            const restoreStartId = String(stationActionRequest?.startStationId ?? "");
+            const restoreEndId = String(stationActionRequest?.endStationId ?? "");
+
+            if (!restoreStartId || !restoreEndId) return;
+            if (isStationUnavailableForRouting(restoreStartId) || isStationUnavailableForRouting(restoreEndId)) {
+                return;
+            }
+
+            buildRouteBetween(restoreStartId, restoreEndId);
+            return;
+        }
+
         if (stationActionRequest?.action === "toggle-closure") {
+            const stationId = String(stationActionRequest?.stationId ?? "");
+
+            if (!stationId) return;
             handleToggleStationClosure(stationId);
         }
     }, [
+        buildRouteBetween,
         handleToggleStationClosure,
         isStationUnavailableForRouting,
         selectRouteDestination,

@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useRef, useState } from "react";
+
 function formatDuration(seconds) {
     if (!Number.isFinite(seconds) || seconds <= 0) return "-";
     const mins = Math.round(seconds / 60);
@@ -9,10 +11,15 @@ function formatDuration(seconds) {
     return m ? `${h}h ${m}m` : `${h}h`;
 }
 
+const ROUTE_PANEL_TRANSITION_MS = 240;
+
 export function RouteInfoPanel({
     isOpen,
     onToggle,
     routeInfo,
+    onClearRoute,
+    lastClearedRoute,
+    onUndoClearRoute,
     isSidebarOpen = false,
     COLORS,
     accentColor: accentColour,
@@ -25,6 +32,7 @@ export function RouteInfoPanel({
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const hasMobileModeBar = layout?.hasMobileModeBar ?? false;
+    const searchReservedBottom = layout?.searchReservedBottom ?? null;
     const hasPath = !!routeInfo?.hasPath;
     const stops = routeInfo?.stops ?? [];
     const shouldSlideOffscreen = isMobilePortrait && isSidebarOpen;
@@ -34,9 +42,67 @@ export function RouteInfoPanel({
     const stopCount = Math.max(0, stops.length - 1);
     const bottomOffset = isMobilePortrait ? (hasMobileModeBar ? 86 : 18) : (hypotheticalSettingsEnabled ? 70 : 25);
     const actionColour = accentColour ?? "#3b82f6";
+    const routePanelGap = isMobilePortrait ? 12 : 16;
+    const defaultOpenPanelMaxHeight = isMobilePortrait ? "52vh" : "340px";
+    const openPanelMaxHeight = Number.isFinite(searchReservedBottom)
+        ? `max(0px, min(${defaultOpenPanelMaxHeight}, calc(100vh - ${Math.ceil(searchReservedBottom + routePanelGap + bottomOffset)}px)))`
+        : defaultOpenPanelMaxHeight;
+    const showClearRouteAction = Boolean(onClearRoute && hasPath);
+    const showUndoClearRouteAction = Boolean(
+        onUndoClearRoute
+        && !hasPath
+        && lastClearedRoute?.startId
+        && lastClearedRoute?.endId
+    );
+    const lastClearedRouteSummary = showUndoClearRouteAction
+        ? `${lastClearedRoute?.startName ?? "Start"} -> ${lastClearedRoute?.endName ?? "End"}`
+        : null;
     const mobileInstruction = hypotheticalSettingsEnabled && mobileInteractionMode === "closures"
         ? "Select stations or lines on the map to close or reopen them."
         : "Select a start station, then select your destination.";
+    const [isExpandedMounted, setIsExpandedMounted] = useState(isOpen);
+    const [isExpandedVisible, setIsExpandedVisible] = useState(isOpen);
+    const expandedPanelAnimationFrameRef = useRef(null);
+    const expandedPanelTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        if (expandedPanelAnimationFrameRef.current) {
+            window.cancelAnimationFrame(expandedPanelAnimationFrameRef.current);
+            expandedPanelAnimationFrameRef.current = null;
+        }
+
+        if (expandedPanelTimeoutRef.current) {
+            window.clearTimeout(expandedPanelTimeoutRef.current);
+            expandedPanelTimeoutRef.current = null;
+        }
+
+        if (isOpen) {
+            setIsExpandedMounted(true);
+            expandedPanelAnimationFrameRef.current = window.requestAnimationFrame(() => {
+                setIsExpandedVisible(true);
+            });
+
+            return () => {
+                if (expandedPanelAnimationFrameRef.current) {
+                    window.cancelAnimationFrame(expandedPanelAnimationFrameRef.current);
+                    expandedPanelAnimationFrameRef.current = null;
+                }
+            };
+        }
+
+        setIsExpandedVisible(false);
+        expandedPanelTimeoutRef.current = window.setTimeout(() => {
+            setIsExpandedMounted(false);
+            expandedPanelTimeoutRef.current = null;
+        }, ROUTE_PANEL_TRANSITION_MS);
+
+        return () => {
+            if (expandedPanelTimeoutRef.current) {
+                window.clearTimeout(expandedPanelTimeoutRef.current);
+                expandedPanelTimeoutRef.current = null;
+            }
+        };
+    }, [isOpen]);
 
     return (
         <div
@@ -53,67 +119,53 @@ export function RouteInfoPanel({
                 pointerEvents: shouldSlideOffscreen ? "none" : "auto",
             }}
         >
-            {!isOpen && (
-                <div
-                    style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        padding: "10px 12px",
-                        borderRadius: 14,
-                        border: `1px solid ${COLORS.border}`,
-                        background: COLORS.card,
-                        color: COLORS.text,
-                        backdropFilter: "blur(10px)",
-                        boxShadow: isMobilePortrait ? COLORS.shadow : "none",
-                    }}
-                >
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <div style={{ fontWeight: 700, color: COLORS.textStrong }}>
-                            {isMobilePortrait ? "Route Planner" : "Route"}
-                        </div>
-                        <div style={{ fontSize: 12, color: COLORS.textMuted }}>
-                            {hasPath
-                                ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
-                                : (isMobilePortrait ? mobileInstruction : "No route selected")
-                            }
-                        </div>
-                        {isMobilePortrait && hasPath && (
-                            <div style={{ marginTop: 6, fontSize: 12, color: COLORS.textMuted }}>
-                                {`${formatDuration(totalTravelSeconds)} · ${changes} change${changes === 1 ? "" : "s"} · ${stopCount} stops`}
-                            </div>
-                        )}
+            <div
+                style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    padding: "10px 12px",
+                    borderRadius: 14,
+                    border: `1px solid ${COLORS.border}`,
+                    background: COLORS.card,
+                    color: COLORS.text,
+                    backdropFilter: "blur(10px)",
+                    boxShadow: isMobilePortrait ? COLORS.shadow : "none",
+                    opacity: isExpandedVisible ? 0 : 1,
+                    transform: isExpandedVisible ? "translateY(12px) scale(0.985)" : "translateY(0) scale(1)",
+                    pointerEvents: isExpandedMounted ? "none" : "auto",
+                    transition: `opacity ${ROUTE_PANEL_TRANSITION_MS}ms ease, transform ${ROUTE_PANEL_TRANSITION_MS}ms ease`,
+                }}
+            >
+                <div style={{ display: "flex", flex: 1, minWidth: 0, flexDirection: "column", alignItems: "flex-start" }}>
+                    <div style={{ fontWeight: 700, color: COLORS.textStrong }}>
+                        {isMobilePortrait ? "Route Planner" : "Route"}
                     </div>
+                    <div style={{ fontSize: 12, color: COLORS.textMuted }}>
+                        {hasPath
+                            ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}`
+                            : (showUndoClearRouteAction
+                                ? `Last cleared: ${lastClearedRouteSummary}`
+                                : (isMobilePortrait ? mobileInstruction : "No route selected"))
+                        }
+                    </div>
+                    {isMobilePortrait && hasPath && (
+                        <div style={{ marginTop: 6, fontSize: 12, color: COLORS.textMuted }}>
+                            {`${formatDuration(totalTravelSeconds)} · ${changes} change${changes === 1 ? "" : "s"} · ${stopCount} stops`}
+                        </div>
+                    )}
+                </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        {isMobilePortrait && onResetView && (
-                            <button
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onResetView();
-                                }}
-                                style={{
-                                    padding: "8px 10px",
-                                    borderRadius: 999,
-                                    border: `1px solid ${COLORS.border}`,
-                                    background: COLORS.subtle,
-                                    color: COLORS.text,
-                                    fontWeight: 700,
-                                    fontSize: 12,
-                                    cursor: "pointer",
-                                }}
-                            >
-                                Reset
-                            </button>
-                        )}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, flexWrap: "wrap", flexShrink: 0 }}>
+                    {showClearRouteAction && (
                         <button
-                            onClick={onToggle}
+                            onClick={onClearRoute}
                             style={{
-                                padding: "6px 10px",
+                                padding: "8px 10px",
                                 borderRadius: 999,
-                                border: `1px solid ${COLORS.border}`,
+                                border: `1px solid ${actionColour}`,
                                 background: "transparent",
                                 color: actionColour,
                                 fontWeight: 700,
@@ -121,15 +173,71 @@ export function RouteInfoPanel({
                                 cursor: "pointer",
                             }}
                         >
-                            View Route
+                            Clear Route
                         </button>
-                    </div>
+                    )}
+                    {showUndoClearRouteAction && (
+                        <button
+                            onClick={onUndoClearRoute}
+                            style={{
+                                padding: "8px 10px",
+                                borderRadius: 999,
+                                border: `1px solid ${actionColour}`,
+                                background: "transparent",
+                                color: actionColour,
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Undo Clear
+                        </button>
+                    )}
+                    {isMobilePortrait && onResetView && (
+                        <button
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onResetView();
+                            }}
+                            style={{
+                                padding: "8px 10px",
+                                borderRadius: 999,
+                                border: `1px solid ${COLORS.border}`,
+                                background: COLORS.subtle,
+                                color: COLORS.text,
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Reset
+                        </button>
+                    )}
+                    <button
+                        onClick={onToggle}
+                        style={{
+                            padding: "6px 10px",
+                            borderRadius: 999,
+                            border: `1px solid ${COLORS.border}`,
+                            background: "transparent",
+                            color: actionColour,
+                            fontWeight: 700,
+                            fontSize: 12,
+                            cursor: "pointer",
+                        }}
+                    >
+                        View Route
+                    </button>
                 </div>
-            )}
+            </div>
 
-            {isOpen && (
+            {isExpandedMounted && (
                 <div
                     style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
                         border: `1px solid ${COLORS.border}`,
                         background: COLORS.card,
                         color: COLORS.text,
@@ -137,6 +245,14 @@ export function RouteInfoPanel({
                         boxShadow: COLORS.shadowStrong,
                         overflow: "hidden",
                         borderRadius: isMobilePortrait ? 22 : 16,
+                        maxHeight: openPanelMaxHeight,
+                        display: "flex",
+                        flexDirection: "column",
+                        opacity: isExpandedVisible ? 1 : 0,
+                        transform: isExpandedVisible ? "translateY(0) scale(1)" : "translateY(12px) scale(0.985)",
+                        pointerEvents: isExpandedVisible ? "auto" : "none",
+                        transition: `opacity ${ROUTE_PANEL_TRANSITION_MS}ms ease, transform ${ROUTE_PANEL_TRANSITION_MS}ms ease, max-height ${ROUTE_PANEL_TRANSITION_MS}ms ease`,
+                        transformOrigin: "bottom right",
                     }}
                 >
                     <div
@@ -147,34 +263,54 @@ export function RouteInfoPanel({
                             padding: "10px 12px",
                             borderBottom: `1px solid ${COLORS.border}`,
                         }}>
-                        <div style={{ display: "flex", flexDirection: "column" }}>
+                        <div style={{ display: "flex", flex: 1, minWidth: 0, flexDirection: "column" }}>
                             <div style={{ fontWeight: 800, color: COLORS.textStrong }}>
                                 Route Details
                             </div>
                             <div style={{ fontSize: 12, color: COLORS.textMuted }}>
                                 {hasPath
                                     ? `${routeInfo?.startName ?? "Start"} -> ${routeInfo?.endName ?? "End"}: ${stops.length - 1} stops`
-                                    : mobileInstruction
+                                    : (showUndoClearRouteAction
+                                        ? `Last cleared: ${lastClearedRouteSummary}`
+                                        : mobileInstruction)
                                 }
                             </div>
                         </div>
 
-                        <button
-                            onClick={onToggle}
-                            style={{
-                                borderRadius: 12,
-                                border: `1px solid ${COLORS.border}`,
-                                background: COLORS.subtle,
-                                color: COLORS.text,
-                                padding: "6px 10px",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Close
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                            {showClearRouteAction && (
+                                <button
+                                    onClick={onClearRoute}
+                                    style={{
+                                        borderRadius: 12,
+                                        border: `1px solid ${actionColour}`,
+                                        background: "transparent",
+                                        color: actionColour,
+                                        padding: "6px 10px",
+                                        cursor: "pointer",
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    Clear Route
+                                </button>
+                            )}
+                            <button
+                                onClick={onToggle}
+                                style={{
+                                    borderRadius: 12,
+                                    border: `1px solid ${COLORS.border}`,
+                                    background: COLORS.subtle,
+                                    color: COLORS.text,
+                                    padding: "6px 10px",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
 
-                    <div style={{ padding: 12, maxHeight: isMobilePortrait ? "52vh" : 340, overflow: "auto" }}>
+                    <div style={{ padding: 12, flex: "1 1 auto", minHeight: 0, overflow: "auto" }}>
                         {isMobilePortrait && (
                             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 12 }}>
                                 <div
@@ -238,7 +374,9 @@ export function RouteInfoPanel({
                                                 lineHeight: 1.45,
                                             }}
                                         >
-                                            {mobileInstruction}
+                                            {showUndoClearRouteAction
+                                                ? `Last cleared route: ${lastClearedRouteSummary}`
+                                                : mobileInstruction}
                                         </div>
                                     )}
                                 </div>
@@ -264,11 +402,32 @@ export function RouteInfoPanel({
                         )}
 
                         {!hasPath ? (
-                            <div style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.4 }}>
-                                {isMobilePortrait
-                                    ? mobileInstruction
-                                    : "Click a station to set a start, then click another station to create a route."
-                                }
+                            <div style={{ display: "grid", gap: 10 }}>
+                                {showUndoClearRouteAction && (
+                                    <button
+                                        onClick={onUndoClearRoute}
+                                        style={{
+                                            width: "100%",
+                                            padding: "10px 12px",
+                                            borderRadius: 12,
+                                            border: `1px solid ${actionColour}`,
+                                            background: "transparent",
+                                            color: actionColour,
+                                            fontWeight: 700,
+                                            cursor: "pointer",
+                                        }}
+                                    >
+                                        Undo clear route
+                                    </button>
+                                )}
+                                <div style={{ fontSize: 13, color: COLORS.textMuted, lineHeight: 1.4 }}>
+                                    {showUndoClearRouteAction
+                                        ? `Restore ${lastClearedRouteSummary}, or select a new route on the map.`
+                                        : (isMobilePortrait
+                                            ? mobileInstruction
+                                            : "Click a station to set a start, then click another station to create a route.")
+                                    }
+                                </div>
                             </div>
                         ) : (
                             <>

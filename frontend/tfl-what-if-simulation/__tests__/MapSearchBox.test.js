@@ -3,10 +3,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MapSearchBox } from "../app/components/search/MapSearchBox";
 
 describe("MapSearchBox", () => {
-  test("pressing Enter triggers the first match handler when matches exist", () => {
+  test("pressing Enter selects the highlighted station", () => {
     const onStationQueryChange = jest.fn();
     const onSelectStation = jest.fn();
     const onEnterFirstMatch = jest.fn();
+    const station = {
+      id: "940GZZLUHAW",
+      name: "Harrow & Wealdstone Underground Station",
+    };
 
     render(
       <MapSearchBox
@@ -19,21 +23,13 @@ describe("MapSearchBox", () => {
         accentColor="#3b82f6"
         stationQuery="Harrow"
         onStationQueryChange={onStationQueryChange}
-        stationMatches={[
-          {
-            id: "940GZZLUHAW",
-            name: "Harrow & Wealdstone Underground Station",
-          },
-        ]}
+        stationMatches={[station]}
         onSelectStation={onSelectStation}
         onEnterFirstMatch={onEnterFirstMatch}
       />
     );
 
-    // open search drawer
-    fireEvent.click(screen.getByTitle("Open search"));
-
-    const input = screen.getByPlaceholderText("Search station...");
+    const input = screen.getByPlaceholderText("Search stations");
 
     fireEvent.keyDown(input, {
       key: "Enter",
@@ -41,7 +37,9 @@ describe("MapSearchBox", () => {
       charCode: 13,
     });
 
-    expect(onEnterFirstMatch).toHaveBeenCalledTimes(1);
+    expect(onSelectStation).toHaveBeenCalledTimes(1);
+    expect(onSelectStation).toHaveBeenCalledWith(station);
+    expect(onEnterFirstMatch).not.toHaveBeenCalled();
   });
 
   test("clicking a station suggestion calls onSelectStation with that station", () => {
@@ -71,7 +69,6 @@ describe("MapSearchBox", () => {
       />
     );
 
-    fireEvent.click(screen.getByTitle("Open search"));
     fireEvent.click(
       screen.getByText("Harrow & Wealdstone Underground Station")
     );

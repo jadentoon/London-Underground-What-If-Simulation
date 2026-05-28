@@ -83,26 +83,27 @@ export function MapHud({
                     >
                         <div>
                             <span style={{ color: accentColor }}>Click station:</span>{" "}
-                            {hypotheticalSettingsEnabled ? "plan a route" : "set a start or choose a destination"}
+                            selects station for route planning,
+                            <br /> 
+                            sets start or destination depending on click order
                         </div>
                         <div>
                             <span style={{ color: accentColor }}>Click the same station again:</span>{" "}
-                            clear the selected start point
+                            clear the selected station
                         </div>
                         <div>
                             <span style={{ color: accentColor }}>Click empty map space:</span>{" "}
-                            clear the current route
+                            clear the current selected route
                         </div>
-
                         {hypotheticalSettingsEnabled && (
                             <>
                                 <div>
                                     <span style={{ color: accentColor }}>Double-click station:</span>{" "}
-                                    close or reopen it
+                                    close or reopen station
                                 </div>
                                 <div>
                                     <span style={{ color: accentColor }}>Double-click line:</span>{" "}
-                                    close or reopen it
+                                    close or reopen line
                                 </div>
                                 <div>
                                     <span style={{ color: accentColor }}>Sidebar:</span>{" "}
@@ -110,6 +111,15 @@ export function MapHud({
                                 </div>
                             </>
                         )}
+
+                        <div>
+                            <div>
+                                <span style={{ color: accentColor }}>Zoom map:</span>{" "}
+                                use the + and - keyboard keys, on screen +/- buttons,
+                                <br />
+                                mouse scroll wheel or trackpad pinch to zoom
+                            </div>
+                        </div>
                     </div>
 
                     <div>

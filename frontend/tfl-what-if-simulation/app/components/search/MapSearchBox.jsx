@@ -4,6 +4,8 @@ import { SearchResultsList } from "./SearchResultsList";
 import { FocusedStationPanel } from "./FocusedStationPanel";
 import { CollapsedSearchButton } from "./CollapsedSearchButton";
 
+const DESKTOP_SEARCH_TRANSITION_MS = 240;
+
 /**
  * Station search controller for the map interface.
  *
@@ -29,9 +31,11 @@ import { CollapsedSearchButton } from "./CollapsedSearchButton";
  * @param {Array<{id: string, name: string}>} props.stationMatches - Stations matching the current query.
  * @param {(station: Object) => void} props.onSelectStation - Selects a station from the search results.
  * @param {() => void} props.onEnterFirstMatch - Fallback callback for selecting the first result with Enter.
+ * @param {() => void} props.onSearchQueryStart - Called when a new station search begins.
  * @param {Object | null} props.focusedStation - Station currently focused by search or map interaction.
  * @param {string | null} props.focusedStationSource - Source that last focused the station.
  * @param {() => void} props.onClearFocusedStation - Clears the focused station.
+ * @param {number} [props.routeCompletionSequence=0] - Incremented by the parent after a route is completed.
  * @param {string | null} props.currentRouteStartId - Current route start station id.
  * @param {string | null} props.currentRouteStartName - Current route start station name.
  * @param {string | null} props.currentRouteEndId - Current route destination station id.
@@ -44,6 +48,7 @@ import { CollapsedSearchButton } from "./CollapsedSearchButton";
  * @param {() => void} props.onToggleFocusedStationClosure - Toggles the focused station closure in What-If mode.
  * @param {() => void} props.onDesktopSearchOpen - Called when the desktop search panel is opened.
  * @param {() => void} props.onSearchInputFocus - Called when the search input receives focus.
+ * @param {(metrics: { reserveSpace: boolean, bottom: number }) => void} props.onLayoutMetricsChange - Reports search panel layout for nearby panels.
  * @returns {JSX.Element}
  */
 export function MapSearchBox({
@@ -72,6 +77,9 @@ export function MapSearchBox({
     onToggleFocusedStationClosure,
     onDesktopSearchOpen,
     onSearchInputFocus,
+    routeCompletionSequence = 0,
+    onSearchQueryStart,
+    onLayoutMetricsChange,
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const desktopTop = layout?.desktopTop ?? 92;
@@ -97,9 +105,133 @@ export function MapSearchBox({
     const isDestinationActionDisabled = (!canSetFocusedStationAsDestination && !isFocusedStationCurrentDestination)
         || (isFocusedStationUnavailableForRouting && !isFocusedStationCurrentDestination);
 
+    const [isDesktopCardMounted, setIsDesktopCardMounted] = useState(false);
+    const [isDesktopCardVisible, setIsDesktopCardVisible] = useState(false);
+    const routeResetSequenceRef = useRef(routeCompletionSequence);
+    const overlayRef = useRef(null);
+    const desktopCardAnimationFrameRef = useRef(null);
+    const desktopCardTimeoutRef = useRef(null);
+    
     useEffect(() => {
         setSelectedIndex(0);
     }, [stationQuery, stationMatches.length]);
+
+    useEffect(() => {
+        if (desktopCardAnimationFrameRef.current) {
+            window.cancelAnimationFrame(desktopCardAnimationFrameRef.current);
+            desktopCardAnimationFrameRef.current = null;
+        }
+
+        if (desktopCardTimeoutRef.current) {
+            window.clearTimeout(desktopCardTimeoutRef.current);
+            desktopCardTimeoutRef.current = null;
+        }
+
+        if (isMobilePortrait) {
+            setIsDesktopCardMounted(false);
+            setIsDesktopCardVisible(false);
+            return undefined;
+        }
+
+        if (isOpen) {
+            setIsDesktopCardMounted(true);
+            desktopCardAnimationFrameRef.current = window.requestAnimationFrame(() => {
+                setIsDesktopCardVisible(true);
+            });
+
+            return () => {
+                if (desktopCardAnimationFrameRef.current) {
+                    window.cancelAnimationFrame(desktopCardAnimationFrameRef.current);
+                    desktopCardAnimationFrameRef.current = null;
+                }
+            };
+        }
+
+        setIsDesktopCardVisible(false);
+        desktopCardTimeoutRef.current = window.setTimeout(() => {
+            setIsDesktopCardMounted(false);
+            desktopCardTimeoutRef.current = null;
+        }, DESKTOP_SEARCH_TRANSITION_MS);
+
+        return () => {
+            if (desktopCardTimeoutRef.current) {
+                window.clearTimeout(desktopCardTimeoutRef.current);
+                desktopCardTimeoutRef.current = null;
+            }
+        };
+    }, [isMobilePortrait, isOpen]);
+
+    useEffect(() => {
+        if (isMobilePortrait) return;
+
+        if (!routeCompletionSequence || routeCompletionSequence === routeResetSequenceRef.current) {
+            return;
+        }
+
+        routeResetSequenceRef.current = routeCompletionSequence;
+        onStationQueryChange("");
+        onClearFocusedStation?.();
+        setSelectedIndex(0);
+    }, [
+        isMobilePortrait,
+        onStationQueryChange,
+        onClearFocusedStation,
+        routeCompletionSequence,
+    ]);
+
+    useEffect(() => {
+        if (!onLayoutMetricsChange) return;
+
+        const shouldReserveSpace = isMobilePortrait ? !shouldSlideOffscreen : isDesktopCardMounted;
+        const element = overlayRef.current;
+
+        if (!shouldReserveSpace || !element) {
+            onLayoutMetricsChange({ reserveSpace: false, bottom: 0 });
+            return;
+        }
+
+        const updateLayoutMetrics = () => {
+            if (!overlayRef.current) return;
+
+            const bounds = overlayRef.current.getBoundingClientRect();
+            onLayoutMetricsChange({
+                reserveSpace: true,
+                bottom: Math.ceil(bounds.bottom),
+            });
+        };
+
+        updateLayoutMetrics();
+
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", updateLayoutMetrics);
+
+            return () => {
+                window.removeEventListener("resize", updateLayoutMetrics);
+                onLayoutMetricsChange({ reserveSpace: false, bottom: 0 });
+            };
+        }
+
+        const resizeObserver = new ResizeObserver(() => {
+            updateLayoutMetrics();
+        });
+
+        resizeObserver.observe(element);
+        window.addEventListener("resize", updateLayoutMetrics);
+
+        return () => {
+            resizeObserver.disconnect();
+            window.removeEventListener("resize", updateLayoutMetrics);
+            onLayoutMetricsChange({ reserveSpace: false, bottom: 0 });
+        };
+    }, [
+        focusedStationId,
+        isDesktopCardMounted,
+        isDesktopCardVisible,
+        isMobilePortrait,
+        onLayoutMetricsChange,
+        shouldSlideOffscreen,
+        stationMatches.length,
+    ]);
 
     useEffect(() => {
         if (isMobilePortrait) return;
@@ -146,10 +278,16 @@ export function MapSearchBox({
     };
 
     const handleQueryChange = (nextQuery) => {
+        const isStartingNewSearch = stationQuery.trim().length === 0 && nextQuery.trim().length > 0;
+
         onStationQueryChange(nextQuery);
 
         if (focusedStation && nextQuery !== focusedStation.name) {
             onClearFocusedStation?.();
+        }
+
+        if (isStartingNewSearch) {
+            onSearchQueryStart?.();
         }
     };
 
@@ -192,6 +330,7 @@ export function MapSearchBox({
     if (isMobilePortrait) {
         return (
             <div
+                ref={overlayRef}
                 style={{
                     position: "fixed",
                     top: 84,
@@ -240,15 +379,16 @@ export function MapSearchBox({
                 }}
             >
                 {!isOpen && (
-                    <CollapsedSearchButton 
+                    <CollapsedSearchButton
                         COLORS={COLORS}
                         accentColour={accentColour}
                         onOpen={handleOpenSearch}
                     />
                 )}
 
-                {isOpen && (
+                {isDesktopCardMounted && (
                     <div
+                        ref={overlayRef}
                         data-tour="station-search-box"
                         style={{
                             position: "relative",
@@ -259,6 +399,12 @@ export function MapSearchBox({
                             borderRadius: 18,
                             padding: 14,
                             boxShadow: COLORS.shadow,
+                            maxHeight: `calc(100vh - ${desktopTop + 24}px)`,
+                            overflowY: "auto",
+                            opacity: isDesktopCardVisible ? 1 : 0,
+                            transform: isDesktopCardVisible ? "translateY(0) scale(1)" : "translateY(-10px) scale(0.985)",
+                            pointerEvents: isDesktopCardVisible ? "auto" : "none",
+                            transition: `opacity ${DESKTOP_SEARCH_TRANSITION_MS}ms ease, transform ${DESKTOP_SEARCH_TRANSITION_MS}ms ease`,
                         }}
                     >
                         <div
@@ -304,7 +450,7 @@ export function MapSearchBox({
                             </button>
                         </div>
 
-                        <SearchInput 
+                        <SearchInput
                             COLORS={COLORS}
                             accentColour={accentColour}
                             value={stationQuery}
