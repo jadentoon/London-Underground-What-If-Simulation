@@ -2,6 +2,18 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MapSearchBox } from "../app/components/search/MapSearchBox";
 
+beforeEach(() => {
+  window.requestAnimationFrame = jest.fn((callback) => {
+    callback();
+    return 1;
+  });
+  window.cancelAnimationFrame = jest.fn();
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
 describe("MapSearchBox", () => {
   test("pressing Enter selects the highlighted station", () => {
     const onStationQueryChange = jest.fn();
@@ -28,6 +40,8 @@ describe("MapSearchBox", () => {
         onEnterFirstMatch={onEnterFirstMatch}
       />
     );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Station Search" }));
 
     const input = screen.getByPlaceholderText("Search stations");
 
@@ -68,6 +82,8 @@ describe("MapSearchBox", () => {
         onEnterFirstMatch={onEnterFirstMatch}
       />
     );
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Station Search" }));
 
     fireEvent.click(
       screen.getByText("Harrow & Wealdstone Underground Station")

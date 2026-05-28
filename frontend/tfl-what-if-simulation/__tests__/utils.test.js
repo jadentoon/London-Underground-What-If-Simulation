@@ -6,7 +6,7 @@ import {
   normaliseIdSet,
   offsetSegment,
   splitStateKey,
-} from "../app/components/mapComponents/utils";
+} from "../app/components/mapShared/utils";
 
 describe("map utilities", () => {
   test("groupEdges groups station pairs without regard to direction", () => {

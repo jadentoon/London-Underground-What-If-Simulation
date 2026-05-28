@@ -1,7 +1,7 @@
 import {
   getDelaySeverityColor,
   getDelaySeverityLabel,
-} from "../app/components/mapComponents/delayUtils";
+} from "../app/components/mapShared/delayUtils";
 
 describe("delayUtils", () => {
   test("maps known delay severities to the expected colors", () => {

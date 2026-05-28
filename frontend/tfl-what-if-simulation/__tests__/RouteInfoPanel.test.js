@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { RouteInfoPanel } from "../app/components/layout/RouteInfoPanel";
+import { RouteInfoPanel } from "../app/components/route/RouteInfoPanel";
 
 const COLORS = {
   card: "rgba(15, 23, 42, 0.8)",

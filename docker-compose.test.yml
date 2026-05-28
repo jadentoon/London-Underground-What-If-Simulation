@@ -20,15 +20,19 @@ services:
         frontend_status=0;
 
         echo 'Running root tests...';
-        npm ci &&
-        npm test -- --testPathIgnorePatterns=frontend/tfl-what-if-simulation ||
-        root_status=$?;
+        if ! npm ci; then
+          root_status=1;
+        elif ! npm test -- --testPathIgnorePatterns=frontend/tfl-what-if-simulation; then
+          root_status=1;
+        fi;
 
         echo 'Running frontend tests...';
-        cd frontend/tfl-what-if-simulation &&
-        npm ci &&
-        npm test -- __tests__ ||
-        frontend_status=$?;
+        cd frontend/tfl-what-if-simulation || exit 1;
+        if !npm ci; then
+          frontend_status=1;
+        elif !npm test -- __test__; then
+          frontend_status=1;
+        fi;
 
         if [ \"$root_status\" -ne 0 ] || [ \"$frontend_status\" -ne 0 ]; then
           echo 'One or more test suites failed.';

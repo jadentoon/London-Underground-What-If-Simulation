@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { RoutingErrorBox } from "../app/components/layout/RoutingErrorBox";
+import { RoutingErrorBox } from "../app/components/route/RoutingErrorBox";
 
 describe("RoutingErrorBox", () => {
   test("renders nothing when no routing error exists", () => {

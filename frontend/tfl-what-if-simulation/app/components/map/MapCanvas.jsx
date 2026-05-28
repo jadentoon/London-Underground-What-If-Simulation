@@ -556,6 +556,7 @@ export function MapCanvas() {
                 onSelectStation={handleSearchStationSelection}
                 onEnterFirstMatch={selectFirstStationMatch}
                 focusedStation={focusedStation}
+                focusedStationSource={focusedStationSource}
                 onClearFocusedStation={clearFocusedStation}
                 onSearchQueryStart={handleSearchQueryStart}
                 routeCompletionSequence={routeCompletionSequence}
@@ -563,6 +564,7 @@ export function MapCanvas() {
                 currentRouteStartName={routeSelection.startName}
                 currentRouteEndId={routeSelection.endId}
                 currentRouteEndName={routeSelection.endName}
+                currentRouteHasPath={routeSelection.hasPath}
                 isFocusedStationUnavailableForRouting={isFocusedStationUnavailableForRouting}
                 isFocusedStationHypotheticallyClosed={isFocusedStationHypotheticallyClosed}
                 onSetFocusedStationAsStart={() => handleStationAction("set-start", focusedStation)}
