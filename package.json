@@ -1,6 +1,7 @@
 {
   "type": "module",
   "scripts": {
+    "db:build": "node pipeline/buildGraph.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "test:all": "docker compose -f docker-compose.test.yml run --rm all-tests"
   },

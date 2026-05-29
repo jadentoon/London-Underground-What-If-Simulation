@@ -15,6 +15,7 @@ import { fetchAllLines } from "../data/fetchAllLines.js";
 import { insertStations } from "../db/insertStations.js";
 import { insertEdges } from "../db/insertEdges.js";
 import { createStationConstraint } from "../db/createConstraints.js";
+import { importTravelTimes } from "../db/importTravelTimes.js";
 
 async function main() {
     try {
@@ -42,6 +43,10 @@ async function main() {
         console.log("Inserting edges (connections) into database...");
         await insertEdges(edges);
         console.log("Edges inserted.");
+
+        console.log("Importing travel times from CSV...");
+        await importTravelTimes();
+        console.log("Travel times imported.");
 
         console.log("Graph build complete.");
     } catch (err) {

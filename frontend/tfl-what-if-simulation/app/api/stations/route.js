@@ -18,6 +18,20 @@ let stationGraphCache = null;
 let stationGraphCacheExpiresAt = 0;
 let stationGraphRequestInFlight = null;
 
+function toNumber(value) {
+    if (typeof value === "number") {
+        return value;
+    }
+
+    if (neo4j.isInt(value)) {
+        return neo4j.integer.inSafeRange(value)
+            ? value.toNumber()
+            : Number(value.toString());
+    }
+
+    return Number(value);
+}
+
 async function loadStationGraphFromNeo4j() {
     const session = driver.session();
 
@@ -76,9 +90,7 @@ async function loadStationGraphFromNeo4j() {
                 from: fromId,
                 to: toId,
                 line: record.get("line"),
-                travel_time: neo4j.integer.inSafeRange(travelTime)
-                    ? travelTime.toNumber()
-                    : Number(travelTime.toString()),
+                travel_time: toNumber(travelTime),
             });
         });
 

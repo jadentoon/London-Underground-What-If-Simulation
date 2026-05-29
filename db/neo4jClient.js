@@ -12,6 +12,8 @@ dotenv.config({ path: path.join(process.cwd(), ".env") });
  * Neo4j password loaded securely from environment variables.
  */
 const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD;
+const NEO4J_URI = process.env.NEO4J_URI || "bolt://localhost:7687";
+const NEO4J_USER = process.env.NEO4J_USER || "neo4j";
 
 /**
  * Neo4j driver instance.
@@ -21,7 +23,7 @@ const NEO4J_PASSWORD = process.env.NEO4J_PASSWORD;
  * - Driver is designed to be reused across the application.
  */
 export const driver = neo4j.driver(
-    "bolt://localhost:7687",
-    neo4j.auth.basic("neo4j", NEO4J_PASSWORD)
+    NEO4J_URI,
+    neo4j.auth.basic(NEO4J_USER, NEO4J_PASSWORD)
 );
 
