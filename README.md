@@ -105,5 +105,5 @@ docker compose up frontend
 ```
 
 ```md
-> Note: docker compose down -v deletes the local Neo4j Docker volume.
+> Note: `docker compose down -v` deletes the local Neo4j Docker volume.
 ```
