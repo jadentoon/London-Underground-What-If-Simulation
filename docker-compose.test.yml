@@ -1,43 +1,44 @@
 services:
+  neo4j-test:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/password
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p password 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   all-tests:
     image: node:22-alpine
     working_dir: /workspace
+    depends_on:
+      neo4j-test:
+        condition: service_healthy
     volumes:
       - .:/workspace
       - root_node_modules:/workspace/node_modules
       - frontend_node_modules:/workspace/frontend/tfl-what-if-simulation/node_modules
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    env_file:
-      - .env
-      - frontend/tfl-what-if-simulation/.env.local
     environment:
       NODE_ENV: test
       NEXT_TELEMETRY_DISABLED: "1"
+      RUN_NEO4J_TESTS: "true"
+      NEO4J_URI: bolt://neo4j-test:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: password
     command: >
       sh -c "
-        root_status=0;
-        frontend_status=0;
+        set -e;
 
         echo 'Running root tests...';
-        if ! npm ci; then
-          root_status=1;
-        elif ! npm test -- --testPathIgnorePatterns=frontend/tfl-what-if-simulation; then
-          root_status=1;
-        fi;
+        npm ci;
+        node scripts/seed-test-neo4j.js;
+        npm test -- --testPathIgnorePatterns=frontend/tfl-what-if-simulation;
 
         echo 'Running frontend tests...';
-        cd frontend/tfl-what-if-simulation || exit 1;
-        if !npm ci; then
-          frontend_status=1;
-        elif !npm test -- __test__; then
-          frontend_status=1;
-        fi;
-
-        if [ \"$root_status\" -ne 0 ] || [ \"$frontend_status\" -ne 0 ]; then
-          echo 'One or more test suites failed.';
-          exit 1;
-        fi;
+        cd frontend/tfl-what-if-simulation;
+        npm ci;
+        npm test;
 
         echo 'All test suites passed.'
       "

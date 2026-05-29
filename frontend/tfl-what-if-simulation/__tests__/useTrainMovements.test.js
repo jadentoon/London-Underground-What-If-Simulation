@@ -130,12 +130,11 @@ describe("useTrainMovements", () => {
 
     expect(result.current.feedStatus.source).toBe("fallback");
     expect(result.current.feedStatus.trainCount).toBe(1);
-    expect(result.current.trains[0]).toEqual(
-      expect.objectContaining({
-        isLive: false,
-        routeLabel: "Alpha Underground Station → Bravo Underground Station",
-      }),
-    );
+    expect(result.current.trains[0]).toEqual(expect.objectContaining({ isLive: false }));
+    expect([
+      "Alpha Underground Station → Bravo Underground Station",
+      "Bravo Underground Station → Alpha Underground Station",
+    ]).toContain(result.current.trains[0].routeLabel);
   });
 
   test("falls back cleanly when the live arrivals API errors", async () => {

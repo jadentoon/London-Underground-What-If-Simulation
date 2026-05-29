@@ -36,7 +36,7 @@ No Neo4j Aura credentials are required for the Docker setup.
 
 ### 1. Add a TfL API Key
 
-Create a `.env` file in the projecct root:
+Create a `.env` file in the project root:
 
 ```text
 TFL_APP_KEY=your_tfl_api_key_here
@@ -76,7 +76,9 @@ docker compose up frontend
 ```
 
 Open the application at:
+```text
 http://localhost:3000
+```
 
 ### Local Neo4j Access
 
@@ -96,7 +98,7 @@ The frontend connects to Neo4j automatically through Docker Compose using:
 bolt://neo4j:7687
 ```
 
-No `.env` file is required for the Docker setup.
+No Neo4j/Aura environment variables is required for the Docker setup.
 
 ### Rebuilding the Database
 
@@ -115,6 +117,26 @@ docker compose run --rm db-seed
 docker compose up frontend
 ```
 
-```md
 > Note: `docker compose down -v` deletes the local Neo4j Docker volume.
+
+## Running Tests
+
+The test suite can be run entirely with Docker. The test setup creates its own Neo4j test database, seeds it with deterministic test data, and then runs both the root and frontend Jest test suites.
+
+```bash
+docker compose -f docker-compose.test.yml run --rm all-tests
 ```
+
+This will:
+- Start a separate neo4j-test container
+- Wait until Neo4j is healthy
+- Seed the test database
+- Run the root Jest tests
+- Run the frontend Jest tests
+
+## Authors
+
+- Sinead Parkinson - Project Manager
+- Jaden Toon - Software Development Lead
+- Sattyaj Paul - Testing Lead
+- Saf Sikder - Documentation Lead
