@@ -30,10 +30,21 @@ This project can be run entirely with Docker. The local setup starts a Neo4j dat
 
 - Docker Desktop installed and running
 - Internet access for the first setup and TfL route-data fetch
+- TfL Unified API Key
 
 No Neo4j Aura credentials are required for the Docker setup.
 
-### 1. Start Neo4j
+### 1. Add a TfL API Key
+
+Create a `.env` file in the projecct root:
+
+```text
+TFL_APP_KEY=your_tfl_api_key_here
+```
+
+This key is used by the database seed step to fetch London Underground route data from the TfL API.
+
+### 2. Start Neo4j
 
 ```bash
 docker compose up -d neo4j
@@ -44,7 +55,7 @@ Wait until Neo4j is healthy:
 docker compose ps
 ```
 
-### 2. Seed the Database
+### 3. Seed the Database
 
 ```bash
 docker compose run --rm db-seed
@@ -58,7 +69,7 @@ This will:
 - Import real travel times from 
   `travel_time_data/tfl_station_travel_times.csv`
 
-### 3. Start the Frontend
+### 4. Start the Frontend
 
 ```bash
 docker compose up frontend
