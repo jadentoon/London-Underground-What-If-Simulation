@@ -30,7 +30,15 @@ export function MapTitleOverlay({ hypotheticalSettingsEnabled, isSidebarOpen, la
                         boxShadow: COLORS.shadow,
                     }}
                 >
-                    <span style={{ fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: COLORS.textMuted }}>
+                    <span
+                        style={{
+                            fontSize: 10,
+                            letterSpacing: "0.12em",
+                            textTransform: "uppercase",
+                            color: COLORS.textMuted,
+                            textShadow: titleShadow,
+                        }}
+                    >
                         London Underground
                     </span>
                     <span

@@ -36,7 +36,7 @@ function isPointWithinRadius(point, center, radius) {
     return ((dx * dx) + (dy * dy)) <= (radius * radius);
 }
 
-function isPointInsideStationOcclusion(point, map, stations, zoomLevel) {
+function isPointInsideStationOcclusion(point, map, stations, zoomLevel, isLightTheme) {
     for (const station of stations) {
         if (!Number.isFinite(station?.lat) || !Number.isFinite(station?.lon)) continue;
 
@@ -47,6 +47,7 @@ function isPointInsideStationOcclusion(point, map, stations, zoomLevel) {
             isStart: Boolean(station.isStart),
             isOnPath: Boolean(station.isOnPath),
             isClosed: Boolean(station.isClosed),
+            isLightTheme,
         });
 
         if (isPointWithinRadius(point, stationPoint, occlusionRadius)) {
@@ -118,6 +119,7 @@ function CanvasTrainLayerComponent({
     onTrainSelect,
     stations = [],
     paneName,
+    isLightTheme = false,
 }) {
     const map = useMap();
     const canvasRef = useRef(null);
@@ -213,7 +215,7 @@ function CanvasTrainLayerComponent({
             }
 
             const clickPoint = map.latLngToContainerPoint(event.latlng);
-            if (isPointInsideStationOcclusion(clickPoint, map, stationsRef.current, zoom)) {
+            if (isPointInsideStationOcclusion(clickPoint, map, stationsRef.current, zoom, isLightTheme)) {
                 return;
             }
 
@@ -225,7 +227,7 @@ function CanvasTrainLayerComponent({
                 if (!Number.isFinite(train?.lat) || !Number.isFinite(train?.lon)) continue;
 
                 const point = map.latLngToContainerPoint([train.lat, train.lon]);
-                if (isPointInsideStationOcclusion(point, map, stationsRef.current, zoom)) {
+                if (isPointInsideStationOcclusion(point, map, stationsRef.current, zoom, isLightTheme)) {
                     continue;
                 }
 
@@ -257,7 +259,7 @@ function CanvasTrainLayerComponent({
             canvas.remove();
             canvasRef.current = null;
         };
-    }, [map, onTrainSelect, paneName, scheduleDraw]);
+    }, [isLightTheme, map, onTrainSelect, paneName, scheduleDraw]);
 
     return null;
 }
