@@ -729,7 +729,12 @@ export function MapCanvas() {
 
             {isGuidedTourActive && (
                 <GuidedTourOverlay
-                    onSkipTour={() => setIsGuidedTourActive(false)}
+                    onSkipTour={() => {
+                        setIsGuidedTourActive(false);
+                        // return user to standard mode after tour completes
+                        setHypotheticalSettingsEnabled(false);
+                        setMobileInteractionMode("route");
+                    }}
                     COLORS={COLORS}
                 />
             )}

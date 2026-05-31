@@ -1,0 +1,6 @@
+{
+  "jest.rootPath": "frontend/tfl-what-if-simulation",
+  "jest.jestCommandLine": "npm test --",
+  "jest.runMode": "watch",
+  "testing.automaticallyOpenTestResults": "neverOpen"
+}
