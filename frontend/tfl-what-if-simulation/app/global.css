@@ -227,6 +227,13 @@ body {
     transition: opacity 160ms linear;
 }
 
+.leaflet-control-search,
+.leaflet-control-geocoder,
+.leaflet-control-geosearch {
+  position: relative;
+  top: 80px;
+}
+
 .leaflet-tooltip.line-tooltip {
     transform: translateY(-20px);
     pointer-events: none;
