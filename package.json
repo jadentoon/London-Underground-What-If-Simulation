@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "db:build": "node pipeline/buildGraph.js",
+    "db:build": "node backend/pipeline/buildGraph.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "test:all": "docker compose -f docker-compose.test.yml run --rm all-tests"
   },
@@ -17,10 +17,10 @@
   },
   "jest": {
     "moduleNameMapper": {
-      "^next/server$": "<rootDir>/__tests__/test-mocks/next-server.js"
+      "^next/server$": "<rootDir>/backend/tests/test-mocks/next-server.js"
     },
     "testMatch": [
-      "<rootDir>/__tests__/**/*.test.js"
+      "<rootDir>/backend/tests/**/*.test.js"
     ],
     "testEnvironment": "node",
     "transform": {}

@@ -784,12 +784,12 @@ These scripts are run locally (not in the Next.js app) to seed and update the Ne
 
 ### tFlClient.js — fetchTfl
 
-**File:** `data/tFlClient.js`
+**File:** `backend/data/tFlClient.js`
 
 Generic TfL API fetch helper used by the pipeline scripts. Requires `TFL_APP_KEY` in `.env`.
 
 ```js
-import { fetchTfl } from "./data/tFlClient.js";
+import { fetchTfl } from "./backend/data/tFlClient.js";
 
 const data = await fetchTfl("/Line/Victoria/Route/Sequence/all");
 ```
@@ -808,12 +808,12 @@ Parsed JSON response. Throws an `Error` with message `"TfL API error"` on any no
 
 ### fetchAllLines
 
-**File:** `data/fetchAllLines.js`
+**File:** `backend/data/fetchAllLines.js`
 
 Fetches all tube line metadata from TfL.
 
 ```js
-import { fetchAllLines } from "./data/fetchAllLines.js";
+import { fetchAllLines } from "./backend/data/fetchAllLines.js";
 
 const lines = await fetchAllLines();
 // [{ id: "northern", name: "Northern" }, ...]
@@ -827,12 +827,12 @@ const lines = await fetchAllLines();
 
 ### buildFromRoutes
 
-**File:** `data/buildFromRoutes.js`
+**File:** `backend/data/buildFromRoutes.js`
 
 For each line, fetches the route sequence from TfL and builds station nodes and directed edges (with travel time data where available).
 
 ```js
-import { buildFromRoutes } from "./data/buildFromRoutes.js";
+import { buildFromRoutes } from "./backend/data/buildFromRoutes.js";
 
 const { stations, edges } = await buildFromRoutes(lines);
 ```
@@ -856,17 +856,17 @@ const { stations, edges } = await buildFromRoutes(lines);
 
 ### Neo4j DB Helpers
 
-**Files:** `db/insertStations.js`, `db/insertEdges.js`, `db/createConstraints.js`
+**Files:** `backend/db/insertStations.js`, `backend/db/insertEdges.js`, `backend/db/createConstraints.js`
 
-All helpers use the shared driver from `db/neo4jClient.js` (Bolt on `localhost:7687`, credentials from `NEO4J_PASSWORD` env var).
+All helpers use the shared driver from `backend/db/neo4jClient.js` (Bolt on `localhost:7687`, credentials from `NEO4J_PASSWORD` env var).
 
 | Function | File | Description |
 |---|---|---|
-| `createStationConstraint()` | `db/createConstraints.js` | Creates a Neo4j uniqueness constraint on `Station.id` if it doesn't already exist. Should be run before any inserts. |
-| `insertStations(stations)` | `db/insertStations.js` | Upserts station nodes into Neo4j using `MERGE ON CREATE SET`. Accepts `Array<{ id, name, lat, lon }>`. |
-| `insertEdges(edges)` | `db/insertEdges.js` | Upserts `CONNECTS_TO` relationships between stations. Accepts `Array<{ from, to, line, travel_time }>`. |
+| `createStationConstraint()` | `backend/db/createConstraints.js` | Creates a Neo4j uniqueness constraint on `Station.id` if it doesn't already exist. Should be run before any inserts. |
+| `insertStations(stations)` | `backend/db/insertStations.js` | Upserts station nodes into Neo4j using `MERGE ON CREATE SET`. Accepts `Array<{ id, name, lat, lon }>`. |
+| `insertEdges(edges)` | `backend/db/insertEdges.js` | Upserts `CONNECTS_TO` relationships between stations. Accepts `Array<{ from, to, line, travel_time }>`. |
 
-**Pipeline entry point:** `pipeline/buildGraph.js` — run with `node pipeline/buildGraph.js` from the project root. Fetches all lines, builds nodes and edges, applies constraints, and inserts everything into Neo4j in order.
+**Pipeline entry point:** `backend/pipeline/buildGraph.js` — run with `npm run db:build` or `node backend/pipeline/buildGraph.js` from the project root. Fetches all lines, builds nodes and edges, applies constraints, and inserts everything into Neo4j in order.
 
 ---
 

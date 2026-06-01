@@ -32,7 +32,7 @@ services:
 
         echo 'Running root tests...';
         npm ci;
-        node scripts/seed-test-neo4j.js;
+        node backend/scripts/seed-test-neo4j.js;
         npm test -- --testPathIgnorePatterns=frontend/tfl-what-if-simulation;
 
         echo 'Running frontend tests...';

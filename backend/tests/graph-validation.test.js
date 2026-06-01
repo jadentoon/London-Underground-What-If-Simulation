@@ -1,5 +1,5 @@
-import { buildGraph } from "../frontend/tfl-what-if-simulation/app/lib/graph.js";
-import { dijkstra } from "../frontend/tfl-what-if-simulation/app/lib/pathfinding.js";
+import { buildGraph } from "../../frontend/tfl-what-if-simulation/app/lib/graph.js";
+import { dijkstra } from "../../frontend/tfl-what-if-simulation/app/lib/pathfinding.js";
 
 function findReachableStationIds(graph, startId) {
   const start = String(startId);

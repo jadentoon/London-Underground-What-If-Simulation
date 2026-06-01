@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 
-import { buildGraph } from "../frontend/tfl-what-if-simulation/app/lib/graph.js";
+import { buildGraph } from "../../frontend/tfl-what-if-simulation/app/lib/graph.js";
 
 afterEach(() => {
   jest.restoreAllMocks();

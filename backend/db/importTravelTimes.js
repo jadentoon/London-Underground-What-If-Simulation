@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { driver } from "./neo4jClient.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_CSV_PATH = path.join(__dirname, "..", "travel_time_data", "tfl_station_travel_times.csv");
+const DEFAULT_CSV_PATH = path.join(__dirname, "..", "..", "travel_time_data", "tfl_station_travel_times.csv");
 
 const LINE_CODE_TO_ID = {
     BAK: "bakerloo",

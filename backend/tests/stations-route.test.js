@@ -23,11 +23,11 @@ async function loadStationsRouteModule({ runImpl } = {}) {
   jest.unstable_mockModule("next/server", () => ({
     NextResponse: { json },
   }));
-  jest.unstable_mockModule("../frontend/tfl-what-if-simulation/app/lib/neo4j.js", () => ({
+  jest.unstable_mockModule("../../frontend/tfl-what-if-simulation/app/lib/neo4j.js", () => ({
     default: driver,
   }));
 
-  const module = await import("../frontend/tfl-what-if-simulation/app/api/stations/route.js");
+  const module = await import("../../frontend/tfl-what-if-simulation/app/api/stations/route.js");
 
   return {
     GET: module.GET,
