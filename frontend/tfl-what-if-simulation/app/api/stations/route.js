@@ -125,7 +125,7 @@ export async function GET() {
     if (stationGraphCache && now < stationGraphCacheExpiresAt) {
         return NextResponse.json(stationGraphCache, {
             headers: {
-                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revaildate=86400",
+                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
                 "X-Station-Graph-Cache": "HIT",
             },
         });
@@ -143,7 +143,7 @@ export async function GET() {
 
         return NextResponse.json(graph, {
             headers: {
-                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revaildate=86400",
+                "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
                 "X-Station-Graph-Cache": "MISS",
             },
         });

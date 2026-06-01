@@ -104,13 +104,13 @@ export function dijkstra(
     }
 
     const endLines = linesByStation.get(endId) ?? [];
-    const candidatEndKeys = [
+    const candidateEndKeys = [
         makeKey(endId, "START"),
         ...endLines.map((l) => makeKey(endId, l)),
     ].filter((k) => k in distances);
 
     let bestEndKey = null;
-    for (const k of candidatEndKeys) if (bestEndKey === null || distances[k] < distances[bestEndKey]) bestEndKey = k;
+    for (const k of candidateEndKeys) if (bestEndKey === null || distances[k] < distances[bestEndKey]) bestEndKey = k;
 
     if (!bestEndKey || distances[bestEndKey] === Infinity) return { path: [], totalSeconds: Infinity, changeCount: 0 };
 
