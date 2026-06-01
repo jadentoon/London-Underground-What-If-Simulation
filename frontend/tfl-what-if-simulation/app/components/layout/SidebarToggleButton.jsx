@@ -11,7 +11,6 @@ export function SidebarToggleButton({
     layout,
     COLORS,
     accentColor: accentColour,
-    hypotheticalSettingsEnabled,
     onToggle,
 }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;

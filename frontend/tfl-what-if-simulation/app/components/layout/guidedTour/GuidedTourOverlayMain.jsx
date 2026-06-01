@@ -5,7 +5,7 @@
  * the presentational pieces (`TourDimOverlay`, `TourHighlight`,
  * `TourInstructionBox`). Import this from the thin wrapper `GuidedTourOverlay`.
  */
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { steps as defaultSteps } from "./tourSteps";
 import { TourDimOverlay } from "./TourDimOverlay";
 import { TourHighlight } from "./TourHighlight";
@@ -22,6 +22,14 @@ export function GuidedTourOverlayMain({ onSkipTour, COLORS }) {
 
     const steps = useMemo(() => defaultSteps, []);
     const currentStepData = steps[currentStep];
+
+    const handleNextStep = useCallback(() => {
+        if (currentStep < steps.length - 1) {
+            setCurrentStep(currentStep + 1);
+        } else {
+            onSkipTour?.();
+        }
+    }, [currentStep, onSkipTour, steps.length]);
 
     useEffect(() => {
         if (!currentStepData) return;
@@ -209,15 +217,7 @@ export function GuidedTourOverlayMain({ onSkipTour, COLORS }) {
                 if (eventName) interactionTarget.removeEventListener(eventName, interactionHandler);
             }
         };
-    }, [currentStep, currentStepData]);
-
-    const handleNextStep = () => {
-        if (currentStep < steps.length - 1) {
-            setCurrentStep(currentStep + 1);
-        } else {
-            onSkipTour?.();
-        }
-    };
+    }, [currentStepData, handleNextStep]);
 
     const handleSkip = () => {
         onSkipTour?.();

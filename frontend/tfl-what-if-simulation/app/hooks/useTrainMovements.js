@@ -30,7 +30,7 @@ import {
  * @returns {{ trains: Array<Object>, feedStatus: Object }} - Train marker data and live feed status.
  */
 export function useTrainMovements({ nodes, edges, enabled = true }) {
-    const [clockMs, setClockMs] = useState(Date.now());
+    const [clockMs, setClockMs] = useState(0);
     const [feedSource, setFeedSource] = useState("fallback");
     const [feedUpdatedAt, setFeedUpdatedAt] = useState(null);
     const [feedReason, setFeedReason] = useState("Waiting for live feed");
@@ -122,7 +122,7 @@ export function useTrainMovements({ nodes, edges, enabled = true }) {
                     );
                     setFeedUpdatedAt(new Date());
                 }
-            } catch (err) {
+            } catch {
                 if (cancelled) return;
                 setFeedSource("fallback");
                 setFeedReason("Live TfL arrivals unavailable; using schedule fallback");

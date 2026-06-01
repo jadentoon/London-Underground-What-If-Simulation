@@ -170,7 +170,7 @@ export function useLineStatus({
                     setLinesUpdatedAt(mapped.length ? new Date() : null);
                     setLinesReason(mapped.length ? "" : "TfL line status returned no usable lines");
                 }
-            } catch (err) {
+            } catch {
                 if (!cancelled) {
                     setLineOptions(FALLBACK_LINES);
                     setLiveClosedLines(new Set());

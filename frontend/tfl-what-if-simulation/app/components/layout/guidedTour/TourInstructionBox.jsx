@@ -8,7 +8,6 @@ export function TourInstructionBox({
     boxTop,
     boxLeft,
     boxWidth,
-    boxHeight,
     title,
     description,
     isSuccessFlashing,

@@ -280,7 +280,7 @@ const LeafletMap = ({
 
     const handleTrainSelect = useCallback((trainId) => {
         onSelectedTrainIdChange?.(trainId ? String(trainId) : null);
-    }, []);
+    }, [onSelectedTrainIdChange]);
 
     const focusStationById = useCallback((stationId) => {
         const station = nodeById.get(String(stationId)) ?? null;

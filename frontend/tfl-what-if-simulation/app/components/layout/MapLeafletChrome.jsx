@@ -3,7 +3,7 @@
  * also includes the "what-if" label and corner accents when the sidebar is open
  */
 
-export function MapLeafletChrome({ COLORS, accentColor, hypotheticalSettingsEnabled }) {
+export function MapLeafletChrome({ COLORS, accentColor }) {
     return (
         <style jsx global>{`
             .leaflet-control-zoom {

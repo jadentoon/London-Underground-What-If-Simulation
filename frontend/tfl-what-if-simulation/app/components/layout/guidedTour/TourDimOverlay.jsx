@@ -4,7 +4,7 @@
  * If `undimRect` is provided, the overlay leaves a transparent "hole"
  * over that rectangle so the target element remains visible/highlighted.
  */
-export function TourDimOverlay({ undimRect, COLORS }) {
+export function TourDimOverlay({ undimRect }) {
     if (undimRect) {
         return (
             <>
