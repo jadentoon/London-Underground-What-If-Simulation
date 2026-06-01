@@ -4,6 +4,7 @@ import {
     getStationMarkerRadius,
     getStationMarkerStrokeWeight,
 } from "../mapShared/stationMarkerSizing.js";
+import { getStationMarkerColours } from "../mapShared/stationMarkerColours.js";
 
 function StationLayerComponent({
     nodes,
@@ -21,6 +22,7 @@ function StationLayerComponent({
     interactionMode = "route",
     highlightedStationId,
     paneName,
+    isLightTheme = false,
 }) {
 
     return (
@@ -54,6 +56,14 @@ function StationLayerComponent({
                     isStart,
                     isOnPath,
                     isClosed,
+                    isLightTheme,
+                });
+                const { strokeColour, fillColour } = getStationMarkerColours({
+                    isClosed,
+                    isHighlighted,
+                    isStart,
+                    isOnPath,
+                    isLightTheme,
                 });
 
                 return (
@@ -108,21 +118,9 @@ function StationLayerComponent({
                                 },
                             }}
                             pathOptions={{
-                                color: isClosed
-                                    ? "#ef4444"
-                                    : isHighlighted
-                                    ? "#3b82f6"
-                                    : isStart || isOnPath
-                                    ? "#22c55e"
-                                    : "#ffffff",
+                                color: strokeColour,
                                 weight: strokeWeight,
-                                fillColor: isClosed
-                                    ? "#7f1d1d"
-                                    : isHighlighted
-                                    ? "#1d4ed8"
-                                    : isOnPath
-                                    ? "#052e16"
-                                    : "#000000",
+                                fillColor: fillColour,
                                 fillOpacity: dim ? 0.6 : 1,
                                 opacity: dim ? 0.35 : 1,
                             }}
@@ -163,7 +161,8 @@ const StationLayer = React.memo(StationLayerComponent, (prev, next) => {
         prev.liveClosedSet === next.liveClosedSet &&
         prev.interactionMode === next.interactionMode &&
         prev.highlightedStationId === next.highlightedStationId &&
-        prev.paneName === next.paneName
+        prev.paneName === next.paneName &&
+        prev.isLightTheme === next.isLightTheme
     );
 });
 

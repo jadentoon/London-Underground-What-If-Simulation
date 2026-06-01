@@ -35,10 +35,21 @@ export function getStationMarkerStrokeWeight({
     isStart = false,
     isOnPath = false,
     isClosed = false,
+    isLightTheme = false,
 }) {
-    if (isHighlighted) return 5;
-    if (isStart || isOnPath || isClosed) return 3;
-    return 2;
+    let strokeWeight = 2;
+
+    if (isHighlighted) {
+        strokeWeight = 5;
+    } else if (isStart || isOnPath || isClosed) {
+        strokeWeight = 3;
+    }
+
+    if (isLightTheme && !isHighlighted && !isClosed && !isOnPath) {
+        return strokeWeight + 1;
+    }
+
+    return strokeWeight;
 }
 
 export function getStationOcclusionRadius(options) {

@@ -326,7 +326,6 @@ const LeafletMap = ({
         const blockedEdges = partialEdgeKeys;
 
         const result = dijkstra(graph, startId, endId, stationsToAvoid, linesToAvoid, blockedEdges);
-
         const newPath = Array.isArray(result) ? result : (result?.path ?? []);
         const totalSeconds = Array.isArray(result) ? null : result?.totalSeconds;
         const changeCount = Array.isArray(result) ? null : result?.changeCount;
@@ -740,6 +739,7 @@ const LeafletMap = ({
                             onTrainSelect={handleTrainSelect}
                             stations={stationOcclusionTargets}
                             paneName={TRAIN_PANE_NAME}
+                            isLightTheme={isLightTheme}
                         />
                     )}
                 </Pane>
@@ -761,6 +761,7 @@ const LeafletMap = ({
                         interactionMode={interactionMode}
                         highlightedStationId={highlightedStationId}
                         paneName={STATION_PANE_NAME}
+                        isLightTheme={isLightTheme}
                     />
                 </Pane>
             </MapContainer>
