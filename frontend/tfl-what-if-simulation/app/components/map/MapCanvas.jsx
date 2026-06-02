@@ -1,14 +1,10 @@
 'use client';
 /**
- * MapCanvas.jsx
- * 
- * Client-side container component for the London Underground
- * "What-If" Simulator map. Wraps the LeafletMap component and
- * provides a HUD overlay for displaying current zoom level and map
- * center coordinates in real-time.
- * 
- * This component must be a Client Component in Next.js because it
- * depends on browser APIs (window, DOM) used by Leaflet.
+ * Top-level client container for the London Underground What-If map.
+ *
+ * `MapCanvas` coordinates map-wide UI state, live disruption hooks, search,
+ * routing panels, train controls, What-If scenario controls and mobile/desktop
+ * overlays. The Leaflet-specific rendering is delegated to `LeafletMap`.
  */
 
 import { useRef, useState, useCallback, useEffect } from "react";
@@ -66,6 +62,20 @@ const COLORS = {
 const DEFAULT_CENTER = { lat: LONDON_CENTER[0], lng: LONDON_CENTER[1] };
 const LIVE_CLOSURE_POLL_MS = 60_000;
 
+/**
+ * Floating desktop toggle for enabling and disabling What-If mode.
+ *
+ * The toggle is rendered outside the sidebar on desktop so the primary scenario
+ * mode can be changed without opening the full control panel.
+ *
+ * @param {Object} props - Toggle props.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {string} props.accentColor - Accent colour for the toggle.
+ * @param {() => void} props.onToggleWhatIfMode - Toggles What-If mode.
+ * @param {Object} props.layout - Fixed-position layout offsets.
+ * @returns {JSX.Element} Floating What-If mode toggle.
+ */
 function MainScreenWhatIfToggle({
     COLORS,
     hypotheticalSettingsEnabled,
@@ -137,27 +147,24 @@ function MainScreenWhatIfToggle({
 }
 
 /**
- * MapCanvas
- * 
- * Container component for the interactive map.
- * Handles:
- * - Displaying the Leaflet map.
- * - Tracking map state (zoom and center).
- * - Rendering a HUD overlay with live map information.
- * - Rendering title and description overlays.
- * 
- * @returns {JSX.Element} Full-screen interactive map with HUD.
+ * Composes the complete map experience.
+ *
+ * This component owns the high-level interaction state shared across the map:
+ * sidebar visibility, What-If mode, mobile interaction mode, selected trains,
+ * route undo state, search focus, live status feeds and guided tour state. It
+ * passes the relevant state and callbacks into presentation components and the
+ * Leaflet map renderer.
+ *
+ * @returns {JSX.Element} Full-screen interactive map application.
  */
 export function MapCanvas() {
 
-    //Ref to store the Leaflet map instance for programmatic controls (reset view + search)
+    // Leaflet map instance used for imperative actions such as reset view and search navigation.
     const leafletMapRef = useRef(null);
 
-    // collapse state
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
 
-    // State for hypothetical settings toggle
     const [hypotheticalSettingsEnabled, setHypotheticalSettingsEnabled] = useState(false);
     const [mobileInteractionMode, setMobileInteractionMode] = useState("route");
 
@@ -189,7 +196,6 @@ export function MapCanvas() {
     const lastActiveRouteSnapshotRef = useRef(null);
     const hadActiveRouteRef = useRef(false);
 
-    // Dynamic accent colour based on hypothetical mode
     const accentColour = hypotheticalSettingsEnabled ? COLORS.whatIfAccent : COLORS.accent;
     const titleShadow = COLORS.titleShadow;
 
@@ -280,8 +286,13 @@ export function MapCanvas() {
     });
 
     /**
-     * Reset the map view to its original center and zoom level.
-     * Also resets any filters / what-if state to the original defaults.
+     * Resets the map view and clears transient route/search state.
+     *
+     * What-If station closures are cleared, route panels are reset and mobile
+     * interaction mode returns to route selection. Line closures remain managed
+     * separately by the What-If controls.
+     *
+     * @returns {void}
      */
     const handleResetView = useCallback(() => {
         if (leafletMapRef.current) {
@@ -297,6 +308,14 @@ export function MapCanvas() {
         setResetRouteSequence((value) => value + 1);
     }, [clearClosedStations, clearFocusedStation, clearRoutePanel, setStationQuery]);
     
+    /**
+     * Toggles What-If mode and resets mode-specific UI state.
+     *
+     * Closing the sidebar and clearing line closures prevents stale scenario
+     * state from carrying between live mode and simulated closure mode.
+     *
+     * @returns {void}
+     */
     const handleToggleWhatIfMode = useCallback(() => {
         setHypotheticalSettingsEnabled((prev) => !prev);
         setMobileInteractionMode("route");
@@ -306,6 +325,14 @@ export function MapCanvas() {
 
     const hasActiveRoute = Boolean(routeInfo?.hasPath || routeSelection.hasPath);
 
+    /**
+     * Clears the active route in both the panel state and Leaflet route state.
+     *
+     * The sequence value is passed to `LeafletMap`, where it is observed by the
+     * route hook and used to clear selected start/end stations.
+     *
+     * @returns {void}
+     */
     const clearActiveRoute = useCallback(() => {
         if (!hasActiveRoute) return;
 
@@ -320,6 +347,12 @@ export function MapCanvas() {
         setResetRouteSequence((value) => value + 1);
     }, [clearRoutePanel, hasActiveRoute]);
 
+    /**
+     * Loads a saved What-If scenario and switches the UI into closure mode.
+     *
+     * @param {string} scenarioId - Saved scenario id.
+     * @returns {void}
+     */
     const handleLoadScenario = useCallback((scenarioId) => {
         const loadedScenario = loadScenario(scenarioId);
         if (!loadedScenario) return;
@@ -330,6 +363,15 @@ export function MapCanvas() {
         setResetRouteSequence((value) => value + 1);
     }, [clearRoutePanel, loadScenario]);
 
+    /**
+     * Synchronises route selection state from `LeafletMap` into the outer UI.
+     *
+     * Search panels and undo controls use this state to know whether a start,
+     * destination or completed route is currently active.
+     *
+     * @param {Object} selection - Current route selection state.
+     * @returns {void}
+     */
     const handleRouteSelectionChange = useCallback((selection) => {
         const hasSelection = Boolean(selection?.startId || selection?.endId || selection?.hasPath);
 
@@ -352,6 +394,16 @@ export function MapCanvas() {
         });
     }, [clearFocusedStation, focusedStationSource]);
 
+    /**
+     * Sends an imperative station action request to `LeafletMap`.
+     *
+     * Search controls use this bridge to set route starts/destinations or toggle
+     * station closures without directly mutating Leaflet route state.
+     *
+     * @param {"set-start" | "set-destination" | "toggle-closure"} action - Requested station action.
+     * @param {Object | null} station - Station receiving the action.
+     * @returns {void}
+     */
     const handleStationAction = useCallback((action, station) => {
         if (!station?.id) return;
 
@@ -368,6 +420,15 @@ export function MapCanvas() {
         });
     }, []);
 
+    /**
+     * Handles selecting a station from search.
+     *
+     * Any active route is cleared before panning to the selected station so the
+     * search result becomes the user's next focus.
+     *
+     * @param {Object} station - Station selected from search results.
+     * @returns {void}
+     */
     const handleSearchStationSelection = useCallback((station) => {
         clearActiveRoute();
         goToStation(station);
@@ -377,11 +438,22 @@ export function MapCanvas() {
         clearActiveRoute();
     }, [clearActiveRoute]);
 
+    /**
+     * Collapses competing UI when the search input receives focus.
+     *
+     * @returns {void}
+     */
     const handleSearchInputFocus = useCallback(() => {
         setSelectedTrainId(null);
         collapseRoutePanel();
     }, [collapseRoutePanel]);
 
+    /**
+     * Stores search panel layout metrics used to avoid overlay collisions.
+     *
+     * @param {{ reserveSpace?: boolean, bottom?: number }} nextMetrics - Latest search panel bounds.
+     * @returns {void}
+     */
     const handleSearchLayoutMetricsChange = useCallback((nextMetrics) => {
         setSearchPanelMetrics((prev) => {
             const reserveSpace = Boolean(nextMetrics?.reserveSpace);
@@ -395,6 +467,14 @@ export function MapCanvas() {
         });
     }, []);
 
+    /**
+     * Restores the most recently cleared route.
+     *
+     * The request is sent to `LeafletMap` through the station action sequence so
+     * the route is rebuilt with the current live/What-If disruption state.
+     *
+     * @returns {void}
+     */
     const handleUndoClearRoute = useCallback(() => {
         if (!lastClearedRoute?.startId || !lastClearedRoute?.endId) return;
 
@@ -731,7 +811,7 @@ export function MapCanvas() {
                 <GuidedTourOverlay
                     onSkipTour={() => {
                         setIsGuidedTourActive(false);
-                        // return user to standard mode after tour completes
+                        // Return to the standard route-planning mode after the tour completes.
                         setHypotheticalSettingsEnabled(false);
                         setMobileInteractionMode("route");
                     }}

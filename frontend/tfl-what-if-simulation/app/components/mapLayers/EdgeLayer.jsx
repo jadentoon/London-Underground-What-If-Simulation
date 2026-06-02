@@ -8,6 +8,24 @@ const DISRUPTED_LINE_OUTLINE_COLOUR = "#f59e0b";
 const DISRUPTED_LINE_CORE_COLOUR = "#000000";
 const DISRUPTED_LINE_DASH_ARRAY = "8 8";
 
+/**
+ * Renders station-to-station Underground line edges.
+ *
+ * Edges are grouped by station pair so multiple lines can be offset from each
+ * other and remain visible. In What-If closure mode, clicking or double-clicking
+ * a line edge toggles that line's simulated closure state.
+ *
+ * @param {Object} props - Edge layer props.
+ * @param {Object<string, Array<Object>>} props.groupedEdges - Edge groups keyed by station pair.
+ * @param {Map<string, Object>} props.nodeById - Station lookup keyed by station id.
+ * @param {boolean} props.dimmed - Whether edges should be faded behind an active route.
+ * @param {Set<string>} props.closedLines - Closed line ids.
+ * @param {Set<string>} [props.partialEdgeKeys] - Partially disrupted edge keys.
+ * @param {(lineId: string) => void} props.onLineToggle - Toggles a line closure.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {"route" | "closures"} [props.interactionMode] - Active map interaction mode.
+ * @returns {JSX.Element} Rendered line edge layer.
+ */
 function EdgeLayerComponent({
     groupedEdges,
     nodeById,
@@ -114,7 +132,12 @@ function EdgeLayerComponent({
     );
 }
 
-// Memoize to prevent unnecessary re-renders when parent updates
+/**
+ * Memoised edge layer.
+ *
+ * The custom comparison avoids rerendering hundreds of polylines unless the
+ * graph, disruption state or interaction handlers actually change.
+ */
 const EdgeLayer = React.memo(EdgeLayerComponent, (prev, next) => {
     // Return true if props are equal (don't re-render)
     // Return false if props differ (do re-render)

@@ -5,7 +5,13 @@ import { MapContainer, TileLayer, useMapEvents, useMap, Pane } from "react-leafl
 import { useTheme } from "next-themes";
 import L from "leaflet";
 
-// Debounce utility for map events
+/**
+ * Debounces rapidly firing Leaflet events before updating React state.
+ *
+ * @param {Function} callback - Callback to run after the debounce delay.
+ * @param {number} delay - Delay in milliseconds.
+ * @returns {Function} Debounced callback.
+ */
 function useDebounce(callback, delay) {
     const timeoutRef = useRef(null);
     
@@ -37,34 +43,29 @@ const TRAIN_PANE_NAME = "train-pane";
 const STATION_PANE_NAME = "station-pane";
 
 /**
- * MapEvents
- * 
- * Attaches event listener to the Leaflet map instance.
- * Reports map camera changes (pan/zoom) to the parent component
- * via the `onChange` callback.
- * 
- * @param {function} onChange - Callback to report {center, zoom}. 
- * @returns {null} This component does not render any UI.
+ * Reports Leaflet camera changes to the parent map container.
+ *
+ * Move and zoom events are debounced so dragging and wheel zooming do not cause
+ * excessive React updates while the user is interacting with the map.
+ *
+ * @param {Object} props - Map event props.
+ * @param {(state: { center: Object, zoom: number }) => void} props.onChange - Receives the latest map camera state.
+ * @returns {null} This component attaches Leaflet listeners but renders no DOM.
  */
 function MapEvents({ onChange }) {
-    //debonce map events to reduce re-render frequency 
     const debouncedOnChange = useDebounce(onChange, 300);
     
     const map = useMapEvents({
-        //tigger when map stops moving after pan
         moveend() {
             debouncedOnChange({ center: map.getCenter(), zoom: map.getZoom() });
         },
-        //trigger when zoom level changes
         zoomend() {
             debouncedOnChange({ center: map.getCenter(), zoom: map.getZoom() });
         },
     });
 
-    //hard disable double-click zoom (guards against Leaflet defaults)
     useEffect(() => {
         map.doubleClickZoom.disable();
-        //initial call not debounced
         onChange({ center: map.getCenter(), zoom: map.getZoom() });
     }, [map, onChange]);
 
@@ -72,13 +73,14 @@ function MapEvents({ onChange }) {
 }
 
 /**
- * MapInstance
- * 
- * Captures the Leaflet map instance and provides it to the parent
- * via the onReady callback.
- * 
- * @param {function} onReady - callback that receives the Leaflet map instance
- * @returns {null}
+ * Exposes the Leaflet map instance to the parent container.
+ *
+ * The parent uses the map instance for imperative actions such as resetting the
+ * view or panning to a searched station.
+ *
+ * @param {Object} props - Map instance props.
+ * @param {(map: Object) => void} props.onReady - Receives the Leaflet map instance.
+ * @returns {null} This component renders no DOM.
  */
 function MapInstance({ onReady }) {
     const map = useMap();
@@ -89,6 +91,14 @@ function MapInstance({ onReady }) {
     return null;
 }
 
+/**
+ * Clears the active route when the map background is clicked.
+ *
+ * @param {Object} props - Clear handler props.
+ * @param {boolean} props.enabled - Whether map clicks should clear the route.
+ * @param {() => void} props.onClear - Clears the current route.
+ * @returns {null} This component attaches a Leaflet click listener only.
+ */
 function ClearOnMapClick({ enabled, onClear }) {
     useMapEvents({
         click() {
@@ -99,6 +109,17 @@ function ClearOnMapClick({ enabled, onClear }) {
     return null;
 }
 
+/**
+ * Fits the map viewport to the active route.
+ *
+ * The controller remembers the last fitted path so repeated renders do not
+ * constantly refit the same route bounds.
+ *
+ * @param {Object} props - Route fitting props.
+ * @param {Array<[number, number]>} props.pathPositions - Route coordinates.
+ * @param {boolean} props.hasPath - Whether a valid route is active.
+ * @returns {null} This component performs a Leaflet side effect only.
+ */
 function RouteFitController({ pathPositions, hasPath }) {
     const map = useMap();
     const lastFitKeyRef = useRef("");
@@ -132,27 +153,41 @@ function RouteFitController({ pathPositions, hasPath }) {
 }
 
 /**
- * LeafletMap
- * 
- * Renders a controlled Leaflet map container with:
- * - Dark themed CartoDB basemap for reduced visual noise.
- * - Stations rendered as Circlemarkers with popups.
- * - Connections rendered as Polylines.
- * - Native Leaflet zoom & pan interactions.
- * 
- * Uses React state to load and render nodes (stations) and edges (connections).
- * Map camera chanes are communicated to the parent component via
- * the `onMapChange` callback.
- * 
- * @param {function} onMapChange - callback invoked on pan/zoom
- * @param {boolean} hypotheticalSettingsEnabled - what-if mode
- * @param {Set} closedStations - set of stations IDs that are marked as closed (will need for djikstra's algo)
- * @param {function} onStationClick - callback when a station is double-clicked (close/open)
- * @param {function} onStationSelect - callback when a station is single-clicked (route planning)
- * @param {Set} closedLines - set of line ids that are marked as closed
- * @param {Map<string, Set<string>>} partialStationIdsByLine - live partial disruption station ids by line
- * @param {function} onLineToggle - callback when a line is toggled on map
- * @returns {JSX.Element} Leaflet Map container.
+ * Renders the interactive Leaflet map and map layers.
+ *
+ * This component now delegates station graph loading and route calculation to
+ * hooks, then composes the base map, line edges, station markers, route layer,
+ * train canvas layer and selected-train panel. Parent components receive route,
+ * train-feed and camera updates through callbacks.
+ *
+ * @param {Object} props - Leaflet map props.
+ * @param {(state: { center: Object, zoom: number }) => void} props.onMapChange - Receives map camera changes.
+ * @param {Object} props.COLORS - Theme tokens used by map overlays.
+ * @param {boolean} [props.hypotheticalSettingsEnabled=false] - Whether What-If mode is active.
+ * @param {Set<string>} [props.closedStations] - Station ids closed by the current What-If scenario.
+ * @param {Set<string>} [props.closedLines] - Effective closed line ids.
+ * @param {Map<string, Set<string>>} [props.partialStationIdsByLine] - Live partial disruption station ids by line.
+ * @param {(stationId: string) => void} props.onToggleStationClosed - Toggles a station closure.
+ * @param {(lineId: string) => void} props.onLineToggle - Toggles a line closure.
+ * @param {(map: Object) => void} props.onMapReady - Receives the Leaflet map instance.
+ * @param {(stations: Array<Object>) => void} props.onStationsLoaded - Receives loaded station data for search.
+ * @param {(error: Object | null) => void} props.onRoutingError - Receives route error state.
+ * @param {(routeInfo: Object) => void} props.onRouteChange - Receives active route summary data.
+ * @param {Set<string>} [props.liveClosedStations] - Station ids closed by live TfL disruption data.
+ * @param {(status: Object) => void} props.onTrainFeedStatusChange - Receives train feed status metadata.
+ * @param {boolean} [props.showTrains=true] - Whether train markers are visible.
+ * @param {string | null} [props.selectedTrainId] - Currently selected train id.
+ * @param {(trainId: string | null) => void} props.onSelectedTrainIdChange - Updates the selected train.
+ * @param {"all" | "selected"} [props.trainFilterMode] - Train line filter mode.
+ * @param {Set<string>} [props.visibleTrainLines] - Visible train line ids when filtering.
+ * @param {"route" | "closures"} [props.interactionMode] - Active station/line interaction mode.
+ * @param {boolean} [props.isMobilePortrait=false] - Whether the map is in mobile portrait layout.
+ * @param {number} [props.resetRouteSequence=0] - Sequence value used to request route resets.
+ * @param {string | null} [props.highlightedStationId] - Station id highlighted by search.
+ * @param {Object | null} [props.stationActionRequest] - Imperative station action request from the search panel.
+ * @param {(selection: Object) => void} props.onRouteSelectionChange - Receives start/end route selection state.
+ * @param {(station: Object | null) => void} props.onFocusedStationChange - Receives station focus changes from map clicks.
+ * @returns {JSX.Element} Interactive Leaflet map with Underground network layers.
  */
 const LeafletMap = ({
     onMapChange,

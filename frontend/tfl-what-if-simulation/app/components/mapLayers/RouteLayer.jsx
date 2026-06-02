@@ -1,5 +1,16 @@
 import { CircleMarker, Polyline, Tooltip } from "react-leaflet";
 
+/**
+ * Renders the currently selected route as a highlighted polyline.
+ *
+ * The route is drawn with a glow, main stroke and dashed overlay so it remains
+ * visible above the wider Underground network. A midpoint tooltip summarises
+ * the number of stops on the selected path.
+ *
+ * @param {Object} props - Route layer props.
+ * @param {Array<[number, number]>} props.pathPositions - Ordered latitude/longitude pairs for the route.
+ * @returns {JSX.Element | null} Highlighted route layer or null when no route is selected.
+ */
 export default function RouteLayer({ pathPositions }) {
     const hasPath = pathPositions.length > 1;
     if (!hasPath) return null;

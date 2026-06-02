@@ -6,6 +6,32 @@ import {
 } from "../mapShared/stationMarkerSizing.js";
 import { getStationMarkerColours } from "../mapShared/stationMarkerColours.js";
 
+/**
+ * Renders all station markers and handles station-level map interactions.
+ *
+ * The layer marks route starts, route stations, search highlights, live
+ * closures and What-If closures. Station clicks either select route endpoints
+ * or toggle closures depending on the current interaction mode.
+ *
+ * @param {Object} props - Station layer props.
+ * @param {Array<Object>} props.nodes - Station nodes to render.
+ * @param {string | null} props.startId - Currently selected route start station id.
+ * @param {(stationId: string | null) => void} props.setStartId - Updates the selected route start.
+ * @param {Set<string>} props.pathSet - Station ids included in the active route path.
+ * @param {Set<string>} props.closedSet - Station ids closed in What-If mode.
+ * @param {boolean} props.hasPath - Whether an active route is displayed.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {Object | null} props.redXIcon - Leaflet icon used for closed stations.
+ * @param {(stationId: string) => void} props.onSingleClickStation - Handles route station selection.
+ * @param {(stationId: string) => void} props.onDoubleClickStation - Handles station closure toggles.
+ * @param {number} props.zoomLevel - Current Leaflet zoom level.
+ * @param {Set<string>} [props.liveClosedSet] - Live TfL closed station ids.
+ * @param {"route" | "closures"} [props.interactionMode] - Active map interaction mode.
+ * @param {string | null} props.highlightedStationId - Station id highlighted by search.
+ * @param {string} props.paneName - Leaflet pane used for station markers.
+ * @param {boolean} [props.isLightTheme] - Whether the map is using the light theme.
+ * @returns {JSX.Element} Rendered station marker layer.
+ */
 function StationLayerComponent({
     nodes,
     startId,
@@ -143,7 +169,12 @@ function StationLayerComponent({
     );
 }
 
-// Memoize to prevent unnecessary re-renders when parent updates
+/**
+ * Memoised station layer.
+ *
+ * Station markers are numerous, so the custom equality check prevents expensive
+ * marker rerenders when parent state changes but station-layer inputs are stable.
+ */
 const StationLayer = React.memo(StationLayerComponent, (prev, next) => {
     // Return true if props are equal (don't re-render)
     return (

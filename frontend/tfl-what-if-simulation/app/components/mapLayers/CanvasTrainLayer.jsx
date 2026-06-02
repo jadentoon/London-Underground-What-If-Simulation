@@ -12,23 +12,57 @@ const HIDE_TRAINS_AT_ZOOM = 12;
 const TRAIN_BASE_OPACITY = 0.58;
 const TRAIN_SELECTED_OPACITY = 0.95;
 
+/**
+ * Clamps a numeric value to an inclusive min/max range.
+ *
+ * @param {number} value - Value to clamp.
+ * @param {number} min - Minimum allowed value.
+ * @param {number} max - Maximum allowed value.
+ * @returns {number} Clamped value.
+ */
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
 
+/**
+ * Calculates train marker radius from the current map zoom.
+ *
+ * @param {number} zoom - Current Leaflet zoom level.
+ * @returns {number} Radius in canvas pixels.
+ */
 function getTrainRadiusForZoom(zoom) {
     const safeZoom = clamp(Number.isFinite(zoom) ? zoom : MAX_TRAIN_ZOOM, MIN_TRAIN_ZOOM, MAX_TRAIN_ZOOM);
     return TRAIN_RADIUS_AT_MIN_ZOOM + ((safeZoom - MIN_TRAIN_ZOOM) * TRAIN_RADIUS_ZOOM_STEP);
 }
 
+/**
+ * Determines whether train markers should be hidden at the current zoom.
+ *
+ * @param {number} zoom - Current Leaflet zoom level.
+ * @returns {boolean} True when train markers should not be drawn.
+ */
 function shouldHideTrains(zoom) {
     return (Number.isFinite(zoom) ? zoom : MAX_TRAIN_ZOOM) < HIDE_TRAINS_AT_ZOOM + 1;
 }
 
+/**
+ * Returns the clickable hit radius for a train marker.
+ *
+ * @param {number} radius - Visual train marker radius.
+ * @returns {number} Hit-test radius in pixels.
+ */
 function getTrainHitRadius(radius) {
     return Math.max(radius + 2, 8);
 }
 
+/**
+ * Tests whether a point is inside a circular hit area.
+ *
+ * @param {{ x: number, y: number }} point - Point being tested.
+ * @param {{ x: number, y: number }} center - Circle centre.
+ * @param {number} radius - Circle radius.
+ * @returns {boolean} True when the point falls within the radius.
+ */
 function isPointWithinRadius(point, center, radius) {
     const dx = center.x - point.x;
     const dy = center.y - point.y;
@@ -36,6 +70,19 @@ function isPointWithinRadius(point, center, radius) {
     return ((dx * dx) + (dy * dy)) <= (radius * radius);
 }
 
+/**
+ * Checks whether a train click or marker would overlap a station marker.
+ *
+ * Station occlusion prevents train selection from stealing clicks intended for
+ * prominent station markers.
+ *
+ * @param {{ x: number, y: number }} point - Container point to test.
+ * @param {Object} map - Leaflet map instance.
+ * @param {Array<Object>} stations - Station marker state used for occlusion sizing.
+ * @param {number} zoomLevel - Current Leaflet zoom level.
+ * @param {boolean} isLightTheme - Whether light theme marker sizing is active.
+ * @returns {boolean} True when the point overlaps a station marker.
+ */
 function isPointInsideStationOcclusion(point, map, stations, zoomLevel, isLightTheme) {
     for (const station of stations) {
         if (!Number.isFinite(station?.lat) || !Number.isFinite(station?.lon)) continue;
@@ -58,6 +105,19 @@ function isPointInsideStationOcclusion(point, map, stations, zoomLevel, isLightT
     return false;
 }
 
+/**
+ * Draws a single train marker onto the canvas.
+ *
+ * Live and fallback trains share the same shape, with line colour, glow and a
+ * selected ring used to distinguish state.
+ *
+ * @param {CanvasRenderingContext2D} ctx - Canvas drawing context.
+ * @param {{ x: number, y: number }} point - Marker centre in container pixels.
+ * @param {Object} train - Train marker data.
+ * @param {boolean} isSelected - Whether this train is currently selected.
+ * @param {number} radius - Marker radius in pixels.
+ * @returns {void}
+ */
 function drawTrain(ctx, point, train, isSelected, radius) {
     const lineId = String(train?.lineId || "");
     const isNorthern = lineId === "northern";
@@ -113,6 +173,22 @@ function drawTrain(ctx, point, train, isSelected, radius) {
     ctx.restore();
 }
 
+/**
+ * Renders train markers as a custom Leaflet canvas layer.
+ *
+ * Canvas rendering is used instead of individual Leaflet markers so live train
+ * movement remains smooth even when many train positions are updated at once.
+ * Click handling is implemented manually with canvas hit testing.
+ *
+ * @param {Object} props - Canvas train layer props.
+ * @param {Array<Object>} [props.trains] - Train marker data to draw.
+ * @param {string | null} [props.selectedTrainId] - Currently selected train id.
+ * @param {(trainId: string | null) => void} props.onTrainSelect - Called when a train is selected or cleared.
+ * @param {Array<Object>} [props.stations] - Station marker state used to avoid click occlusion.
+ * @param {string} props.paneName - Leaflet pane to attach the canvas to.
+ * @param {boolean} [props.isLightTheme] - Whether the map is using the light theme.
+ * @returns {null} Canvas layer attaches directly to Leaflet and renders no React DOM.
+ */
 function CanvasTrainLayerComponent({
     trains = [],
     selectedTrainId = null,
@@ -264,6 +340,12 @@ function CanvasTrainLayerComponent({
     return null;
 }
 
+/**
+ * Memoised canvas train layer.
+ *
+ * The layer stores frequently changing train data in refs and schedules canvas
+ * redraws manually, so React rerenders are kept to a minimum.
+ */
 const CanvasTrainLayer = React.memo(CanvasTrainLayerComponent);
 
 export default CanvasTrainLayer;
