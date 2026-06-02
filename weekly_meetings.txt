@@ -1,0 +1,647 @@
+COMP6030 GROUP PROJECT - WEEKLY MEETING MINUTES
+London Underground "What-If" Simulation (Group PG6)
+Supervisor: Peter Rodgers
+Team: Sinead Parkinson, Jaden Toon, Sattyaj Paul, Saf Sikder
+
+This file consolidates the minutes from all weekly sprint meetings, as required
+by the COMP6030 project guidance (Appendix 4 / Section 3.2). The
+formatted copies of each meeting are stored as PDFs in the "Meeting minutes"
+folder of this repository. The source PDF for each sprint is named under the
+heading below.
+
+Per-member contribution breakdown:
+  Meeting minutes/COMP6030_Project_Contribution_Sheet.pdf
+(This sheet records what each group member contributed across the project.)
+
+==============================================================================
+COMP6030 – Sprint 1 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_1_Meeting_Minutes.pdf
+Date: Friday 16th January 2026
+Sprint dates: Jan 12 – Jan 16 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Project kick-off, set up infrastructure, begin TfL API integration
+Tasks planned this sprint
+• Researching similar software offerings and UI and looking at mapping frameworks
+• Set up code repository and Git
+• Map out project structure
+• Create agile project board
+• Have project kick-off meeting with supervisor
+• Decide code review Process
+• Use Version Control for Docs
+Completed tasks and notes
+• Started research into how we may want the interface to look, pulling up resources
+for inspiration to create a document to refer back to. Looked into possible
+mapping frameworks Leaflet.js or D3.js.
+• GitHub repo set up. Agreed on main plus feature branches. Using conventional
+commits
+• Basic React frontend and Node/Express backend started
+• Project board on Google Sheets to be set up with tasks imported from the backlog
+based on user stories that will be created. Had the first sprint planning session.
+• Kick-off meeting held with supervisor. Scope discussed, requirements clarified.
+Weekly Tuesday meetings confirmed. Encouraged to create user stories
+• All merges to main must go through a pull request with at least one peer review.
+Blockers / Issues
+• Some initial confusion about the folder structure
+• More visibility requested for project board
+Actions / Next steps
+• Start looking to API’s, such as how the TFL API will be integrated into the project
+• Parsing and storing fetched data from the API’s
+• Have a look at databases that could be suitable for the project
+• From research, decide what direction to go for mapping and UI
+• Write users stories to understand the scope of the project
+• Decide on a slightly better format for the project board for clarity and readability
+
+==============================================================================
+COMP6030 – Sprint 2 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_2_Meeting_Minutes.pdf
+Date: Friday 23rd January 2026
+Sprint dates: Jan 19 – Jan 23 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Begin TfL API integration Unit tests for data import, station hub model, initial map
+rendering have finalised user stories and project plan
+Tasks planned this sprint
+• Implement TfL API integration
+• Parse and Store Fetched Data
+• Write Unit tests (Data import)
+• Code review (API Integration)
+• Map Parent-Child relationships
+• Validate station connectivity
+• Build network graph model
+• Choose graph representation
+• Populate graph from TfL data
+• Choose mapping framework
+• Implement zoom and pan
+• Develop master test plan
+• Complete project plan
+Completed tasks and notes
+• Unit tests written for the data fetch module using mocked API responses. Covers
+correct parsing and error cases like timeouts or bad responses.
+• Code review done on the API integration. A few minor style issues flagged and
+fixed. Overall the code was in good shape.
+• Parent-child mapping complete. Validated with a few known stations (eg King's
+Cross St. Pancras) and everything links up correctly.
+• All station nodes verified to connect to a hub. No orphan nodes found.
+• Decided to go with Leaflet.js for the map. Looked at D3.js but it felt like overkill for
+what we need. Leaflet has good pan/zoom out of the box.
+• Zoom and pan working smoothly. Tested across a few browser sizes.
+• Master test plan drafted. Covers unit, integration and UAT testing. Pass/fail
+criteria defined.
+Blockers / Issues
+• TfL API client is working - we're using the Unified API endpoint. Had to register
+for an API key which took a bit of time. Set up scheduled fetch every 5 minutes
+for now, may revisit this.
+• Data is being parsed into station and line objects. Had a bit of back and forth
+about the internal structure but settled on a clean format.
+• TfL data has some inconsistencies for certain stations - had to add some manual
+overrides. Not ideal but noted for now..
+Actions / Next steps
+• Address station overlap rendering issue next sprint if time allows
+• Begin graph construction in Sprint 3
+
+==============================================================================
+COMP6030 – Sprint 3 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_3_Meeting_Minutes.pdf
+Date: Friday 30th January 2026
+Sprint dates: Jan 26 – Jan 30 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Graph construction, integrate station hierarchy, begin interactive map features
+Tasks planned this sprint
+• Integration with graph construction
+• Code review (Station hierarchy)
+• Verify graph connectivity
+• Station tooltip/label
+• Clickable stations
+Completed tasks and notes
+• Graph construction now integrated with the station hierarchy. Parent station
+nodes used as routing nodes, preserving platform detail underneath. Feels clean.
+• Code review done. Suggestion was some renaming and refactoring a few things
+for clarity - quick fix applied.
+• Went with an adjacency list representation. Considered a graph library (e.g.
+graphlib) but decided to build it ourselves for more control. Nodes = stations,
+edges = track segments with distance weights for now may use travel time in the
+future.
+• Graph populated from the TfL data. All lines and connections imported
+successfully.
+• Connectivity check passed - all nodes are reachable. A simple Dijkstra script
+written to verify.
+• Hover tooltips showing station names working.
+• Stations are now clickable. Click selects the station and highlights it. Will hook up
+to route planning in a later sprint.
+Blockers / Issues
+• Decisions to do with the graph took longer than expected - debated graph library
+vs custom implementation.
+• A few stations have duplicate entries in the TfL data which needed filtering.
+Actions / Next steps
+• Optimise graph if needed
+• Start work on rendering lines to show connections between stations
+• Add some more tests before adding to UI and ensuring code reviews are
+completed before moving to next tasks
+
+==============================================================================
+COMP6030 – Sprint 4 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_4_Meeting_Minutes.pdf
+Date: Friday 6th February 2026
+Sprint dates: Feb 2 – Feb 6 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Graph experimentation, rendering lines and station connections, closure simulation
+logic, UI testing and code refactoring, initial pathfinding set up
+Tasks planned this sprint
+• Write Unit Tests? (Graph Construction)
+• Code review / Graph model
+• Draw lines and station connections on map
+• Add TFL styling to lines
+• Update legal considerations document
+• Gitlab maintenance and reorg
+• Implement station/line closure logic
+• Scenario reset functionality
+• Code review / UI map
+Completed tasks and notes
+• Graph performance is fine on the full network major changes need yet but will
+need optimisation in the future
+• Unit tests for graph construction done. Given a small fixed network, verified node/
+edge counts are correct.
+• Code review completed on the graph model. Code is clean and modular should
+be easy to expand in the future if needed.
+• Map rendering implemented for station markers and line connections. Verified that
+stations and route segments display correctly after data load.
+• Applied TfL-inspired line styling to the map, including distinct colours for each
+route and clearer visual separation between lines.
+• Legal considerations document updated to reflect current project scope, data
+usage, and operational assumptions especially around TfL usage
+• Closure logic implemented. Closing a station removes/deactivates its nodes and
+edges from the routing graph. Line closures do the same for all stations on that
+line.
+• Reset function added. Clears all closure state and restores the full graph.
+• Code review on the map component. Flagged a few hardcoded values that should
+be constants which was fixed.
+Blockers / Issues
+• ID-52 took a bit of time to get the observer notification pattern right so the UI stays
+in sync when closures change.
+Actions / Next steps
+• Begin proper pathfinding algorithm implementation next sprint
+• Need to update and integrate closing and opening logic into the UI
+
+==============================================================================
+COMP6030 – Sprint 5 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_5_Meeting_Minutes.pdf
+Date: Friday 13th February 2026
+Sprint dates: Feb 9 – Feb 13 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Implement core pathfinding algorithm, calculate travel times, station selection UI
+Tasks planned this sprint
+• Implement pathfinding algorithm
+• Unit test pathfinding with sample queries
+• Implement station search
+• Toggle station state
+• Write Unit tests for scenario logic
+• Implement station selection UI
+Completed tasks and notes
+• Dijkstra's algorithm implemented over the network graph. Edge weights are travel
+times in minutes. Research into how to use travel time ongoing
+• Tests pass on small networks. Verified it finds the correct shortest path between a
+few well known routes (e.g. King's Cross to Waterloo).
+• Scenario logic tests cover closing a station, attempting a route through it, verifying
+the system finds an alternative or returns no route found.
+• Station state toggle implemented so stations can be opened or closed
+interactively as part of scenario setup.
+Blockers / Issues
+• Algorithm implementation as the biggest task this sprint took up most of the sprint
+but the algorithm is solid.
+• Finding a way to find out or calculate travel time is pushed for next sprint but the
+algorithm works fine on distance for now but the intention is to move to travel
+times when data is obtained.
+• Discussed whether to use A* instead of Dijkstra. We decided Dijkstra is fine for
+this network size. Can revisit in the future when looking at optimisation
+Actions / Next steps
+• Integrate routing into the backend API next sprint
+• Handle edge cases (no route found, same start/end) in Sprint 6
+• Add the option to close entire lines
+• Research travel times and implement into algorithm
+• Start showing the route on the map
+
+==============================================================================
+COMP6030 – Sprint 6 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_6_Meeting_Minutes.pdf
+Date: Friday 20th February 2026
+Sprint dates: Feb 16 – Feb 20 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Display calculated route and travel time on the map, support dynamic re-routing when
+stations or lines are closed, integrate TfL travel time data into route calculation, improve
+UI controls for route clearing, updating and closure toggling
+Tasks planned this sprint
+• Input validation and edge cases
+• Write Unit tests for routing engine
+• Validate no-through routes handling
+• Request route calculation
+• Add time travel logic to the algorithm
+• Source, add and parse TFL travel time information
+• Display route and travel time
+• Clear and update route in UI
+• Add line closure in UI and add easy way to toggle within sidebar
+• Refactoring code and reorganisation
+Completed tasks and notes
+• Input validation added it handles same start/end (returns trivial result), unknown
+station codes and no route found cases with appropriate messages.
+• Extra tests added for edge cases like no route found when a major hub is closed
+and same station start/end.
+• Tested by closing a station that splits the graph the system returns 'No route
+available' message and works correctly.
+• TfL travel time data sourced and integrated into the network model. Parsing
+added so station to station travel times can be used by the routing engine.
+• Travel time logic added to the routing algorithm so route costs are based on
+journey time rather than distance.
+• Frontend now calls the backend /api/route endpoint when stations are selected.
+• Route is highlighted on the map with a green outline over the existing network.
+Travel time shown in a panel above the map.
+• Route display now clears and refreshes correctly when a new journey is
+requested or when route conditions change.
+• Line closure controls added to the UI, with an easier toggle flow in the sidebar for
+quickly opening and closing lines during scenario testing.
+• Refactoring completed to improve structure and maintainability. Related routing,
+UI and scenario logic were reorganised into clearer modules.
+Blockers / Issues
+• Heaviest sprint so far in terms of tasks - team was stretched a bit thin.
+• Having some issues with live partial line closures which has been pushed to next
+weeks sprint
+Actions / Next steps
+• Code reviews for pathfinding and dynamic routing to be done in Sprint 7
+• Build out the scenario control panel UI more in Sprint 7
+
+==============================================================================
+COMP6030 – Sprint 7 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_7_Meeting_Minutes.pdf
+Date: Friday 27th February 2026
+Sprint dates: Feb 23 – Feb 27 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Code reviews, completing live partial closures, scenario control panel UI, UI for sidebar
+and routing, improve visual continuity between live and hypothetical closures
+Tasks planned this sprint
+• Code review for pathfinding
+• Add functionality for live partial line closures and disruptions
+• Ensure real time adaptation for routing
+• Write Unit/Integration tests for dynamic routing
+• Code review for dynamic re-routing
+• Code review for route UI
+• Work on what if scenario control panel UI
+• UX design for closure toggles and buttons
+• Reworked visual highlighting of closed elements for continuity between live/
+hypothetical
+Completed tasks and notes
+• Code review on pathfinding done. Algorithm is clear and well commented. Minor
+suggestion to extract the heuristic logic into its own function.
+• Live data feed integration confirmed. When a live disruption comes in from the TfL
+API, the closure logic triggers and routes re-calculate automatically. Tested with a
+simulated feed.
+• Integration tests simulate disruption events and verify routing returns updated
+paths. Tests pass.
+• Route UI code reviewed. State management looks correct, no old route paths left
+showing.
+• Scenario control panel built. Panel on the left side lists all lines with toggles to
+close/open.
+• Toggle labels updated to be clear eg. 'Close Jubilee line'. Warning colour shown
+when a line is closed. Added a small legend.
+• Closed stations now show a red X marker. Closed lines are rendered in amber
+and black dashed style. Updates in real time.
+Blockers / Issues
+• Side panel took a bit longer than expected as getting the state for all lines into the
+panel cleanly required some refactoring of how closure state is stored.
+• Had a minor merge conflict mid-sprint between the UI and routing branches which
+has been resolved
+Actions / Next steps
+• Ensure connection scenario controls to the backend closure logic
+• Sprint 8 is the last big feature sprint before focus on the project fair
+
+==============================================================================
+COMP6030 – Sprint 8 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_8_Meeting_Minutes.pdf
+Date: Monday 2nd March 2026
+Sprint dates: Mar 2 – Mar 6 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Full integration of scenario controls, disruption UI tests, technical report updates
+Tasks planned this sprint
+• Update Technical Report with disruption handling and UI
+• Integrate Scenario Controls with UI
+• Evaluate Impact on Routes
+• Code review for scenario planning
+• UI refresh without page reload
+• Write Unit/Integration Tests for Disruption UI
+• Code review for Disruption UI
+Completed tasks and notes
+• Disruption handling section added to the technical report. Covers both manual
+(user toggled) and live (API feed) closures.
+• Scenario control now fully wired up to the backend. Toggling a line or station in
+the UI calls the closure logic and updates the map and is responsive.
+• Confirmed that when closures are toggled, new route queries use the updated
+graph. Retested the re-routing flow end to end - working well.
+• Code review on scenario planning - noted that scenario state is correctly isolated
+from live data. No issues.
+• What-if scenario functionality documented in the technical report.
+• All UI updates are reactive - no page reloads needed. Tested by toggling several
+closures quickly in a row.
+• Integration tests pass. Toggling a station closed removes it from any subsequent
+route. End-to-end test scenario works.
+• Disruption UI code reviewed. Both manual and live closures use the same code
+path which is consistent.
+• Disruption UI documented in the technical report with screenshot of a closed
+station on the map.
+Blockers / Issues
+• Minor issue with the UI not re-rendering immediately on rapid toggle clicks added
+a short debounce and it's fine now.
+• One test was flaky due to async timing
+Actions / Next steps
+• Sprint 9 shifts focus to integration testing and the project poster
+• Start thinking about what results/screenshots to include on the poster and report
+• Report sections are mostly drafted
+
+==============================================================================
+COMP6030 – Sprint 9 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_9_Meeting_Minutes.pdf
+Date: Monday 9th March 2026
+Sprint dates: Mar 9 – Mar 13 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Integration testing, project poster and abstract for the Project Fair
+Tasks planned this sprint
+• Ongoing integration testing
+• Design project poster and abstract
+• Print Draft and review poster
+Completed tasks and notes
+• Full integration testing done this sprint. Ran end-to-end tests covering: loading the
+map, selecting stations, viewing a route, toggling closures and seeing a re-route.
+A couple of minor defects found and fixed (one edge case with a line with a single
+station on a branch).
+• Project poster completed. A1 size. Includes title, abstract, architecture diagram,
+screenshot of the map and a section on aims and key features. Abstract written
+and kept to ~150 words.
+• A4 draft printed and reviewed as a team. Made some small tweaks to the layout
+and fixed a typo in the algorithm description. Poster PDF finalised.
+Blockers / Issues
+• Poster design took longer than we estimated - got a bit carried away making it
+look nice.
+• The display glitch found in integration testing was a minor CSS issue - quick fix.
+Actions / Next steps
+• Final poster to be submitted/printed before the Project Fair deadline
+• Continue integration testing in upcoming sprints as new features land
+• Technical report final proofread to be done as a team before submission
+• Good sprint - project is in a solid state at this point
+
+==============================================================================
+COMP6030 – Sprint 10 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_10_Meeting_Minutes.pdf
+Date: Monday 13th April 2026
+Sprint dates: Apr 13 – Apr 17 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+First week back after the Easter break. Get our bearings around the project again and resume
+train display work.
+Tasks planned this sprint
+• Regroup after the break and review where the project stands
+• Re-familiarise with the codebase and the outstanding tasks
+• Agree priorities for the rest of the term now the project fair is behind us
+• Let the user select which line's trains to display on the map
+• Refactor train ID helper functions
+• Stop unnecessary re-renders when the live feed updates
+Completed tasks and notes
+• First week back after the break. Spent some time as a team getting our bearings again,
+re-reading the code and docs and agreeing what to prioritise for the rest of term.
+• Added an option for the user to choose which line they want to see trains for, rather than
+showing all of them at once.
+• Stopped a child-parent update loop that was firing on every feed update, removing
+unnecessary re-renders and improving performance.
+• Moved some of the helper functions out of useTrainMovements into a dedicated
+trainIdUtils file.
+• Slower week overall as we got back into the swing of things after time away.
+Blockers / Issues
+• Took a little while to get back up to speed after the break.
+• Needed to re-agree priorities now that the poster and project fair are done.
+Actions / Next steps
+• Move the live trains TfL API call to the backend
+• Continue tidying the train modules
+• Plan the remaining feature work for the term
+
+==============================================================================
+COMP6030 – Sprint 11 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_11_Meeting_Minutes.pdf
+Date: Monday 20th April 2026
+Sprint dates: Apr 20 – Apr 24 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Now properly back into the project. Backend train data and map loading improvements.
+Tasks planned this sprint
+• Move the live train TfL API call to the backend
+• Improve map and line loading
+• Add a max bound to the map
+• Fix the station closure bug
+• Refactor train graph helper functions
+Completed tasks and notes
+• Back into the project at full pace this week after settling in last week.
+• Moved the TfL API call for live trains to the backend so the API key isn't exposed on the
+client and calls are centralised.
+• Improved loading for lines on the map and general map loading performance.
+• Implemented a max bound so users can't pan endlessly away from London.
+• Fixed a station closure bug.
+• Refactored several functions into trainGraphUtils.
+Blockers / Issues
+• A couple of the map loading issues were fiddly to track down.
+Actions / Next steps
+• Begin the larger MapCanvas refactor to make the codebase easier to work in
+• Improve the train prediction system using live API data
+
+==============================================================================
+COMP6030 – Sprint 12 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_12_Meeting_Minutes.pdf
+Date: Monday 27th April 2026
+Sprint dates: Apr 27 – May 1 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Major MapCanvas refactor, smarter train movement prediction, and mobile UI improvements.
+Tasks planned this sprint
+• Extract state out of MapCanvas (what-if closures, station search, live closures, line
+delays, HUD, route panel)
+• Predict the next leg of each train journey from API data
+• Add Jubilee and Metropolitan line trains to the graph
+• Improve the mobile UI
+• Add new test documents
+• Add code comments and documentation to the train modules
+Completed tasks and notes
+• Broke MapCanvas down into focused files. Pulled out what-if closures, station search,
+live station closures, line delays, HUD state and the route panel state, which makes
+everything much easier to maintain.
+• Changed the train system to predict the next part of each journey from the API data, with
+estimated values and corrected location text when on the next leg.
+• Added Jubilee and Metropolitan line trains to the graph.
+• Improved the mobile UI.
+• Added new test documents and made minor tidy-ups to existing ones.
+• Added comments across the train modules (movement timing, route expansion,
+snapshot builder, constants and position builders).
+Blockers / Issues
+• MapCanvas had grown large, so the refactor was a bigger job than estimated, but worth
+it.
+• The train prediction logic needed several passes to get the estimates looking believable.
+Actions / Next steps
+• Move train rendering to canvas for performance
+• Continue performance work (zoom handling, animation ticks)
+• Start planning a user study to evaluate usability
+
+==============================================================================
+COMP6030 – Sprint 13 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_13_Meeting_Minutes.pdf
+Date: Monday 4th May 2026
+Sprint dates: May 4 – May 8 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Performance pass on train rendering, plus search and interaction improvements, and prepare
+the user study.
+Tasks planned this sprint
+• Render trains using canvas
+• Cache train icons
+• Fix memo-breaking callbacks into StationLayer
+• Tune the animation tick rate
+• Dynamically resize trains with the zoom level
+• Add a clear button and arrow-key navigation to search
+• Glow a searched station so it stands out
+• Improve the train status box position
+• Add Docker setup and test scripts
+• Prepare user study materials (task sheet, questionnaire, consent sheet)
+Completed tasks and notes
+• Switched train rendering to canvas and cached the train icons. Big performance
+improvement when there are lots of live trains.
+• Fixed memo-breaking callbacks going into StationLayer and set the animation ticks to
+1000ms for smoother movement.
+• Trains now shrink and enlarge dynamically based on the zoom level.
+• Search now has a clear button and arrow-key navigation, and a searched station glows
+so it is easy to spot.
+• Improved the position of the train status box.
+• Added Docker setup and Mac/PowerShell scripts to run all tests, and modified the Babel
+and Jest setup.
+• Started preparing the user study: drafting the task sheet, questionnaire and consent
+sheet, ready to launch next week.
+Blockers / Issues
+• Getting canvas rendering and Leaflet to play nicely together took some iteration.
+• Zoom increments needed tuning so the trains didn't jump in size.
+Actions / Next steps
+• Launch the user study (running from the 14th for about a week and a half)
+• Polish station search focus and add collapsible map controls
+• Make reset view also clear active routes and start the save/load feature
+
+==============================================================================
+COMP6030 – Sprint 14 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_14_Meeting_Minutes.pdf
+Date: Monday 11th May 2026
+Sprint dates: May 11 – May 15 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Launch the user study (from the 14th, running about a week and a half) and continue search/
+route polish while beginning the save/load feature.
+Tasks planned this sprint
+• Finalise user study materials and recruit participants
+• Launch the user study on the 14th
+• Refine station search focus
+• Add collapsible map controls
+• Render trains beneath stations so station interaction is prioritised
+• Make reset view reset routes too
+• Begin the save/load feature
+Completed tasks and notes
+• User study launched on Thursday 14th May, planned to run for about a week and a half.
+Participants were given the prototype with a set of guided tasks and a questionnaire.
+• Refined station search focus and added collapsible map controls so the map is less
+cluttered.
+• Trains now render beneath stations so a tap or click hits the station first.
+• Reset view now also resets any active routes.
+• Moved the search box to line up with the route info box and improved the map controls
+copy and route/closure signposting.
+• Started work on the save/load scenarios feature.
+Blockers / Issues
+• Running study sessions alongside development meant slightly reduced dev capacity
+from mid-week.
+• Scheduling participant sessions around everyone's timetables took some coordination.
+Actions / Next steps
+• Keep the study running into next week and collate feedback as it comes in
+• Complete save/load and put what-if mode on the main screen
+
+==============================================================================
+COMP6030 – Sprint 15 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_15_Meeting_Minutes.pdf
+Date: Monday 18th May 2026
+Sprint dates: May 18 – May 22 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Finished the user study and ship fixes including light/dark mode plus the save/load feature.
+Tasks planned this sprint
+• Finish up user study sessions
+• Begin collating questionnaire responses and observation notes
+• Add light/dark theme tokens and a toggle slider
+• Apply light mode across all box components
+• Complete the save/load feature
+• Put what-if mode on the main screen
+• Centre the map when doing a route
+Completed tasks and notes
+• User study sessions continued through the week, on track to finish around the 25th.
+Began collating questionnaire responses and observation notes as they came in.
+• Added light and dark theme tokens and a slider to switch between modes, and applied
+light mode to all of the box components including the save/load sidebar.
+• Fixed hydration errors caused by the light mode slider and the line info button.
+• Completed the save/load scenarios feature so users can store and reload hypothetical
+disruptions.
+• Brought what-if mode onto the main screen and changed the UI to make it easier to see.
+• The map now centres when doing a route.
+Blockers / Issues
+• Hydration mismatches from theming needed a few fixes (the slider and the line info
+button).
+• Slightly reduced capacity with study sessions still running.
+Actions / Next steps
+• Finish collating study results and turn them into a prioritised list of fixes
+• Refactor the control panel and add a guided tour
+• Clean up the API docs and start the README
+
+==============================================================================
+COMP6030 – Sprint 16 meeting minutes
+Source PDF: Meeting minutes/COMP6030_Sprint_16_Meeting_Minutes.pdf
+Date: Monday 25th May 2026
+Sprint dates: May 25 – May 29 2026
+Attendees: Jaden, Sattyaj, Sinead, Saf. All team members present
+Sprint goals
+Act on the user study findings, plus codebase clean-up (control panel refactor and a guided
+tour) and developer experience (API docs, README, a Docker test database and a CI pipeline).
+Tasks planned this sprint
+• Finish collating the user study results
+• Apply study fixes, polishing map search and route panel interactions
+• Refactor the map control panel into separate files
+• Add a guided tour of the UI
+• Move TfL API calls to only be called by the internal Next.js API
+• Merge and clean up the requirements and API documents and start the README
+• Add a local Neo4j database via Docker and run tests via Docker
+• Add a GitLab CI pipeline
+Completed tasks and notes
+• User study completed, having run for about a week and a half from the 14th. Collated the
+results and pulled out the priorities: clearer search, a more obvious what-if mode and
+better map readability.
+• Applied study fixes, polishing the map search and route panel interactions based on the
+feedback.
+• Refactored the control panel. Pulled out the toggles, interaction mode toggle, saved
+scenarios panel, train display controls, line status rows and network summary into their
+own files, and did the same for the map search box (inputs, results list, focused station
+panel and collapsed button).
+• Built a working guided tour of the UI for first-time users.
+• Moved all TfL API calls to go only through the internal Next.js API.
+• Merged the requirements documents together, cleaned up the API document and started
+the README.
+• Added a local Neo4j database via Docker and made the tests runnable via Docker
+against it, which makes marking much easier.
+• Added a GitLab CI pipeline for the backend and frontend tests.
+Blockers / Issues
+• One test was flaky due to async timing.
+• Coordinating the large refactor across branches needed careful merging.
+Actions / Next steps
+• Final documentation push (user study report, user guide, technical architecture, testing
+reports)
+• Finalise the poster and abstract for submission
+• Fix remaining lint errors and tidy the repo for hand-in
