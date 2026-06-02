@@ -18,12 +18,13 @@ function useDebounce(callback, delay) {
 }
 
 import { dijkstra } from "../../lib/pathfinding.js";
-import { buildGraph } from "../../lib/graph.js";
 
 import { LONDON_CENTER } from "../mapShared/constants.js";
-import { groupEdges, dedupeEdges, buildNodeById, normaliseIdSet, splitStateKey, buildUndirectedLineEdgeKey } from "../mapShared/utils.js";
+import { groupEdges, dedupeEdges, normaliseIdSet, splitStateKey, buildUndirectedLineEdgeKey } from "../mapShared/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "../mapShared/icons.js";
+
 import { useTrainMovements } from "../../hooks/useTrainMovements.js";
+import { useStationGraph } from "../../hooks/map/useStationGraph.js";
 
 import RouteLayer from "../mapLayers/RouteLayer.jsx";
 import EdgeLayer from "../mapLayers/EdgeLayer.jsx";
@@ -191,8 +192,12 @@ const LeafletMap = ({
     const { resolvedTheme } = useTheme();
     const isLightTheme = resolvedTheme === "light";
 
-    const [nodes, setNodes] = useState([]);
-    const [edges, setEdges] = useState([]);
+    const {
+        nodes,
+        edges,
+        nodeById,
+        graph
+    } = useStationGraph({ onStationsLoaded });
 
     const [start, setStart] = useState(null);
     const [end, setEnd] = useState(null);
@@ -239,29 +244,6 @@ const LeafletMap = ({
         onRoutingError?.(null);
     }, [onRoutingError]);
 
-    useEffect(() => {
-        let alive = true;
-        (async () => {
-            const res = await fetch("/api/stations");
-            const data = await res.json();
-            if (!alive) return;
-
-            setNodes(data.nodes || []);
-            setEdges(data.edges || []);
-            onStationsLoaded?.(data.nodes || []);
-        })();
-
-        return () => {
-            alive = false;
-        };
-    }, [onStationsLoaded]);
-
-    const nodeById = useMemo(() => buildNodeById(nodes), [nodes]);
-
-    const graph = useMemo(() => {
-        if (!nodes.length || !edges.length) return null;
-        return buildGraph(nodes, edges);
-    }, [nodes, edges]);
     const trainVisualsEnabled = !hypotheticalSettingsEnabled;
     const { trains, feedStatus } = useTrainMovements({
         nodes,
