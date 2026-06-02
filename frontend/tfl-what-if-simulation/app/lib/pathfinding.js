@@ -16,6 +16,22 @@ function splitKey(k) {
     return { stationId, line: line === "START" ? null : line };
 }
 
+
+/**
+ * Calculates the shortest route between two stations using Dijkstra's algorithm.
+ * 
+ * The search treats each station/line combination as a separate state so line 
+ * changes can be penalised. It also supports closed stations, closed lines and blocked
+ * edges for live disruption and What-If routing.
+ * 
+ * @param {Object<string, Array<{ to: string, weight: number, line: string }>>} graph - Adjacency-list network graph.
+ * @param {string | number} start - Start station id.
+ * @param {string | number} end - Destination station id. 
+ * @param {Set<string | number>} [closedStations] - Station ids to avoid, except when the station is the destination. 
+ * @param {Set<string | number>} [closedLines] - Line ids to avoid. 
+ * @param {Set<string>} [blockedEdges] - Undirected line-edges to avoid. 
+ * @returns {{ path: Array<string>, totalSeconds: number, changeCount: number, statePath: Array<string> }} Route Result.
+ */
 export function dijkstra(
     graph,
     start,

@@ -3,10 +3,25 @@ import { normaliseStationName } from "./trainIdUtils.js";
 
 const MIN_EDGE_TRAVEL_TIME_SECONDS = 60;
 
+/**
+ * Builds the map key used for a directed edge on a specific line.
+ *
+ * @param {string | number} lineId - TfL line id.
+ * @param {string | number} from - Source station id.
+ * @param {string | number} to - Destination station id.
+ * @returns {string} Directed edge lookup key in the format `line|from|to`.
+ */
 function buildDirectedEdgeKey(lineId, from, to) {
     return `${lineId}|${from}|${to}`;
 }
 
+/**
+ * Builds the map key used to find inbound edges for a station on a line.
+ *
+ * @param {string | number} lineId - TfL line id.
+ * @param {string | number} stationId - Destination station id.
+ * @returns {string} Inbound lookup key in the format `line|station`.
+ */
 function buildInboundKey(lineId, stationId) {
     return `${lineId}|${stationId}`;
 }
@@ -94,6 +109,20 @@ export function buildEdgeIndexes(edges) {
     return { directedTravelTimeByLine, inboundByLineTo, edgesByLine };
 }
 
+/**
+ * Infers a train's previous station from "between X and Y" location text.
+ *
+ * Only station candidates that form a valid directed edge into the destination
+ * on the train's line are accepted.
+ *
+ * @param {Object} params - Location matching inputs.
+ * @param {Object} params.prediction - Raw TfL prediction.
+ * @param {Map<string, string>} params.stationNameToId - Normalised station name to station id lookup.
+ * @param {string} params.lineId - TfL line id.
+ * @param {string} params.toId - Destination station id.
+ * @param {Map<string, number>} params.directedTravelTimeByLine - Directed edge travel-time lookup.
+ * @returns {string} Inferred previous station id, or an empty string if no valid match is found.
+ */
 function chooseFromLocationText({ prediction, stationNameToId, lineId, toId, directedTravelTimeByLine}) {
     const betweenIds = parseBetweenStations(prediction.currentLocation, stationNameToId);
 
@@ -107,6 +136,20 @@ function chooseFromLocationText({ prediction, stationNameToId, lineId, toId, dir
     return "";
 }
 
+/**
+ * Infers a train's previous station by comparing ETA with inbound edge times.
+ *
+ * When no reliable location text is available, this chooses the inbound edge
+ * whose travel time is closest to the prediction's ETA.
+ *
+ * @param {Object} params - ETA matching inputs.
+ * @param {Object} params.prediction - Raw TfL prediction.
+ * @param {number} params.etaSeconds - Normalised ETA in seconds.
+ * @param {string} params.lineId - TfL line id.
+ * @param {string} params.toId - Destination station id.
+ * @param {Map<string, Array<{ from: string, travelTime: number }>>} params.inboundByLineTo - Inbound edge lookup.
+ * @returns {string} Inferred previous station id, or an empty string if no inbound edge is available.
+ */
 function chooseFromEta({ prediction, etaSeconds, lineId, toId, inboundByLineTo }) {
     const inbound = inboundByLineTo.get(`${lineId}|${toId}`) || [];
     if (inbound.length === 0) return "";
@@ -131,6 +174,23 @@ function chooseFromEta({ prediction, etaSeconds, lineId, toId, inboundByLineTo }
     return best.from;
 }
 
+/**
+ * Infers the most likely previous station for a live train prediction.
+ *
+ * The function first attempts to use TfL location text, then falls back to ETA
+ * matching against inbound edges. This gives live train markers a plausible
+ * source station for interpolation.
+ *
+ * @param {Object} params - Prediction and graph lookup data.
+ * @param {Object} params.prediction - Raw TfL prediction.
+ * @param {number} params.etaSeconds - Normalised ETA in seconds.
+ * @param {string} params.lineId - TfL line id.
+ * @param {string} params.toId - Destination station id.
+ * @param {Map<string, number>} params.directedTravelTimeByLine - Directed edge travel-time lookup.
+ * @param {Map<string, Array<{ from: string, travelTime: number }>>} params.inboundByLineTo - Inbound edge lookup.
+ * @param {Map<string, string>} params.stationNameToId - Normalised station name to station id lookup.
+ * @returns {string} Inferred previous station id, or an empty string if no match is found.
+ */
 export function chooseFromStop({
     prediction,
     etaSeconds,

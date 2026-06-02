@@ -41,6 +41,17 @@ function buildTrackableTrainKey(prediction) {
     return lineId && vehicleId ? `${lineId}|${vehicleId}` : "";
 }
 
+/**
+ * Fetches live train arrival predictions from the TfL Arrivals API.
+ *
+ * The service separates predictions into trackable and untrackable arrivals so
+ * the map can animate trains with reliable vehicle ids while still reporting
+ * feed quality metadata.
+ *
+ * @param {Object} [options] - Fetch options.
+ * @param {Array<string>} [options.lineIds] - TfL line ids to request. Defaults to all supported tube lines.
+ * @returns {Promise<{ arrivals: Array<Object>, trackableArrivals: Array<Object>, untrackableArrivals: Array<Object>, meta: Object }>} Live feed payload.
+ */
 export async function getLiveTrainFeed({ lineIds } = {}) {
     const requestedLineIds = normaliseRequestedLineIds(lineIds);
     const response = await fetch(buildTflArrivalsUrl(requestedLineIds), {
