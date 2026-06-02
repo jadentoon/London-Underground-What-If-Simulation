@@ -17,14 +17,13 @@ function useDebounce(callback, delay) {
     }, [callback, delay]);
 }
 
-import { dijkstra } from "../../lib/pathfinding.js";
-
 import { LONDON_CENTER } from "../mapShared/constants.js";
-import { groupEdges, dedupeEdges, normaliseIdSet, splitStateKey, buildUndirectedLineEdgeKey } from "../mapShared/utils.js";
+import { groupEdges, dedupeEdges, normaliseIdSet, buildUndirectedLineEdgeKey } from "../mapShared/utils.js";
 import { setupLeafletDefaultIcons, createRedXIcon } from "../mapShared/icons.js";
 
 import { useTrainMovements } from "../../hooks/useTrainMovements.js";
 import { useStationGraph } from "../../hooks/map/useStationGraph.js";
+import { useMapRoute } from "../../hooks/map/useMapRoute.js";
 
 import RouteLayer from "../mapLayers/RouteLayer.jsx";
 import EdgeLayer from "../mapLayers/EdgeLayer.jsx";
@@ -199,17 +198,6 @@ const LeafletMap = ({
         graph
     } = useStationGraph({ onStationsLoaded });
 
-    const [start, setStart] = useState(null);
-    const [end, setEnd] = useState(null);
-
-    const [path, setPath] = useState([]);
-
-    const [routeMeta, setRouteMeta] = useState({
-        totalSeconds: 0,
-        changeCount: 0,
-        statePath: [],
-    });
-
     const [zoomLevel, setZoomLevel] = useState(14);
 
     //expand vector render bounds so paths stay visible while dragging at viewport edges.
@@ -225,24 +213,6 @@ const LeafletMap = ({
 
         return liveClosedSet.has(id) || (hypotheticalSettingsEnabled && closedSet.has(id));
     }, [closedSet, hypotheticalSettingsEnabled, liveClosedSet]);
-
-    const clearRoute = useCallback(() => {
-        setPath([]);
-        setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
-        setStart(null);
-        setEnd(null);
-        onRoutingError?.(null);
-    }, [onRoutingError]);
-
-    const setRouteStartSelection = useCallback((stationId) => {
-        const id = String(stationId);
-
-        setStart(id);
-        setEnd(null);
-        setPath([]);
-        setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
-        onRoutingError?.(null);
-    }, [onRoutingError]);
 
     const trainVisualsEnabled = !hypotheticalSettingsEnabled;
     const { trains, feedStatus } = useTrainMovements({
@@ -296,68 +266,31 @@ const LeafletMap = ({
         return out;
     }, [edges, hypotheticalSettingsEnabled, partialStationIdsByLine]);
 
-    const buildRouteBetween = useCallback((originId, destinationId) => {
-        const startId = String(originId);
-        const endId = String(destinationId);
-
-        if (!startId || !endId || !graph) return;
-
-        // pass all the closed stations to dijkstra's algorithm so it can avoid them when calculating the path
-        const stationsToAvoid = hypotheticalSettingsEnabled ? closedSet : new Set();
-        const linesToAvoid = closedLineSet;
-        const blockedEdges = partialEdgeKeys;
-
-        const result = dijkstra(graph, startId, endId, stationsToAvoid, linesToAvoid, blockedEdges);
-        const newPath = Array.isArray(result) ? result : (result?.path ?? []);
-        const totalSeconds = Array.isArray(result) ? null : result?.totalSeconds;
-        const changeCount = Array.isArray(result) ? null : result?.changeCount;
-        const statePath = Array.isArray(result) ? [] : (result?.statePath ?? []);
-
-        if (newPath.length === 0 && startId !== endId) {
-            const startStation = nodeById.get(startId);
-            const endStation = nodeById.get(endId);
-            const hasClosedStations = hypotheticalSettingsEnabled && closedSet.size > 0;
-            const hasLineDisruptions = closedLineSet.size > 0 || partialEdgeKeys.size > 0;
-
-            onRoutingError?.({
-                from: startStation?.name || startId,
-                to: endStation?.name || endId,
-                reason: hasClosedStations
-                    ? "closed-stations"
-                    : (hasLineDisruptions ? "closed-lines" : "no-connection")
-            });
-            setPath([]);
-            setRouteMeta({ totalSeconds: 0, changeCount: 0, statePath: [] });
-        } else {
-            onRoutingError?.(null);
-
-            setPath(newPath);
-            setRouteMeta({
-                totalSeconds: Number.isFinite(totalSeconds) ? Number(totalSeconds) : 0,
-                changeCount: Number.isFinite(changeCount) ? Number(changeCount) : 0,
-                statePath,
-            });
-        }
-
-        setStart(startId);
-        setEnd(endId);
-    }, [
+    const {
+        start,
+        end,
+        pathSet,
+        pathPositions,
+        hasPath,
+        pathStops,
+        groupedLegs,
+        totalTravelSeconds,
+        changeCount,
+        clearRoute,
+        setStart,
+        setRouteStartSelection,
+        buildRouteBetween,
+        selectRouteDestination,
+    } = useMapRoute({
         graph,
         nodeById,
+        edges,
         hypotheticalSettingsEnabled,
         closedSet,
         closedLineSet,
         partialEdgeKeys,
         onRoutingError,
-    ]);
-
-    const selectRouteDestination = useCallback((destinationId) => {
-        const id = String(destinationId);
-
-        if (!start || !graph) return;
-
-        buildRouteBetween(start, id);
-    }, [buildRouteBetween, graph, start]);
+    });
 
     const handleSingleClickStation = useCallback((stationId) => {
         const id = String(stationId);
@@ -382,7 +315,6 @@ const LeafletMap = ({
         onLineToggle?.(lineId);
     }, [clearRoute, onLineToggle]);
 
-    const pathSet = useMemo(() => new Set(path.map(String)), [path]);
     const stationOcclusionTargets = useMemo(() => {
         return nodes.map((station) => {
             const id = String(station.id);
@@ -408,112 +340,6 @@ const LeafletMap = ({
         pathSet,
         start,
     ]);
-
-    const pathPositions = useMemo(() => {
-        if (!path.length) return [];
-        return path
-            .map(id => nodeById.get(String(id)))
-            .filter(Boolean)
-            .map(n => [n.lat, n.lon]);
-    }, [path, nodeById]);
-
-    const hasPath = pathPositions.length > 1;
-
-    const edgeByPair = useMemo(() => {
-        const m = new Map();
-        for (const e of edges) {
-            const a = String(e.from);
-            const b = String(e.to);
-            const line = String(e.line ?? "unknown");
-            m.set(`${a}|${b}|${line}`, e);
-            m.set(`${b}|${a}|${line}`, e);
-        }
-        return m;
-    }, [edges]);
-
-    const pathStops = useMemo(() => {
-        return path
-            .map((id, idx) => {
-                const n = nodeById.get(String(id));
-                if (!n) return null;
-                return {
-                    id: String(id),
-                    index: idx,
-                    name: n.name,
-                    lat: n.lat,
-                    lon: n.lon,
-                }
-            })
-            .filter(Boolean);
-    }, [path, nodeById]);
-
-    const pathLegs = useMemo(() => {
-        const sp = routeMeta.statePath ?? [];
-        if (sp.length < 2) return [];
-
-        const legs = [];
-
-        for (let i = 1; i < sp.length; i++) {
-            const prev = splitStateKey(sp[i - 1]);
-            const curr = splitStateKey(sp[i]);
-
-            if (prev.stationId === curr.stationId) continue;
-
-            const fromNode = nodeById.get(String(prev.stationId));
-            const toNode = nodeById.get(String(curr.stationId));
-
-            const edge = edgeByPair.get(`${prev.stationId}|${curr.stationId}|${curr.line ?? "unknown"}`);
-
-            legs.push({
-                fromId: prev.stationId,
-                toId: curr.stationId,
-                fromName: fromNode?.name ?? prev.stationId,
-                toName: toNode?.name ?? curr.stationId,
-                line: curr?.line ?? "unknown",
-                travelTimeSeconds: Number.isFinite(edge?.travel_time)
-                    ? Number(edge.travel_time)
-                    : 0,
-            });
-        }
-
-        return legs;
-    }, [routeMeta.statePath, nodeById, edgeByPair]);
-
-    const groupedLegs = useMemo(() => {
-        if (!pathLegs.length) return [];
-
-        const groups = [];
-        let current = null;
-
-        for (const leg of pathLegs) {
-            const line = leg.line ?? "unknown";
-
-            if (!current || current.line !== line) {
-                current = {
-                    line,
-                    fromName: leg.fromName,
-                    toName: leg.toName,
-                    stops: 1,
-                    travelTimeSeconds: leg.travelTimeSeconds ?? 0,
-                };
-                groups.push(current);
-            } else {
-                current.toName = leg.toName;
-                current.stops += 1;
-                current.travelTimeSeconds += leg.travelTimeSeconds ?? 0;
-            }
-        }
-
-        return groups;
-    }, [pathLegs]);
-
-    const totalTravelSeconds = useMemo(() => {
-        return routeMeta.totalSeconds ?? 0;
-    }, [routeMeta.totalSeconds]);
-
-    const changeCount = useMemo(() => {
-        return routeMeta.changeCount ?? Math.max(0, groupedLegs.length - 1);
-    }, [routeMeta.changeCount, groupedLegs.length]);
 
     const lastRouteKeyRef = useRef("");
     const lastRouteSelectionKeyRef = useRef("");
