@@ -4,14 +4,14 @@ Supervisor: Peter Rodgers
 Team: Sinead Parkinson, Jaden Toon, Sattyaj Paul, Saf Sikder
 
 This file consolidates the minutes from all weekly sprint meetings, as required
-by the COMP6030 project guidance (Appendix 4 / Section 3.2). The authoritative,
+by the COMP6030 project guidance (Appendix 4 / Section 3.2). The
 formatted copies of each meeting are stored as PDFs in the "Meeting minutes"
-folder of this repository; the source PDF for each sprint is named under its
+folder of this repository. The source PDF for each sprint is named under each
 heading below.
 
 Per-member contribution breakdown:
   Meeting minutes/COMP6030_Project_Contribution_Sheet.pdf
-(See Section 3.2 of the guidance - this sheet records what each group member
+(This sheet records what each group member
 contributed across the project.)
 
 ==============================================================================
