@@ -1,9 +1,16 @@
 /**
- * SidebarToggleButton.jsx
- * A button to toggle the sidebar open and closed.  
- * uses the same style as the rest of the app
- * using the standard button element 
- * simple colour change on hover
+ * Toggle button for opening and closing the map controls panel.
+ *
+ * On desktop the button attaches to the sidebar edge; on mobile it becomes a
+ * square floating control in the top-left corner.
+ *
+ * @param {Object} props - Sidebar toggle props.
+ * @param {boolean} props.isSidebarOpen - Whether the sidebar/control sheet is open.
+ * @param {Object} props.layout - Responsive layout values.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {string} props.accentColor - Button icon colour.
+ * @param {() => void} props.onToggle - Toggles sidebar visibility.
+ * @returns {JSX.Element} Sidebar toggle button.
  */
 
 export function SidebarToggleButton({

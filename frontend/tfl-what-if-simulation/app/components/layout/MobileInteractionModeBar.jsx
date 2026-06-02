@@ -1,3 +1,18 @@
+/**
+ * Renders the mobile segmented control for route planning versus closure editing.
+ *
+ * The bar is only shown in mobile What-If mode and slides away while the mobile
+ * control sheet is open.
+ *
+ * @param {Object} props - Mobile interaction mode props.
+ * @param {boolean} props.isVisible - Whether the bar should be rendered.
+ * @param {boolean} props.isSidebarOpen - Whether the mobile control sheet is open.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {string} props.accentColor - Accent colour for the selected mode.
+ * @param {"route" | "closures"} props.interactionMode - Current mobile interaction mode.
+ * @param {(mode: "route" | "closures") => void} props.onInteractionModeChange - Updates the active mode.
+ * @returns {JSX.Element | null} Mobile mode bar or null.
+ */
 export function MobileInteractionModeBar({
     isVisible,
     isSidebarOpen,

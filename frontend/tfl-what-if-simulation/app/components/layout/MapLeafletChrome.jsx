@@ -1,6 +1,13 @@
 /**
- * component to inject custom styles for the leaflet map controls, such as the zoom buttons
- * also includes the "what-if" label and corner accents when the sidebar is open
+ * Injects global Leaflet control styles for the map.
+ *
+ * Leaflet renders zoom controls outside the React component tree, so this
+ * component supplies theme-aware global CSS for the built-in zoom buttons.
+ *
+ * @param {Object} props - Leaflet chrome props.
+ * @param {Object} props.COLORS - Theme tokens used by the zoom controls.
+ * @param {string} props.accentColor - Accent colour for zoom button text.
+ * @returns {JSX.Element} Global style block for Leaflet controls.
  */
 
 export function MapLeafletChrome({ COLORS, accentColor }) {

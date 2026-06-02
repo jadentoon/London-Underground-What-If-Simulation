@@ -1,6 +1,14 @@
 /**
- * map overlay component to show the "what-if" label and corner accents when the sidebar is open
- * does also include the flashing dot next to the label for extra emphasis
+ * Renders desktop visual framing while What-If mode is active.
+ *
+ * Corner accents and the WHAT-IF label make simulated closure mode visually
+ * distinct from the live network view.
+ *
+ * @param {Object} props - Overlay props.
+ * @param {boolean} props.isSidebarOpen - Whether the desktop sidebar is open.
+ * @param {Object} props.COLORS - Theme tokens used for text styling.
+ * @param {string} props.accentColor - Accent colour used for frame corners.
+ * @returns {JSX.Element} What-If mode overlay accents.
  */
 
 export function MapWhatIfOverlay({ isSidebarOpen, COLORS, accentColor }) {

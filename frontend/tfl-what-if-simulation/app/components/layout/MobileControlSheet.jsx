@@ -1,5 +1,20 @@
 import { MapControlPanelContent } from "../controls/MapControlPanelContent";
 
+/**
+ * Bottom-sheet version of the map control panel for mobile layouts.
+ *
+ * The sheet shares `MapControlPanelContent` with the desktop sidebar, but wraps
+ * it in a dismissible mobile overlay and enables touch-specific controls such
+ * as the route/closure interaction mode toggle.
+ *
+ * @param {Object} props - Mobile control sheet props.
+ * @param {boolean} props.isOpen - Whether the sheet is open.
+ * @param {() => void} props.onClose - Closes the sheet.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {string} props.accentColor - Accent colour for controls.
+ * @returns {JSX.Element} Mobile control sheet and backdrop.
+ */
 export function MobileControlSheet({
     isOpen,
     onClose,

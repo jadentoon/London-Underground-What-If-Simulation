@@ -1,16 +1,21 @@
-/*
- * GuidedTourOverlayMain.jsx
- * Main guided-tour controller: orchestrates step progression, attaches
- * listeners to user interactions, computes target/box positions and composes
- * the presentational pieces (`TourDimOverlay`, `TourHighlight`,
- * `TourInstructionBox`). Import this from the thin wrapper `GuidedTourOverlay`.
- */
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { steps as defaultSteps } from "./tourSteps";
 import { TourDimOverlay } from "./TourDimOverlay";
 import { TourHighlight } from "./TourHighlight";
 import { TourInstructionBox } from "./TourInstructionBox";
 
+/**
+ * Controls guided-tour step progression and overlay positioning.
+ *
+ * The controller watches target elements, listens for required interactions,
+ * auto-advances completed steps and composes the dim overlay, target highlight,
+ * instruction card and arrow annotation.
+ *
+ * @param {Object} props - Guided tour props.
+ * @param {() => void} props.onSkipTour - Ends the guided tour.
+ * @param {Object} props.COLORS - Theme tokens used by the tour UI.
+ * @returns {JSX.Element | null} Active guided-tour overlay or null before a target is found.
+ */
 export function GuidedTourOverlayMain({ onSkipTour, COLORS }) {
     const [currentStep, setCurrentStep] = useState(0);
     const [targetRect, setTargetRect] = useState(null);
@@ -227,7 +232,7 @@ export function GuidedTourOverlayMain({ onSkipTour, COLORS }) {
         return null;
     }
 
-    //box position calculations
+    // Keep the instruction box centred while allowing each step to nudge it.
     const boxWidth = 280;
     const boxHeight = 140;
     const boxNudgeX = currentStepData.boxNudgeX ?? 0;
@@ -239,7 +244,7 @@ export function GuidedTourOverlayMain({ onSkipTour, COLORS }) {
     const boxLeft = Math.max(20, Math.min(rawLeft, window.innerWidth - boxWidth - 20));
     const boxTop = Math.max(20, Math.min(rawTop, window.innerHeight - boxHeight - 20));
 
-    //arrow position calculations
+    // Draw an arrow from the instruction box toward the highlighted target.
     const targetCenterX = targetRect.left + targetRect.width / 2;
     const targetCenterY = targetRect.top + targetRect.height / 2;
     const boxCenterX = boxLeft + boxWidth / 2;

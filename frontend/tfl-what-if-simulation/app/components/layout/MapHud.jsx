@@ -1,7 +1,21 @@
 import { useState } from "react";
 
 /**
- * Info box with the current zoom level and center coordinates, as well as a reset view button
+ * Displays desktop map controls and current camera information.
+ *
+ * The HUD can expand to show interaction guidance, current zoom/centre values
+ * and a reset-view action. It is hidden on mobile where controls are moved into
+ * the mobile sheet and bottom interaction bar.
+ *
+ * @param {Object} props - HUD props.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {boolean} props.isSidebarOpen - Whether the desktop sidebar is open.
+ * @param {Object} props.layout - Responsive layout values.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {string} props.accentColor - Accent colour for labels and buttons.
+ * @param {{ zoom: number, center: { lat: number, lng: number } }} props.hudState - Current map camera state.
+ * @param {() => void} props.onResetView - Resets the map camera and transient route/search state.
+ * @returns {JSX.Element | null} Desktop map HUD or null on mobile.
  */
 export function MapHud({
     hypotheticalSettingsEnabled,

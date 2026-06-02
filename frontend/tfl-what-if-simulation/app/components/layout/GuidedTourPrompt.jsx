@@ -1,13 +1,17 @@
-/**
- * GuidedTourPrompt.jsx
- * 
- * A modal prompt that appears at the botttom center of the screen asking if the user
- * would like a guided tour. With a yes button and a no buttom which has a countdown timer
- * that auto-dismisses after 30 seconds.
- */
-
 import { useState, useEffect } from "react";
 
+/**
+ * Prompts the user to start the guided map tour.
+ *
+ * The prompt auto-dismisses after a countdown or slides away when the user
+ * starts/dismisses the tour manually.
+ *
+ * @param {Object} props - Guided tour prompt props.
+ * @param {() => void} props.onStartTour - Starts the guided tour.
+ * @param {() => void} props.onDismiss - Called when the prompt is dismissed.
+ * @param {Object} props.COLORS - Theme tokens used for prompt styling.
+ * @returns {JSX.Element | null} Guided tour prompt or null after dismissal.
+ */
 export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
     const [isVisible, setIsVisible] = useState(true);
     const [countdown, setCountdown] = useState(30);
@@ -29,7 +33,6 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
         return () => clearInterval(timer);
     }, [isVisible]);
 
-    //handle animation completion and removal
     useEffect(() => {
         if (isAnimatingOut) {
             const timeout = setTimeout(() => {
@@ -57,7 +60,7 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
 
     return (
         <>
-            {/*overlay and backdrop  */}
+            {/* Transparent backdrop reserves the tour prompt layer without blocking the map. */}
             <div
                 style={{
                     position: "fixed",
@@ -71,7 +74,7 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
                 }}
             />
 
-            {/*prompt box */}
+            {/* Prompt card */}
             <div
                 style={{
                     position: "fixed",
@@ -93,7 +96,7 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
                     pointerEvents: "auto",
                 }}
             >
-                {/*Question*/}
+                {/* Prompt question */}
                 <div
                     style={{
                         marginBottom: 14,
@@ -107,7 +110,7 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
                     Would you like a guided tour?
                 </div>
 
-                {/*container */}
+                {/* Prompt actions */}
                 <div
                     style={{
                         display: "flex",
@@ -115,7 +118,7 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
                         justifyContent: "center",
                     }}
                 >
-                    {/*yes button */}
+                    {/* Start tour */}
                     <button
                         onClick={handleYes}
                         style={{
@@ -142,7 +145,7 @@ export function GuidedTourPrompt({ onStartTour, onDismiss, COLORS }) {
                         Yes
                     </button>
 
-                    {/*no button with countdown */}
+                    {/* Dismiss with countdown */}
                     <button
                         onClick={handleNo}
                         style={{

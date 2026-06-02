@@ -1,8 +1,10 @@
-/*
- * tourSteps.js
- * Defines the sequence of guided tour steps used by the tour controller.
- * Each step describes the UI target, instruction text, completion criteria
- * and optional follow-up actions. Keep steps declarative and small.
+/**
+ * Declarative guided-tour step configuration.
+ *
+ * Each step identifies a target element, instruction text, completion
+ * condition and optional follow-up action. Keeping this data separate from the
+ * controller makes the tour sequence easier to adjust without touching overlay
+ * positioning or event-listener logic.
  */
 export const steps = [
     {

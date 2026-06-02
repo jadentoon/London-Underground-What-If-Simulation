@@ -1,9 +1,18 @@
-/**
- * sidebar component for the map view, showing settings and line status information
- */
-
 import { MapControlPanelContent } from "../controls/MapControlPanelContent";
 
+/**
+ * Renders the desktop side panel for map settings and network status.
+ *
+ * The sidebar delegates its actual controls to `MapControlPanelContent` and is
+ * responsible only for desktop positioning, slide-in animation and scrollable
+ * panel layout.
+ *
+ * @param {Object} props - Sidebar props.
+ * @param {boolean} props.isSidebarOpen - Whether the sidebar is visible.
+ * @param {Object} props.layout - Sidebar layout values.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @returns {JSX.Element} Desktop map sidebar.
+ */
 export function MapSidebar({
     isSidebarOpen,
     layout,

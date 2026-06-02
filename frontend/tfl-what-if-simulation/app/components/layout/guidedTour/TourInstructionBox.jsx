@@ -1,8 +1,24 @@
-/*
- * TourInstructionBox.jsx
- * Renders the instruction card shown during a tour step. Shows a title,
- * description and controls (Next / Skip / Done). Accepts positioning props
- * and simple theming via `COLORS`.
+/**
+ * Renders the guided-tour instruction card.
+ *
+ * The card is positioned by the tour controller and displays the current step
+ * title, description and navigation controls. A success flash is shown when a
+ * step is completed automatically.
+ *
+ * @param {Object} props - Instruction box props.
+ * @param {number} props.boxTop - Fixed top position in pixels.
+ * @param {number} props.boxLeft - Fixed left position in pixels.
+ * @param {number} props.boxWidth - Fixed width in pixels.
+ * @param {string} props.title - Current tour step title.
+ * @param {string} props.description - Current tour step description.
+ * @param {boolean} props.isSuccessFlashing - Whether the completion flash is active.
+ * @param {number} props.flashMs - Flash animation duration in milliseconds.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {number} props.currentStepIndex - Current zero-based step index.
+ * @param {number} props.totalSteps - Total guided tour steps.
+ * @param {() => void} props.onSkip - Skips or completes the tour.
+ * @param {() => void} props.onNext - Moves to the next step.
+ * @returns {JSX.Element} Guided-tour instruction card.
  */
 export function TourInstructionBox({
     boxTop,

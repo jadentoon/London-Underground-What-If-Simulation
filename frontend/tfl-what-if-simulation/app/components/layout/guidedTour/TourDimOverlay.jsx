@@ -1,8 +1,13 @@
-/*
- * TourDimOverlay.jsx
- * Renders the full-screen dimming overlay used by the guided tour.
- * If `undimRect` is provided, the overlay leaves a transparent "hole"
- * over that rectangle so the target element remains visible/highlighted.
+/**
+ * Renders the dimming overlay behind the active guided-tour step.
+ *
+ * When an undim rectangle is provided, the overlay is split into four fixed
+ * regions so the target area remains visible while the rest of the screen is
+ * dimmed.
+ *
+ * @param {Object} props - Dim overlay props.
+ * @param {DOMRect | null} props.undimRect - Rectangle to leave visible.
+ * @returns {JSX.Element} Guided tour dim overlay.
  */
 export function TourDimOverlay({ undimRect }) {
     if (undimRect) {

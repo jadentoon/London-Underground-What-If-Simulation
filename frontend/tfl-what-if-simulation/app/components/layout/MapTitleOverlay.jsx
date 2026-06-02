@@ -1,3 +1,18 @@
+/**
+ * Renders the fixed title overlay above the map.
+ *
+ * The title adjusts its position for the desktop sidebar and switches to a
+ * compact panel layout on mobile so it does not block primary controls.
+ *
+ * @param {Object} props - Title overlay props.
+ * @param {boolean} props.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {boolean} props.isSidebarOpen - Whether the sidebar is open.
+ * @param {Object} props.layout - Responsive layout values.
+ * @param {Object} props.COLORS - Theme tokens used for styling.
+ * @param {string} props.accentColor - Accent colour for highlighted title text.
+ * @param {string} props.titleShadow - Text shadow used over the map.
+ * @returns {JSX.Element} Map title overlay.
+ */
 export function MapTitleOverlay({ hypotheticalSettingsEnabled, isSidebarOpen, layout, COLORS, accentColor: accentColour, titleShadow }) {
     const isMobilePortrait = layout?.isMobilePortrait ?? false;
     const sidebarOffset = layout?.sidebarOffset ?? null;

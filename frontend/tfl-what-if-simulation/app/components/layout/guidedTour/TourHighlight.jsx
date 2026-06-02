@@ -1,7 +1,10 @@
-/*
- * TourHighlight.jsx
- * Renders the glowing outline/highlight around the current tour target element.
- * Accepts `targetRect` (DOMRect-like) and `COLORS` to match app theme.
+/**
+ * Draws the animated highlight around the current guided-tour target.
+ *
+ * @param {Object} props - Highlight props.
+ * @param {DOMRect | null} props.targetRect - Target element bounds.
+ * @param {Object} props.COLORS - Theme tokens used for highlight colour.
+ * @returns {JSX.Element | null} Highlight overlay or null when no target exists.
  */
 export function TourHighlight({ targetRect, COLORS }) {
     if (!targetRect) return null;
