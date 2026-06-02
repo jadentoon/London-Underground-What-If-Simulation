@@ -1,10 +1,18 @@
 /**
- * RoutingErrorBox.jsx
- * 
- * Displays an error message when no route is possible between two stations.
- * Shows in what-if mode when closed stations prevent routing.
+ * Displays an error message when routing cannot find a usable path.
+ *
+ * The message adapts to the current map layout and explains whether closures
+ * are likely blocking the requested route. Returning null when there is no
+ * error keeps the overlay out of the DOM during normal route planning.
+ *
+ * @param {Object} props - Routing error props.
+ * @param {{ from: string, to: string, reason?: string } | null} props.error - Current routing error.
+ * @param {Object} props.layout - Responsive map layout state.
+ * @param {boolean} props.layout.isMobilePortrait - Whether the app is in mobile portrait layout.
+ * @param {boolean} props.layout.hasMobileModeBar - Whether the mobile interaction mode bar is visible.
+ * @param {() => void} props.onClose - Called when the user dismisses the error.
+ * @returns {JSX.Element | null} Routing error overlay or null.
  */
-
 export function RoutingErrorBox({ error, layout, onClose }) {
     if (!error) return null;
 

@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
+/**
+ * Formats a route duration into a compact label for the route panel.
+ *
+ * Non-positive or invalid values are hidden behind a dash because they usually
+ * mean no route has been calculated yet.
+ *
+ * @param {number} seconds - Route duration in seconds.
+ * @returns {string} Human-readable duration label.
+ */
 function formatDuration(seconds) {
     if (!Number.isFinite(seconds) || seconds <= 0) return "-";
     const mins = Math.round(seconds / 60);
@@ -13,6 +22,31 @@ function formatDuration(seconds) {
 
 const ROUTE_PANEL_TRANSITION_MS = 240;
 
+/**
+ * Shows the currently selected route summary and expandable route details.
+ *
+ * The panel supports desktop and mobile layouts, route clearing, undoing the
+ * last cleared route, and a compact collapsed state. It receives route data
+ * from the map route hook and renders grouped line segments with travel times.
+ *
+ * @param {Object} props - Route panel props.
+ * @param {boolean} props.isOpen - Whether the expanded route detail panel is visible.
+ * @param {() => void} props.onToggle - Toggles the expanded/collapsed panel state.
+ * @param {Object | null} props.routeInfo - Current route summary and grouped leg data.
+ * @param {() => void} [props.onClearRoute] - Clears the active route.
+ * @param {Object | null} props.lastClearedRoute - Last cleared route that can be restored.
+ * @param {() => void} [props.onUndoClearRoute] - Restores the last cleared route.
+ * @param {boolean} [props.isSidebarOpen=false] - Whether the map sidebar is currently open.
+ * @param {Object} props.COLORS - Theme tokens used for panel styling.
+ * @param {string} props.accentColor - Accent colour used for route actions.
+ * @param {Object} props.layout - Responsive route panel layout values.
+ * @param {boolean} [props.hypotheticalSettingsEnabled=false] - Whether What-If mode is active.
+ * @param {Object} props.lineColours - Map of line ids to display colours.
+ * @param {Object} props.lineLabels - Map of line ids to display labels.
+ * @param {() => void} [props.onResetView] - Resets the map view on mobile.
+ * @param {"route" | "closures"} [props.mobileInteractionMode="route"] - Active mobile interaction mode.
+ * @returns {JSX.Element} Route summary and details panel.
+ */
 export function RouteInfoPanel({
     isOpen,
     onToggle,

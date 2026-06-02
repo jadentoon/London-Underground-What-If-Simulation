@@ -1,6 +1,15 @@
 import { X } from "lucide-react";
 import { LINE_COLOURS } from "../mapShared/constants";
 
+/**
+ * Formats a live train arrival timestamp for compact panel display.
+ *
+ * Invalid or missing timestamps are hidden so the detail panel only renders
+ * useful arrival information.
+ *
+ * @param {string | null | undefined} isoTimestamp - ISO timestamp from the train feed.
+ * @returns {string} Localised time label, or an empty string when unavailable.
+ */
 function formatArrivalTime(isoTimestamp) {
     if (!isoTimestamp) return "";
     const timestamp = new Date(isoTimestamp);
@@ -18,6 +27,18 @@ const FALLBACK_COLORS = {
     shadowStrong: "0 18px 45px rgba(0, 0, 0, 0.38)",
 };
 
+/**
+ * Renders one labelled train detail if a value is available.
+ *
+ * Returning null for empty values keeps the selected-train panel compact and
+ * avoids showing placeholder rows for unavailable live feed data.
+ *
+ * @param {Object} props - Detail row props.
+ * @param {string} props.label - Short label shown above the value.
+ * @param {string | number | null | undefined} props.value - Detail value to display.
+ * @param {Object} props.COLORS - Theme tokens used by the row.
+ * @returns {JSX.Element | null} Labelled detail row or null.
+ */
 function DetailRow({ label, value, COLORS }) {
     if (!value) return null;
     return (
@@ -28,6 +49,21 @@ function DetailRow({ label, value, COLORS }) {
     );
 }
 
+/**
+ * Displays details for the train currently selected on the map.
+ *
+ * The panel combines live or fallback train metadata, including route,
+ * destination, ETA, punctuality and platform/location details. It is positioned
+ * responsively so the same component works on desktop and mobile map layouts.
+ *
+ * @param {Object} props - Selected train panel props.
+ * @param {Object | null} props.train - Selected train marker data, or null when no train is selected.
+ * @param {Object} props.layout - Current map layout state.
+ * @param {boolean} props.layout.isMobilePortrait - Whether the map is in mobile portrait layout.
+ * @param {Object} [props.COLORS] - Theme tokens for panel styling.
+ * @param {() => void} props.onClose - Called when the close button is pressed.
+ * @returns {JSX.Element | null} Selected train detail panel or null.
+ */
 export function SelectedTrainPanel({ train, layout, COLORS = FALLBACK_COLORS, onClose }) {
     if (!train) return null;
 
