@@ -1,5 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/**
+ * Manages the lightweight map HUD state shown over the Leaflet map.
+ * 
+ * Camera changes are stored in a ref and copied into React state on a short
+ * interval, reducing rerenders while the map is being dragged or zoomed.
+ * 
+ * @param {{ lat: number, lng: number }} defaultCenter - Initial map centre shown in the HUD.
+ * @returns {{
+ *  hudState: { zoom: number, center: Object },
+ *  handleMapChange: (state: {center: Object, zoom: number }) => void
+ * }} HUD display state and Leaflet camera-change handler.
+ */
 export function useHudState(defaultCenter) {
     // Reference to store the current map state (center & zoom) without triggering React renders.
     const mapStateRef = useRef({
@@ -15,7 +27,7 @@ export function useHudState(defaultCenter) {
 
     /**
      * Callback passed to LeafletMap to receive camera changes.
-     * Updatting the mapStateRef with the latest center and zoom.
+     * Updating the mapStateRef with the latest center and zoom.
      */
     const handleMapChange = useCallback((state) => {
         mapStateRef.current = state;

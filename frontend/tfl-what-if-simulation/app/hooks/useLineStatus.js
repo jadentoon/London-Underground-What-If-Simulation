@@ -124,6 +124,19 @@ function getLiveLineDisruptions(lines) {
     return { closed, partial, partialStationIdsByLine };
 }
 
+/**
+ * Loads TfL line status data and derives the effective line disruption state.
+ * 
+ * In normal mode, the hook polls live TfL line status and detects closed or partially
+ * closed lines. In What-If mode, it uses simulated line closures so user scenarios
+ * take priority over live service data.
+ * 
+ * @param {Object} params - Line status options.
+ * @param {boolean} params.hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @param {Set<string>} [params.simulatedClosedLines] - Line ids closed by the current What-If scenario.
+ * @param {number} [params.pollMs] - Polling interval for live TfL status.
+ * @returns {Object} Effective line options, closures, source metadata and display status values.
+ */
 export function useLineStatus({
     hypotheticalSettingsEnabled,
     simulatedClosedLines = EMPTY_LINE_SET,

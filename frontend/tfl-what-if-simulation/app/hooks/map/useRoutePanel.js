@@ -1,7 +1,14 @@
 import { useCallback, useState } from "react";
 
+/**
+ * Manages route panel state, route summaries and routing errors.
+ * 
+ * The panel opens automatically when a valid route is received and can be
+ * collapsed, toggled or cleared by map controls.
+ * 
+ * @returns {Object} Route panel state and actions for updating or clearing route UI.
+ */
 export function useRoutePanel() {
-     // State for routing errors
     const [routingError, setRoutingError] = useState(null);
     const [routeInfo, setRouteInfo] = useState(null);
     const [isRoutePanelOpen, setIsRoutePanelOpen] = useState(false);

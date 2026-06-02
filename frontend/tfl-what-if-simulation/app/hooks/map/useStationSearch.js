@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+/**
+ * Manages station search, focused station state and map navigation from search.
+ * 
+ * Stores searchable station data after the graph loads, filters matches from
+ * the current query, pans the Leaflet map to selected stations and temporarily
+ * highlights the selected marker.
+ * 
+ * @param {React.MutableRefObject<Object|null>} leafletMapRef - Ref containing the Leaflet map instance.
+ * @returns {Object} Search query state, station matches, focus state and search actions.
+ */
 export function useStationSearch(leafletMapRef) {
     // Stations list for search (filled by LeafletMap once loaded)
     const [stationsForSearch, setStationsForSearch] = useState([]);

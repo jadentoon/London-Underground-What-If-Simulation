@@ -3,7 +3,17 @@ import { useEffect, useState } from "react";
 const TFL_STATION_DISRUPTIONS_URL = 
     "/api/tfl/station-disruptions";
 
-// Fetch live station closures from TfL StopPoint Disruption API
+/**
+ * Polls live TfL station disruption data and returns closed station ids.
+ * 
+ * When disabled, the hook clears live closures so What-If mode can use only the 
+ * simulated closure state controlled by the user.
+ * 
+ * @param {Object} params - Live closure options.
+ * @param {boolean} params.enabled - Whether live station closures should be fetched.
+ * @param {number} [params.pollMs=15000] - Polling interval in milliseconds.
+ * @returns {Set<string>} Station ids currently reported as closed.
+ */
 export function useLiveStationClosures({
     enabled,
     pollMs = 15_000,

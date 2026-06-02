@@ -2,8 +2,17 @@ import { useEffect, useState } from "react";
 
 const TFL_LINE_STATUS_URL = "/api/tfl/line-status";
 
+/**
+ * Polls TfL line status and extracts delay details for display.
+ * 
+ * This hook keeps richer delay text separate from the route-blocking line
+ * closure state used by `useLineStatus`.
+ * 
+ * @param {Object} [options] - Delay polling options.
+ * @param {number} [options.pollMs=60000] - Polling interval in milliseconds. 
+ * @returns {Map<string, Object>} Delay/status details keyed by line id.
+ */
 export function useLineDelays({pollMs = 60_000} = {}) {
-    //line delay/status data from TfL API
     const [lineDelays, setLineDelays] = useState(new Map());
 
     useEffect(() => {

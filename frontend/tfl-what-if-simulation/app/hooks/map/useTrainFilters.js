@@ -1,5 +1,13 @@
 import { useCallback, useState } from "react";
 
+/**
+ * Manages train marker visibility and line filtering controls.
+ * 
+ * Used by the control panel to show/hide trains, switch between all trains
+ * and selected-line filtering and track which lines are visible.
+ * 
+ * @returns {Object} Train display state and filter action callbacks.
+ */
 export function useTrainFilters() {
     const [showTrains, setShowTrains] = useState(true);
     const [trainFilterMode, setTrainFilterMode] = useState("all");

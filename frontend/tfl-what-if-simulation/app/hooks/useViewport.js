@@ -8,6 +8,20 @@ const DEFAULT_STATE = {
     isLargeDesktop: false,
 };
 
+/**
+ * Tracks the current browser viewport size and responsive layout flags.
+ * 
+ * Used by map layout components to switch between mobile, portrait and large
+ * desktop behaviours without duplicating resize logic.
+ * 
+ * @returns {{
+ *  width: number,
+ *  height: number,
+ *  isPortrait: boolean,
+ *  isMobile: boolean,
+ *  isLargeDesktop: boolean
+ * }} Current viewport state.
+ */
 function getViewportState() {
     if (typeof window === "undefined") return DEFAULT_STATE;
 

@@ -57,6 +57,15 @@ function writeSavedScenarios(scenarios) {
     }
 }
 
+/**
+ * Manages What-If station/line closures and saved closure scenarios.
+ *
+ * The hook stores simulated closed stations and lines, persists named scenarios
+ * in localStorage, and prevents closure toggles when What-If mode is inactive.
+ *
+ * @param {boolean} hypotheticalSettingsEnabled - Whether What-If mode is active.
+ * @returns {Object} Closure state, saved scenarios and What-If action callbacks.
+ */
 export function useWhatIfClosures(hypotheticalSettingsEnabled) {
     // State to track closed stations (set of station IDs)
     const [closedStations, setClosedStations] = useState(new Set());
