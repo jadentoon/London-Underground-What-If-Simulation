@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server";
 
+/**
+ * Handles `GET /api/tfl/line-status`.
+ *
+ * Proxies TfL tube line status data through the Next.js server so the frontend
+ * can request live status without calling TfL directly. Passing `detail=true`
+ * forwards TfL's detailed disruption data for partial-closure handling.
+ *
+ * @param {Request} request - Incoming Next.js route request.
+ * @returns {Promise<import("next/server").NextResponse>} TfL line status response or 502 error.
+ */
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);

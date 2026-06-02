@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 
+/**
+ * Handles `GET /api/tfl/station-disruptions`.
+ *
+ * Proxies TfL StopPoint disruption data for tube stations. The frontend uses
+ * this response to identify live station closures in normal operating mode.
+ *
+ * @returns {Promise<import("next/server").NextResponse>} TfL station disruption response or 502 error.
+ */
 export async function GET() {
     try {
         const response = await fetch(

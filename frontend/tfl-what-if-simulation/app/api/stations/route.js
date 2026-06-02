@@ -1,12 +1,9 @@
 /**
- * API route for fetching station nodes and their connections from Neo4j.
- * 
- * This endpoint:
- * - Queries all Station -> Station Connections.
- * - Normalises stations into unique nodes.
- * - Returns a graph-friendly structure: { nodes, edges }.
- * 
- * Designed for front-end map visualisation.
+ * API route for loading the station graph used by the map.
+ *
+ * The route queries Neo4j for Station -> CONNECTS_TO -> Station relationships,
+ * normalises duplicate station nodes, converts Neo4j integer values into plain
+ * numbers and returns graph-friendly `{ nodes, edges }` data for the frontend.
  */
 import { NextResponse } from "next/server";
 import driver from "../../lib/neo4j.js";
@@ -18,6 +15,15 @@ let stationGraphCache = null;
 let stationGraphCacheExpiresAt = 0;
 let stationGraphRequestInFlight = null;
 
+/**
+ * Converts Neo4j numeric values into JavaScript numbers.
+ *
+ * Neo4j integer objects need explicit conversion before they can be safely
+ * serialised into the API response.
+ *
+ * @param {number | Object} value - Native number or Neo4j integer-like value.
+ * @returns {number} JavaScript numeric value.
+ */
 function toNumber(value) {
     if (typeof value === "number") {
         return value;
@@ -32,6 +38,15 @@ function toNumber(value) {
     return Number(value);
 }
 
+/**
+ * Loads the station graph directly from Neo4j.
+ *
+ * Station nodes are deduplicated by id while each relationship becomes one edge
+ * in the response. The session is always closed in `finally` to avoid leaking
+ * database connections.
+ *
+ * @returns {Promise<{ nodes: Array<Object>, edges: Array<Object> }>} Station graph data.
+ */
 async function loadStationGraphFromNeo4j() {
     const session = driver.session();
 
@@ -45,25 +60,14 @@ async function loadStationGraphFromNeo4j() {
                 r.travel_time_seconds AS travel_time
         `);
 
-        /**
-         * Map used to deduplicate station nodes.
-         * Keyed by station id to ensure each station appears only once
-         * even if it has many connections.
-         */
         const nodesMap = new Map();
 
-        /**
-         * Edge list representing connections between stations.
-         * Each edge corresponds to a CONNECTS_TO relationship.
-         */
         const edges = [];
 
-        // Transform Neo4j records into nodes + edges.
         result.records.forEach(record => {
             const fromId = record.get("fromId");
             const toId = record.get("toId");
 
-            // Add source station if it hasn't been seen before.
             if (!nodesMap.has(fromId)) {
                 nodesMap.set(fromId, {
                     id: fromId,
@@ -73,7 +77,6 @@ async function loadStationGraphFromNeo4j() {
                 });
             }
 
-            // Add destination station if it hasn't been seen before.
             if (!nodesMap.has(toId)) {
                 nodesMap.set(toId, {
                     id: toId,
@@ -85,7 +88,6 @@ async function loadStationGraphFromNeo4j() {
 
             const travelTime = record.get("travel_time");
 
-            // Record the connection between stations.
             edges.push({
                 from: fromId,
                 to: toId,
@@ -94,7 +96,6 @@ async function loadStationGraphFromNeo4j() {
             });
         });
 
-        // Convert node map into an array for JSON serialisation.
         const nodes = Array.from(nodesMap.values());
 
         return {
@@ -102,22 +103,18 @@ async function loadStationGraphFromNeo4j() {
             edges,
         };
     } finally {
-        /**
-         * Always close the Neo4j session.
-         * This runs regardless of success or failure and prevents
-         * connection leaks under load.
-         */
         await session.close();
     }
 }
 
 /**
- * GET /api/stations
- * 
- * @returns {JSON} {
- *  nodes: Array<{ id, name, lat, lon }>,
- *  edges: Array<{ from, to, line }>
- * }
+ * Handles `GET /api/stations`.
+ *
+ * Responses are cached in memory to avoid repeatedly querying Neo4j while the
+ * station graph is unchanged. Concurrent requests share the same in-flight
+ * database query.
+ *
+ * @returns {Promise<import("next/server").NextResponse>} Station graph JSON response.
  */
 export async function GET() {
     const now = Date.now();
