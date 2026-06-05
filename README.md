@@ -1,4 +1,4 @@
-# COMP6030 Group Project - London Underground "What-If" Simulation
+# London Underground "What-If" Simulation
 
 A web-based London Underground network simulator that uses TfL data, Neo4j and an interactive map to visualise routes, live service disruption, train movement and hypothetical station or line closures.
 
@@ -140,3 +140,20 @@ This will:
 - Jaden Toon - Software Development Lead
 - Sattyaj Paul - Testing Lead
 - Saf Sikder - Documentation Lead
+
+## Screenshots
+<p>
+  <img width="1919" height="876" alt="image" src="https://github.com/user-attachments/assets/5396aaa0-a52e-474f-a340-1b0fc0c3e6bc" />
+  <em>The Main screen of the London Underground What-If Simulation, displaying the interactive network map, station search, route planning and scenario modelling controls. </em>
+</p>
+<br>
+<p>
+  <img width="1919" height="868" alt="image" src="https://github.com/user-attachments/assets/b4ef1689-b306-4916-a59b-d9ffc16547c3" />
+  <em>Light Mode of the main screen.</em>
+</p>
+<br>
+<p>
+  <img width="1919" height="873" alt="image" src="https://github.com/user-attachments/assets/fae3f5e1-04e5-485b-b998-d40612b0493c" />
+  <em>What-If Mode – Demonstrates dynamic route recalculation by showing a journey from Tottenham Court Road to Bond Street with Oxford Circus closed, forcing the routing engine to find an alternative path through the network.</em>
+</p>
+
